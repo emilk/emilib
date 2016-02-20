@@ -1064,7 +1064,7 @@ ShaderInput create_ff(int flags)
 
 	std::string vs;
 
-	vs += "vs_in " + vec_name + " a_vert;\n"; // All need vertices
+	vs += "vs_in " + vec_name + " a_pos;\n"; // All need vertices
 
 	for (auto&& a : vars) {
 		vs += "vs_in " + a.precision_type() + " a_" + a.name + ";\n"; // e.g.  varying lowp vec4 v_color;
@@ -1081,9 +1081,9 @@ ShaderInput create_ff(int flags)
 	vs += "\n";
 	vs += "void main() {\n";
 	if (Dims==2) {
-		vs += "    gl_Position = u_mvp * vec4(a_vert, 0.0, 1.0);\n";
+		vs += "    gl_Position = u_mvp * vec4(a_pos, 0.0, 1.0);\n";
 	} else {
-		vs += "    gl_Position = u_mvp * vec4(a_vert, 1.0);\n";
+		vs += "    gl_Position = u_mvp * vec4(a_pos, 1.0);\n";
 	}
 
 	for (auto&& a : vars)
@@ -1155,8 +1155,11 @@ Program compile_ff_program(int flags)
 
 size_t VertComp::sizeBytes() const
 {
-	if (type == GL_UNSIGNED_BYTE) { return num_comps * sizeof(uint8_t); }
-	if (type == GL_FLOAT)         { return num_comps * sizeof(float);   }
+	if (type == GL_BYTE)           { return num_comps * sizeof(int8_t);   }
+	if (type == GL_UNSIGNED_BYTE)  { return num_comps * sizeof(uint8_t);  }
+	if (type == GL_SHORT)          { return num_comps * sizeof(int16_t);  }
+	if (type == GL_UNSIGNED_SHORT) { return num_comps * sizeof(uint16_t); }
+	if (type == GL_FLOAT)          { return num_comps * sizeof(float);    }
 	ABORT_F("Unknow type: %u", type);
 }
 
@@ -1166,12 +1169,12 @@ VertComp VertComp::Float(const char* name)
 	vc.name      = name;
 	vc.num_comps = 1;
 	vc.type      = GL_FLOAT;
-	vc.normalize = false;
+	vc.normalize = DONT_NORMALIZE;
 	vc.offset    = 0;
 	return vc;
 }
 
-VertComp VertComp::Vec2(const char* name, bool normalize)
+VertComp VertComp::Vec2(const char* name, Normalize normalize)
 {
 	VertComp vc;
 	vc.name      = name;
@@ -1188,7 +1191,7 @@ VertComp VertComp::RGBA32(const char* name)
 	vc.name      = name;
 	vc.num_comps = 4;
 	vc.type      = GL_UNSIGNED_BYTE;
-	vc.normalize = true;
+	vc.normalize = NORMALIZE;
 	vc.offset    = 0;
 	return vc;
 }
@@ -1298,21 +1301,24 @@ void VBO::upload()
 		CHECK_F(glBindVertexArray != nullptr);
 		CHECK_F(glDeleteVertexArrays != nullptr);
 
-		glGenVertexArrays(1, &_id);
+		//glGenVertexArrays(1, &_id);
+		glGenVertexArraysAPPLE(1, &_id);
 		CHECK_FOR_GL_ERROR;
 	}
 
 	VAO::~VAO()
 	{
 		CHECK_FOR_GL_ERROR;
-		glDeleteVertexArrays(1, &_id);
+		//glDeleteVertexArrays(1, &_id);
+		glDeleteVertexArraysAPPLE(1, &_id);
 		CHECK_FOR_GL_ERROR;
 	}
 
 	void VAO::bind()
 	{
 		CHECK_FOR_GL_ERROR;
-		glBindVertexArray(_id);
+		//glBindVertexArray(_id);
+		glBindVertexArrayAPPLE(_id);
 		CHECK_FOR_GL_ERROR;
 	}
 

@@ -193,19 +193,26 @@ Program compile_ff_program(int flags);
 
 // ----------------------------------------------------------------------------
 
+enum Normalize { DONT_NORMALIZE, NORMALIZE };
+
 struct VertComp
 {
 	std::string name;
 	unsigned    num_comps; // 1 for scalars, 2 for Vec2 etc
 	unsigned    type;      // e.g. GL_FLOAT
-	bool        normalize; // true/false
+	Normalize   normalize; // If we normalize, values are rescaled to [0, 1]
 	size_t      offset;    // Byte offset, filled in by VertexFormat::VertexFormat.
 
 	size_t sizeBytes() const;
 
+	VertComp() {}
+
+	VertComp(const char* name_, unsigned num_comps_, unsigned type_, Normalize normalize_)
+		: name(name_), num_comps(num_comps_), type(type_), normalize(normalize_) {}
+
 	// Static constructor helpers:
 	static VertComp Float(const char* name);
-	static VertComp Vec2(const char* name, bool normalize = false);
+	static VertComp Vec2(const char* name, Normalize normalize = DONT_NORMALIZE);
 	static VertComp RGBA32(const char* name);
 };
 
