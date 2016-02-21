@@ -970,7 +970,8 @@ const auto common_prefix = R"(#version 150
 #define highp
 #define precision
 
-#define texture2D texture
+#define texture2D   texture
+#define textureCube texture
 )";
 
 const auto vs_prefix = R"(
@@ -992,7 +993,8 @@ const auto common_prefix = R"(#version 150
 #define highp
 #define precision
 
-#define texture2D texture
+#define texture2D   texture
+#define textureCube texture
 )";
 
 const auto vs_prefix = R"(
@@ -1301,24 +1303,24 @@ void VBO::upload()
 		CHECK_F(glBindVertexArray != nullptr);
 		CHECK_F(glDeleteVertexArrays != nullptr);
 
-		//glGenVertexArrays(1, &_id);
-		glGenVertexArraysAPPLE(1, &_id);
+		glGenVertexArrays(1, &_id);
+		//glGenVertexArraysAPPLE(1, &_id);
 		CHECK_FOR_GL_ERROR;
 	}
 
 	VAO::~VAO()
 	{
 		CHECK_FOR_GL_ERROR;
-		//glDeleteVertexArrays(1, &_id);
-		glDeleteVertexArraysAPPLE(1, &_id);
+		glDeleteVertexArrays(1, &_id);
+		//glDeleteVertexArraysAPPLE(1, &_id);
 		CHECK_FOR_GL_ERROR;
 	}
 
 	void VAO::bind()
 	{
 		CHECK_FOR_GL_ERROR;
-		//glBindVertexArray(_id);
-		glBindVertexArrayAPPLE(_id);
+		glBindVertexArray(_id);
+		//glBindVertexArrayAPPLE(_id);
 		CHECK_FOR_GL_ERROR;
 	}
 
@@ -1431,7 +1433,9 @@ TempViewPort::~TempViewPort()
 void TempViewPort::set_back_buffer(Rectangle bb)
 {
 	s_current_vp = bb;
+	CHECK_FOR_GL_ERROR;
 	glViewport(bb.x, bb.y, bb.width, bb.height);
+	CHECK_FOR_GL_ERROR;
 }
 
 const Rectangle& TempViewPort::back_buffer()

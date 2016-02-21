@@ -170,7 +170,7 @@ private:
 
 /* Uses a uniform syntax for all gl versions.
 VertexShader:  vs_in/vs_out instead of attribute/varying.
-PixelShader:   ps_in instead of varying, write to out_FragColor.
+PixelShader:   fs_in instead of varying, write to out_FragColor.
 */
 Program compile_program(const std::string& vs, const std::string& fs, const std::string& debug_name);
 
@@ -390,6 +390,7 @@ public:
 
 	void add_strip(const Vertex* ptr, size_t n)
 	{
+		if (n == 0) { return; }
 		CHECK_GT_F(n, 2u);
 		VBO& vbo = _mesh_painter.vert_vbo();
 		if (!vbo.empty()) {
