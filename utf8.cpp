@@ -21,7 +21,7 @@ size_t count_chars(const char* utf8, size_t num_bytes)
 {
 	size_t count = 0;
 	for (size_t i = 0; i < num_bytes; ++i) {
-		CHECK(*utf != '\0') << "Premature end of string";
+		CHECK_F(*utf8 != '\0', "Premature end of string");
 		if ((*utf8 & 0b11000000) != 0b10000000) {
 			count += 1;
 		}
