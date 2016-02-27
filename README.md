@@ -30,3 +30,6 @@ Nice text rendering for OSX and iOS.
 
 ### utf8
 Really basic utf8 operations.
+
+### wav
+Parse WAVE (.wav) sound files into a nice format.
