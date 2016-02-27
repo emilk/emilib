@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <string>
 
+#include <loguru.hpp>
+
 namespace emilib {
 
 Wav parse_wav(const void* wav_void_data, size_t wav_size)
@@ -93,7 +95,8 @@ Wav parse_wav(const void* wav_void_data, size_t wav_size)
 	uint16_t channels        = read_uint16(); // 1 mono, 2 stereo
 	uint32_t sample_rate     = read_uint32();
 	uint32_t bytes_per_sec   = read_uint32();
-	skip(2); // Skip block_align
+	// uint16_t block_align     = read_uint16();
+	skip(2); // Skip block_align - its probably 2 bytes.
 	uint16_t bits_per_sample = read_uint16(); // 8 bit or 16 bit file?
 
 	// ------------------------------------------------------------------------
@@ -102,7 +105,9 @@ Wav parse_wav(const void* wav_void_data, size_t wav_size)
 	uint32_t data_size = read_uint32(); // How many bytes of sound data we have
 
 	if (pos + data_size < wav_size) {
-		throw std::runtime_error("Extra data in WAV file.");
+		// This happens, and I'm not sure why.
+		auto extra = wav_size - data_size - pos;
+		LOG_F(WARNING, "%lu bytes of extra data in WAV file", extra);
 	}
 	if (pos + data_size > wav_size) {
 		throw std::runtime_error("Premature end of WAV file.");
