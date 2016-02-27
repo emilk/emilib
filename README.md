@@ -1,4 +1,3 @@
-
 # What
 This is a loose collection of C++11 libraries I tend to reuse between different, mostly game-related, projects.
 
@@ -24,6 +23,12 @@ Simple O(N) map/set with small overhead and great performance for small N.
 
 ### mem_map
 Simple wrapper around mmap with RAII.
+
+### music
+Stream mp3 music on OSX and iOS.
+
+### movement_tracker
+Track movement of some data, e.g. to estimate velocity from recent movement.
 
 ### text_paint
 Nice text rendering for OSX and iOS.
