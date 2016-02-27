@@ -10,36 +10,37 @@
 
 #include <loguru.hpp>
 
-namespace os
+namespace emilib {
+
+MemMap::MemMap(const char* path)
 {
-	MemMap::MemMap(const char* path)
-	{
-		auto file = open(path, O_RDONLY);
-		struct stat file_status;
-		auto ret = fstat(file, &file_status);
-		if (ret != 0) {
-			throw std::runtime_error(
-				(std::string)"Failed to stat file '" + path + "' - maybe it's not there?");
-		}
-
-		_size = (size_t)file_status.st_size;
-		_data = mmap(0, _size, PROT_READ, MAP_PRIVATE, file, 0);
-		CHECK_NE_F(_data, MAP_FAILED);
-
-		// Note this will not close the file/mapping right now, as it will be held until unmapped.
-		close(file);
+	auto file = open(path, O_RDONLY);
+	struct stat file_status;
+	auto ret = fstat(file, &file_status);
+	if (ret != 0) {
+		throw std::runtime_error(
+			(std::string)"Failed to stat file '" + path + "' - maybe it's not there?");
 	}
 
-	MemMap::~MemMap()
-	{
-		if (_data) {
-			munmap(_data, _size);
-		}
-	}
+	_size = (size_t)file_status.st_size;
+	_data = mmap(0, _size, PROT_READ, MAP_PRIVATE, file, 0);
+	CHECK_NE_F(_data, MAP_FAILED);
 
-	void MemMap::operator=(MemMap&& o)
-	{
-		std::swap(this->_size, o._size);
-		std::swap(this->_data, o._data);
+	// Note this will not close the file/mapping right now, as it will be held until unmapped.
+	close(file);
+}
+
+MemMap::~MemMap()
+{
+	if (_data) {
+		munmap(_data, _size);
 	}
 }
+
+void MemMap::operator=(MemMap&& o)
+{
+	std::swap(this->_size, o._size);
+	std::swap(this->_data, o._data);
+}
+
+} // namespace emilib
