@@ -11,7 +11,7 @@ size_t count_chars(const char* utf8);
 size_t count_chars(const char* utf8, size_t num_bytes);
 
 // Returns the number of characters outputted, or 0 on error
-size_t encode(std::string& out_utf8, uint64_t c);
+size_t encode(std::string& out_utf8, uint64_t codepoints);
 
 } // namespace utf8
 } // namespace emilib
