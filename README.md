@@ -33,6 +33,9 @@ Track movement of some data, e.g. to estimate velocity from recent movement.
 ### text_paint
 Nice text rendering for OSX and iOS.
 
+### timer
+Monotonic wall time chronometer.
+
 ### utf8
 Really basic utf8 operations.
 
