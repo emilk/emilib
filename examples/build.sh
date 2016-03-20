@@ -1,1 +1,1 @@
-g++ --std=c++14 -I .. coroutine_example.cpp -o coroutine_example
+g++ --std=c++14 -Wall -I .. -I . coroutine_example.cpp -o coroutine_example
