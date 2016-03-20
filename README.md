@@ -21,9 +21,6 @@ Code for doing simple things in OpenGL.
 ### list_map / list_set
 Simple O(N) map/set with small overhead and great performance for small N.
 
-### Loguru
-Not part of emilib, but included for examples to work. Find [Loguru on GitHub](https://github.com/emilk/loguru) for latest version of Loguru.
-
 ### mem_map
 Simple wrapper around mmap with RAII.
 
@@ -32,6 +29,9 @@ Stream mp3 music on OSX and iOS.
 
 ### movement_tracker
 Track movement of some data, e.g. to estimate velocity from recent movement.
+
+### strprintf
+Minimalistic string formating library. Provdides two functions: `strprintf` and `vstrprintf` that act like `printf` and `vprintf` respectively, but return the formated string as a `std::string` instead of printing it.
 
 ### text_paint
 Nice text rendering for OSX and iOS.
