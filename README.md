@@ -1,11 +1,11 @@
 # What
-This is a loose collection of C++11 libraries I tend to reuse between different, mostly game-related, projects.
+This is a loose collection of C++14 libraries I tend to reuse between different, mostly game-related, projects.
 
 They are meant mostly for me (Emil Ernerfeldt), but if you find them useful, have at it.
 
 Their only dependencies are either system dependencies (pthread etc) and [Loguru](https://github.com/emilk/loguru). gl_lib also depends on OpenGL and GLEW. The libraries does not depend on each other.
 
-They all work on OSX and iOS and probably Linux. Some may work on Windows.
+They all work on OSX and iOS and probably Linux. Some may work elsewhere.
 
 ### coroutine
 This is a "fake coroutine" class which implements a cooperative thread and methods for passing execution between the outer and inner thread.
@@ -20,6 +20,9 @@ Code for doing simple things in OpenGL.
 
 ### list_map / list_set
 Simple O(N) map/set with small overhead and great performance for small N.
+
+### Loguru
+Not part of emilib, but included for examples to work. Find [Loguru on GitHub](https://github.com/emilk/loguru) for latest version of Loguru.
 
 ### mem_map
 Simple wrapper around mmap with RAII.

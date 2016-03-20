@@ -8,7 +8,12 @@
 namespace emilib {
 namespace cr {
 
+// This is thrown when the outer thread stop():s the coroutine.
+struct AbortException {};
+
 static std::atomic<unsigned> s_cr_counter { 0 };
+
+// ----------------------------------------------------------------------------
 
 // Trick for allowing forward-declaration of std::thread.
 class Coroutine::Thread : public std::thread
@@ -16,6 +21,8 @@ class Coroutine::Thread : public std::thread
 public:
 	using std::thread::thread;
 };
+
+// ----------------------------------------------------------------------------
 
 Coroutine::Coroutine(const char* debug_name_base, std::function<void(InnerControl& ic)> fun)
 {
@@ -26,9 +33,9 @@ Coroutine::Coroutine(const char* debug_name_base, std::function<void(InnerContro
 	_inner = std::make_unique<InnerControl>(*this);
 
 	_thread = std::make_unique<Thread>([this, fun]{
-		DLOG_F(1, "%s: Coroutine thread starting up", _debug_name.c_str());
 		loguru::set_thread_name(_debug_name.c_str());
 		ERROR_CONTEXT("Coroutine", _debug_name.c_str());
+		DLOG_F(1, "%s: Coroutine thread starting up", _debug_name.c_str());
 
 		_mutex.lock();
 		CHECK_F(!_control_is_outer);
@@ -86,7 +93,7 @@ bool Coroutine::poll(double dt)
 	return _is_done;
 }
 
-// --------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 void InnerControl::wait_sec(double s)
 {
@@ -132,7 +139,7 @@ void InnerControl::poll(double dt)
 	_time += dt;
 }
 
-// -----------------------------------------------
+// ----------------------------------------------------------------------------
 
 void CoroutineSet::clear()
 {

@@ -1,33 +1,50 @@
+/*
+Coroutine-ish feature implemented using a thread.
+Useful for implmenting a script of some sort where a state-machine would be cumbersome.
+The coroutine (inner) thread is executed only when the owning (outer) thread is paused, and vice versa.
+
+The coroutine has helper functions for waiting for a certain amount of time etc.
+To keep track of the time, a time delta must be supplied when polling a coroutine.
+This allows the library user to for instance slow down time by supplying smaller time deltas
+then the wall clock time.
+
+Example usage can be found in examples/ folder.
+*/
+
 #pragma once
 
 #include <atomic>
 #include <condition_variable>
 #include <functional>
-#include <list>
 #include <mutex>
 #include <string>
+#include <vector>
 
 namespace emilib {
 namespace cr {
 
-struct AbortException {};
-
 class InnerControl;
+
+// ----------------------------------------------------------------------------
 
 // This acts like a coroutine, but is implemented as a separate thread.
 class Coroutine
 {
 public:
 	// A running count of all coroutines will be appended to debug_name.
-	// The resulting name is then given to the thread, and written or errors.
+	// The resulting name isused to name the inner thead and will also be written on errors.
 	Coroutine(const char* debug_name, std::function<void(InnerControl& ic)> fun);
+
+	// Will stop() the coroutine, if not already done().
 	~Coroutine();
 
+	// Abort the inner thread, if not done().
 	void stop();
 
-	// Returns 'true' on done
+	// dt = elapsed time since last call in seconds. Returns 'true' on done.
 	bool poll(double dt);
 
+	// Has the inner thread finished its execution?
 	bool done() const { return _is_done; }
 
 private:
@@ -48,6 +65,8 @@ private:
 	std::atomic<bool>             _control_is_outer { true };
 	std::atomic<bool>             _abort { false };
 };
+
+// ----------------------------------------------------------------------------
 
 // This is used from within the coroutine.
 class InnerControl
@@ -81,7 +100,7 @@ private:
 	double     _time = 0;
 };
 
-// -----------------------------------------------
+// ----------------------------------------------------------------------------
 
 // Helper for handling several coroutines
 class CoroutineSet
@@ -92,14 +111,18 @@ public:
 
 	void clear();
 
+	// You can save the returned handle so you can stop() or erase() it later.
 	std::shared_ptr<Coroutine> start(const char* debug_name, std::function<void(InnerControl& ic)> fun);
 
+	// Remove it from the set. If there are no more handles left for the routine, it will be stopped.
+	// Returns false iff the given handle was not found.
 	bool erase(std::shared_ptr<Coroutine> cr);
 
+	// poll all contained coroutines. dt = elapsed time since last call in seconds.
 	void poll(double dt);
 
 private:
-	std::list<std::shared_ptr<Coroutine>> _list;
+	std::vector<std::shared_ptr<Coroutine>> _list;
 };
 
 } // namespace cr
