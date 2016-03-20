@@ -345,7 +345,6 @@ void Texture::set_mip_data(const void* data_ptr, Size size, unsigned mip_level)
 
 		default:
 			ABORT_F("Unknown image format");
-			return;
 	}
 
 	CHECK_FOR_GL_ERROR;
@@ -688,7 +687,6 @@ bool link_program(unsigned prog, const char* debug_name)
 	if (status == GL_FALSE) {
 		print_link_log(prog, debug_name);
 		ABORT_F("Failed to link GL program");
-		return false;
 	}
 
 	return true;
@@ -711,7 +709,6 @@ bool validate_program(GLuint prog, const char* debug_name)
 	glGetProgramiv(prog, GL_VALIDATE_STATUS, &status);
 	if (status == 0) {
 		ABORT_F("Program status is zero: %s", debug_name);
-		return false;
 	}
 
 	return true;
@@ -1533,10 +1530,11 @@ FBO::FBO(const std::string& debug_name, Size size, const Params& params)
 
 	CHECK_FOR_GL_ERROR;
 
-	if (!is_complete()) {
+	{
 		FBO::Lock lock(this);
 		auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-		ABORT_F("Framebuffer '%s' not complete after initialization: %s",
+		CHECK_EQ_F(status, GL_FRAMEBUFFER_COMPLETE,
+		    "Framebuffer '%s' not complete after initialization: %s",
 			debug_name.c_str(), framebuffer_completion_to_string(status));
 	}
 
@@ -1556,12 +1554,6 @@ FBO::~FBO()
 unsigned FBO::id() const
 {
 	return _fbo_id;
-}
-
-bool FBO::is_complete() const
-{
-	FBO::Lock lock(this);
-	return GL_FRAMEBUFFER_COMPLETE == glCheckFramebufferStatus(GL_FRAMEBUFFER);
 }
 
 void FBO::generate_color_mipmap()

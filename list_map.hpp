@@ -62,6 +62,11 @@ public:
 		return e;
 	}
 
+	size_t count(const KeyT& key) const
+	{
+		return find(key) == end() ? 0 : 1;
+	}
+
 	ValueT& operator[](const KeyT& key)
 	{
 		iterator e=end();
@@ -72,6 +77,13 @@ public:
 		}
 		_list.push_back(Pair(key, ValueT()));
 		return _list.back().second;
+	}
+
+	const ValueT& at(const KeyT& key) const
+	{
+		auto it = find(key);
+		if (it == end()) { throw std::domain_error("No such key in ListMap"); }
+		return it->second;
 	}
 
 	bool insert(const Pair& p)

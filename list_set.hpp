@@ -40,9 +40,11 @@ public:
 
 	int count(const KeyT& key) const
 	{
-		for (auto&& k : *this)
-			if (_comp(k, key))
+		for (auto&& k : *this) {
+			if (_comp(k, key)) {
 				return 1;
+			}
+		}
 		return 0;
 	}
 

@@ -496,8 +496,6 @@ public:
 	const gl::Texture& color_texture() { return _color_tex; }
 
 private:
-	bool is_complete() const;
-
 	std::string _debug_name;
 	Size        _size;
 	Params      _params;

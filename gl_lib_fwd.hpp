@@ -3,6 +3,10 @@
 #include <memory>
 #include <utility>
 
+#if __APPLE__
+    #include "TargetConditionals.h"
+#endif
+
 // ----------------------------------------------------------------------------
 
 #ifndef TARGET_OS_IPHONE
