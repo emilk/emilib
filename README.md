@@ -7,6 +7,9 @@ Their only dependencies are either system dependencies (pthread etc) and [Loguru
 
 They all work on OSX and iOS and probably Linux. Some may work elsewhere.
 
+### configuru
+Just a copy of https://github.com/emilk/configuru - here for convenience.
+
 ### coroutine
 This is a "fake coroutine" class which implements a cooperative thread and methods for passing execution between the outer and inner thread.
 
@@ -20,6 +23,9 @@ Code for doing simple things in OpenGL.
 
 ### list_map / list_set
 Simple O(N) map/set with small overhead and great performance for small N.
+
+### loguru
+Just a copy of https://github.com/emilk/loguru - here for convenience, and as a dependency for most other librarties.
 
 ### mem_map
 Simple wrapper around mmap with RAII.
