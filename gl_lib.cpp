@@ -863,7 +863,7 @@ Program::~Program()
 
 void Program::validate() const
 {
-// #if DEBUG
+// #ifndef NDEBUG
 	validate_program(_program, _debug_name.c_str());
 // #endif
 }
