@@ -490,7 +490,7 @@ void Texture::set_filtering(TexFilter filter)
 
 // Image32 Texture::read_rgba() const
 // {
-// 	PROFILE_FUN();
+// 	PROFILE_FUNCTION();
 // 	auto ret = Image32(_size, _debug_name.c_str());
 // 	bind();
 // 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, ret.data());

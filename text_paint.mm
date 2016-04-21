@@ -55,6 +55,8 @@ using namespace text_paint;
 
 #if TARGET_OS_IPHONE
 
+#include <mutex>
+
 UIFont* create_font(const char* family, float size)
 {
 	LOG_F(INFO, "create_font: '%s', size: %f", family, size);
@@ -70,15 +72,16 @@ UIFont* create_font(const char* family, float size)
 
 UIFont* get_font(const TextInfo& ti)
 {
+	// Buffer fonts, since '[UIFont fontWithName ...' is very slow
+	using NameSize = std::pair<std::string, float>;
+	using FontMap  = std::map<NameSize,     UIFont*>;
+	
 	static FontMap    s_fonts;
 	static std::mutex s_mutex;
 
 	auto&& family = ti.font;
 	auto   size   = ti.font_size;
 
-	// Buffer fonts, since '[UIFont fontWithName ...' is very slow
-	using NameSize = std::pair<std::string, float>;
-	using FontMap  = std::map<NameSize,     UIFont*>;
 	NameSize desc{family, size};
 
 	std::lock_guard<std::mutex> lock(s_mutex);

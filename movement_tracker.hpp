@@ -38,12 +38,14 @@ public:
 	void clear()
 	{
 		_list.clear();
+		_has_start = false;
 	}
 
 	void add(const T& pos, double time)
 	{
-		if (!_start) {
-			_start.reset(new TimePosPair{time, pos});
+		if (!_has_start) {
+			_start = TimePosPair{time, pos};
+			_has_start = true;
 		}
 
 		_list.push_back(TimePosPair{time, pos});
@@ -65,14 +67,14 @@ public:
 
 	double start_time() const
 	{
-		CHECK_F(!empty());
-		return _start->when;
+		CHECK_F(_has_start);
+		return _start.when;
 	}
 
 	T start_pos() const
 	{
-		CHECK_F(!empty());
-		return _start->where;
+		CHECK_F(_has_start);
+		return _start.where;
 	}
 
 	double latest_time() const
@@ -101,7 +103,7 @@ public:
 	}
 
 	// Return T() on fail
-	// Calculates the avergae velocity over the last VelocityTime() seconds.
+	// Calculates the average velocity over the last VelocityTime() seconds.
 	virtual T velocity(double now) const
 	{
 		size_t begin;
@@ -122,11 +124,7 @@ public:
 
 	T velocity() const
 	{
-		if (_list.size() < 2) {
-			return T();
-		} else {
-			return velocity(latest_time());
-		}
+		return velocity(latest_time());
 	}
 
 	// Has all movement been within "max_dist" radius, during the last "duration" seconds?
@@ -138,7 +136,7 @@ public:
 
 		for (size_t i=0; i<_list.size(); ++i) {
 			if (now - _list[i].when < duration) {
-				if (dist(_list[i].where, _list.back().where) > max_dist) {
+				if (distance(_list[i].where, _list.back().where) > max_dist) {
 					return false;
 				}
 			}
@@ -164,8 +162,10 @@ protected:
 		if (_list.size() < 2) {
 			return false; // Not enough data
 		}
+		
+		auto duration = now - start_time();
 
-		if (duration() < min_velocity_time()) {
+		if (duration < min_velocity_time()) {
 			return false; // Not enough data
 		}
 
@@ -205,9 +205,10 @@ protected:
 
 	// ------------------------------------------------
 
-	std::unique_ptr<TimePosPair> _start;          // Since it can be pruned from _list
-	TimePosList                  _list;
-	double                       _max_history_time = 10; // Don't keep points older than this
+	bool        _has_start        = false;
+	TimePosPair _start;           // Since it can be pruned from _list
+	TimePosList _list;
+	double      _max_history_time = 10; // Don't keep points older than this
 };
 
 // ------------------------------------------------
