@@ -49,6 +49,9 @@ Stream mp3 music on OSX and iOS.
 ### movement_tracker
 Track movement of some data, e.g. to estimate velocity from recent movement.
 
+### string_interning
+Stupid simple thread-safe string interning.
+
 ### strprintf
 Minimalistic string formating library. Provdides two functions: `strprintf` and `vstrprintf` that act like `printf` and `vprintf` respectively, but return the formated string as a `std::string` instead of printing it.
 
