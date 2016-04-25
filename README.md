@@ -24,6 +24,16 @@ Code for doing simple things in OpenGL.
 ### hash_map / hash_set
 Cache-firendly hash map/set with open adressing, linear probing and power-of-two capacity.
 
+### irange
+Simple integer range, allowing things like:
+
+``` C++
+for (const auto ix : irange(end)) { CHECK_F(0 <= ix && ix < end); }
+for (const auto ix : irange(begin, end)) { CHECK_F(begin <= ix && ix < end); }
+for (const auto ix : indices(some_vector)) { CHECK_F(0 <= ix && ix < some_vector.size(); }
+for (const char ch : emilib::cstr_range("hello world!"))
+```
+
 ### list_map / list_set
 Simple O(N) map/set with small overhead and great performance for small N.
 
@@ -47,6 +57,9 @@ Nice text rendering for OSX and iOS.
 
 ### timer
 Monotonic wall time chronometer.
+
+### tuple_util
+Adds `for_each_tuple` for iterating over a `std::tuple` and also overloads `std::hash` for `std::tuple`.
 
 ### utf8
 Really basic utf8 operations.
