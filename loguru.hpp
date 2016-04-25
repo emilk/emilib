@@ -2268,7 +2268,7 @@ namespace loguru
 
 	using ECPtr = EcEntryBase*;
 
-#if defined(_WIN32) || (defined(TARGET_OS_MAC) && TARGET_OS_MAC)
+#if defined(_WIN32) || (defined(__APPLE__) && !TARGET_OS_IPHONE)
 	#ifdef __APPLE__
 		#define LOGURU_THREAD_LOCAL __thread
 	#else

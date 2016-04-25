@@ -1,6 +1,14 @@
 #pragma once
 
-// Created 2014 for Ghostel
+/* Created in 2014 for Ghostel.
+
+Crash-course:
+	for (const auto ix : irange(end)) { CHECK_F(0 <= ix && ix < end); }
+	for (const auto ix : irange(begin, end)) { CHECK_F(begin <= ix && ix < end); }
+	for (const auto ix : indices(some_vector)) { CHECK_F(0 <= ix && ix < some_vector.size(); }
+	for (const char ch : emilib::cstr_range("hello world!"))
+	for (auto& value : it_range(begin, end)) { std::cout << value; }
+*/
 
 #include <iterator>
 #include <type_traits>
@@ -131,9 +139,7 @@ public:
 	size_t size()  const { return std::distance(_begin, _end); }
 };
 
-template<typename Containter>
-auto it_range(Containter&& c) { return IteratorRange<decltype(c.begin())>(c.begin(), c.end()); }
-
+// for (auto& value : it_range(begin, end)) { std::cout << value; }
 template<typename It>
 auto it_range(It begin, It end) { return IteratorRange<It>(begin, end); }
 

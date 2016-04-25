@@ -12,7 +12,7 @@ struct Wav
 	size_t      data_size;        // Number of bytes in 'data'.
 };
 
-// Throws on failure. The returned Wab will point into wav_data.
+// Throws on failure. The returned Wav will point into wav_data.
 Wav parse_wav(const void* wav_data, size_t size_bytes);
 
 } // namespace emilib
