@@ -8,7 +8,7 @@ Their only dependencies are either system dependencies (pthread etc) and [Loguru
 They all work on OSX and iOS and probably Linux. Some may work elsewhere.
 
 ### configuru
-Just a copy of https://github.com/emilk/configuru - here for convenience.
+This is not part of emilib, but a copy of https://github.com/emilk/configuru here for convenience.
 
 ### coroutine
 This is a "fake coroutine" class which implements a cooperative thread and methods for passing execution between the outer and inner thread.
@@ -21,11 +21,14 @@ This library allows you to watch for changes in a directory, e.g. new files, del
 ### gl_lib
 Code for doing simple things in OpenGL.
 
+### hash_map / hash_set
+Cache-firendly hash map/set with open adressing, linear probing and power-of-two capacity.
+
 ### list_map / list_set
 Simple O(N) map/set with small overhead and great performance for small N.
 
 ### loguru
-Just a copy of https://github.com/emilk/loguru - here for convenience, and as a dependency for most other librarties.
+This is not part of emilib, but a copy of https://github.com/emilk/loguru here for convenience, and as a dependency for most other librarties.
 
 ### mem_map
 Simple wrapper around mmap with RAII.
