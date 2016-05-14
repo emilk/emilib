@@ -2,6 +2,12 @@
 Made by Emil Ernerfeldt.
 Created for Ghostel 2014-12
 Cleaned up as separate library 2016-02
+
+Library for drawing colored, multiline strings on iOS and OSX.
+
+Requires Foundation and CoreText on both iOS and OSX.
+Requires UIKit on iOS.
+Requires AppKit on OSX.
 */
 
 #pragma once
@@ -22,6 +28,7 @@ enum class TextAlign
 	RIGHT
 };
 
+// Multiline text where ranges can be colored differently.
 struct ColoredString
 {
 	struct ColorRange
@@ -52,9 +59,13 @@ struct TextInfo
 	std::string font      = "Noteworthy-Light";
 	float       font_size = 22;
 	TextAlign   alignment = TextAlign::LEFT;
+
+	// Use max_size.x to set a max width for wrapping the text to.
 	Vec2        max_size  = {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
 };
 
+/* Returns how much space the given text will take up.
+   Take the results, round it up, and use as size in draw_text. */
 Vec2 text_size(const TextInfo& ti, const ColoredString& str);
 
 /*
