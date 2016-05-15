@@ -160,11 +160,13 @@ void draw_text(const CGContextRef&  context,
 	bool ignore_text_align = false;
 	auto attr_str = get_attr_string(ti, str, ignore_text_align);
 
+#if 0
 	// Flip the Y axis:
 	CGContextSetTextMatrix(context, CGAffineTransformIdentity);
 	auto screen_height = CGBitmapContextGetHeight(context);
 	CGContextTranslateCTM(context, 0, screen_height);
 	CGContextScaleCTM(context, 1.0, -1.0);
+#endif
 
 	// Create a path which bounds the area where you will be drawing text.
 	// The path need not be rectangular.

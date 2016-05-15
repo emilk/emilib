@@ -76,6 +76,7 @@ If `rgba`, the given buffer should be width * height * 4 bytes.
 If `!rgba`, the given buffer should be width * height bytes.
 max_size must be less than width/height of buffer.
 The text will be drawn inside a rectangle starting at pos and ending at pos + ti.max_size.
+The output image will be be written top-left to bottom-right, row by row.
 */
 void draw_text(uint8_t* bytes, size_t width, size_t height, bool rgba,
                const Vec2& pos, const TextInfo& ti, const ColoredString& str);
