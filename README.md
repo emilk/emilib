@@ -108,6 +108,9 @@ Pretty unicode text rendering for OSX and iOS. It lets you select font, size, al
 
 It draws the text to memory, so it is up to you to display it (e.g. upload it to a texture).
 
+### tga.hpp/.cpp
+Dump a tga image to disk.
+
 ### timer.hpp/.cpp
 Monotonic wall time chronometer.
 
