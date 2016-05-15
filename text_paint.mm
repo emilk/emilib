@@ -84,7 +84,7 @@ id get_color(const RGBAf& color)
 #endif
 }
 
-NSDictionary* get_attributes(const TextInfo& ti)
+NSDictionary* get_attributes(const TextInfo& ti, bool ignore_text_align)
 {
 	NSString* font_name = utf8_to_NSString(ti.font.c_str());
 	CTFontRef font = CTFontCreateWithName((CFStringRef)font_name, ti.font_size, nullptr);
@@ -94,7 +94,7 @@ NSDictionary* get_attributes(const TextInfo& ti)
 
 	NSDictionary* attributes;
 
-	if (ti.alignment == TextAlign::LEFT) {
+	if (ignore_text_align || ti.alignment == TextAlign::LEFT) {
 		attributes = [NSDictionary dictionaryWithObjectsAndKeys:
 			font_id,                   (id)kCTFontAttributeName,
 			underline,                 (id)kCTUnderlineStyleAttributeName,
@@ -121,10 +121,10 @@ NSDictionary* get_attributes(const TextInfo& ti)
 	return attributes;
 }
 
-NSAttributedString* get_attr_string(const TextInfo& ti, const ColoredString& colored_str)
+NSAttributedString* get_attr_string(const TextInfo& ti, const ColoredString& colored_str, bool ignore_text_align)
 {
 	NSString* str = utf8_to_NSString(colored_str.utf8.c_str());
-	auto attributes = get_attributes(ti);
+	auto attributes = get_attributes(ti, ignore_text_align);
 	auto attrib_str = [[NSMutableAttributedString alloc] initWithString:str attributes:attributes];
 
 	// NSMutableAttributedString assumes ranges of characters, not over bytes:
@@ -144,7 +144,8 @@ NSAttributedString* get_attr_string(const TextInfo& ti, const ColoredString& col
 Vec2 text_paint::text_size(const TextInfo& ti, const ColoredString& colored_str)
 {
 	auto max_size = CGSizeMake(ti.max_size.x, ti.max_size.y);
-	auto attr_str = get_attr_string(ti, colored_str);
+	bool ignore_text_align = true; // Can't specify TextAlign when figuring out the size.
+	auto attr_str = get_attr_string(ti, colored_str, ignore_text_align);
 	CGRect rect = [attr_str boundingRectWithSize: max_size
 	                                     options: NSStringDrawingOptions(NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading)
 	                                     context: nil];
@@ -156,7 +157,8 @@ void draw_text(const CGContextRef&  context,
                const TextInfo&      ti,
                const ColoredString& str)
 {
-	auto attr_str = get_attr_string(ti, str);
+	bool ignore_text_align = false;
+	auto attr_str = get_attr_string(ti, str, ignore_text_align);
 
 	// Flip the Y axis:
 	CGContextSetTextMatrix(context, CGAffineTransformIdentity);
@@ -187,6 +189,9 @@ void draw_text(const CGContextRef&  context,
 void text_paint::draw_text(uint8_t* bytes, size_t width, size_t height, bool rgba,
                            const Vec2& pos, const TextInfo& ti, const ColoredString& str)
 {
+	CHECK_F(std::ceil(pos.x + ti.max_size.x) <= width && std::ceil(pos.y + ti.max_size.y) <= height,
+	    "The target must be large enough to fit draw area (pos + max_size)");
+
 	CGColorSpaceRef colorSpace;
 	CGContextRef context;
 
@@ -201,4 +206,38 @@ void text_paint::draw_text(uint8_t* bytes, size_t width, size_t height, bool rgb
 	CGContextSetGrayFillColor(context, 1.0f, 1.0);
 	draw_text(context, pos, ti, str);
 	CGContextRelease(context);
+}
+
+bool text_paint::test()
+{
+	// Create the text to draw:
+	ColoredString str;
+	str.append("Hello ", text_paint::RGBAf{0,0,0,1}); // Black
+	str.append("World!", text_paint::RGBAf{1,1,1,1}); // White
+
+	// Set up how we draw the text:
+	text_paint::TextInfo text_info;
+	text_info.font       = "Noteworthy-Light";
+	text_info.font_size  =  44;
+	text_info.alignment  = TextAlign::CENTER;
+	text_info.max_size.x = 100; // Break to this width.
+
+	// Calulate the size of the text:
+	const auto size_pixels_float = text_paint::text_size(text_info, str);
+
+	// We must set max_size before calling draw_text:
+	text_info.max_size = size_pixels_float;
+
+	// Allocate render target:
+	const auto    buff_width  = (size_t)std::ceil(size_pixels_float.x);
+	const auto    buff_height = (size_t)std::ceil(size_pixels_float.y);
+	const bool    rgba        = true;
+	const uint8_t bg_color    = 0; // Transparent (if rgba=true) or black (if rgba=false)
+	std::vector<uint8_t> bytes(buff_width * buff_height * (rgba ? 4 : 1), bg_color);
+
+	// Do actual painting of text:
+	text_paint::draw_text(bytes.data(), buff_width, buff_height, rgba, {0,0}, text_info, str);
+
+	// Check that we did paint something:
+	return !std::all_of(bytes.begin(), bytes.end(), [&](auto value) { return value == bg_color; });
 }

@@ -48,9 +48,9 @@ struct ColoredString
 	}
 
 	ColoredString() {}
-	ColoredString(const std::string& str)
+	ColoredString(const std::string& str, RGBAf color = {1, 1, 1, 1})
 	{
-		append(str);
+		append(str, color);
 	}
 };
 
@@ -65,15 +65,22 @@ struct TextInfo
 };
 
 /* Returns how much space the given text will take up.
-   Take the results, round it up, and use as size in draw_text. */
+   If max_size.x is set, it will use it as the width to break the text to.
+   Use the results as max_size when calling draw_text.
+   To figure out the minimum size of the draw target you should round up the returned size. */
 Vec2 text_size(const TextInfo& ti, const ColoredString& str);
 
 /*
 This function does not care about retina, i.e. pixel==point.
 If `rgba`, the given buffer should be width * height * 4 bytes.
 If `!rgba`, the given buffer should be width * height bytes.
+max_size must be less than width/height of buffer.
+The text will be drawn inside a rectangle starting at pos and ending at pos + ti.max_size.
 */
 void draw_text(uint8_t* bytes, size_t width, size_t height, bool rgba,
                const Vec2& pos, const TextInfo& ti, const ColoredString& str);
+
+// Should return true, unless something is broken.
+bool test();
 
 } // namespace text_paint
