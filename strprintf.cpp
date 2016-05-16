@@ -18,6 +18,7 @@ static std::string vstrprintf(const char* format, va_list vlist)
 	char* buff = nullptr;
 	int result = vasprintf(&buff, format, vlist);
 	assert(result >= 0);
+	(void)result;
 	std::string str(buff);
 	free(buff);
 	return str;

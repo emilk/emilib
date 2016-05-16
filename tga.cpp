@@ -27,9 +27,9 @@ bool write_tga(const char* path, size_t width, size_t height, const void* rgba_p
 	fwrite((const char*)&header, 1, sizeof(header), fp);
 
 	// The image data is stored bottom-to-top, left-to-right
-	for (int y = height -1; y >= 0; y--) {
+	for (int y = (int)height - 1; y >= 0; y--) {
 		for (int x = 0; x < width; x++) {
-			unsigned rgba = *((const unsigned*)rgba_ptr + y*width + x);
+			uint32_t rgba = *((const uint32_t*)rgba_ptr + y*width + x);
 			if (include_alpha) {
 				char r = (rgba & 0x000000FF);
 				char g = (rgba & 0x0000FF00) >> 8;
