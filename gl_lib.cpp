@@ -964,6 +964,9 @@ Program compile_program(const std::string& vs, const std::string& fs, const std:
 #if GLLIB_GLES
 
 	const auto common_prefix = R"(
+	// enable dFdx, dFdy, fwidth:
+	#extension GL_OES_standard_derivatives : enable
+
 	precision highp float;
 
 	#define GLES
