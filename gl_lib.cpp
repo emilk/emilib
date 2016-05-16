@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#define LOGURU_WITH_STREAMS 1
 #include <loguru.hpp>
 
 #include "gl_lib_opengl.hpp"
@@ -610,6 +611,26 @@ Texture* load_uncompressed_pvr_from_memory(
 
 // ----------------------------------------------------------------------------
 
+std::string prefix_with_line_numbers(const char* str)
+{
+	std::string result;
+	size_t line_nr = 1;
+
+	while (*str)
+	{
+		result += loguru::strprintf("%3lu  ", line_nr).c_str();
+		while (char c = *str++) {
+			result += c;
+			if (c == '\n') {
+				++line_nr;
+				break;
+			}
+		}
+	}
+
+	return result;
+}
+
 unsigned load_shader(GLenum type, const char* source, const char* debug_name)
 {
 	CHECK_FOR_GL_ERROR;
@@ -633,7 +654,7 @@ unsigned load_shader(GLenum type, const char* source, const char* debug_name)
 		CHECK_FOR_GL_ERROR;
 
 		LOG_F(INFO, "-------------------------------------");
-		LOG_F(INFO, "%s", source);
+		LOG_S(INFO) << "\n" << prefix_with_line_numbers(source);
 		LOG_F(INFO, "-------------------------------------");
 
 		LOG_F(ERROR, "Failed to compile %s shader for program \"%s\".",
@@ -901,7 +922,7 @@ bool Program::has_uniform(const std::string& uniform_name) const
 			return true;
 		}
 	}
-	return false;;
+	return false;
 }
 
 bool Program::has_attribute(const std::string& attrib_name) const
@@ -911,7 +932,7 @@ bool Program::has_attribute(const std::string& attrib_name) const
 			return true;
 		}
 	}
-	return false;;
+	return false;
 }
 
 template<> void Program::set_uniform(int loc, const int& v) const
@@ -942,67 +963,67 @@ Program compile_program(const std::string& vs, const std::string& fs, const std:
 
 #if GLLIB_GLES
 
-const auto common_prefix = R"(
-precision highp float;
+	const auto common_prefix = R"(
+	precision highp float;
 
-#define GLES
-)";
+	#define GLES
+	)";
 
-const auto vs_prefix = R"(
-#define vs_in attribute
-#define vs_out varying
-)";
+	const auto vs_prefix = R"(
+	#define vs_in attribute
+	#define vs_out varying
+	)";
 
-const auto fs_prefix = R"(
-#define fs_in varying
-#define out_FragColor gl_FragColor
-)";
+	const auto fs_prefix = R"(
+	#define fs_in varying
+	#define out_FragColor gl_FragColor
+	)";
 
 #elif GLLIB_OPENGL_VERSION < 300
 
-const auto common_prefix = R"(#version 150
+	const auto common_prefix = R"(#version 150
 
-#define lowp
-#define mediump
-#define highp
-#define precision
+	#define lowp
+	#define mediump
+	#define highp
+	#define precision
 
-#define texture2D   texture
-#define textureCube texture
-)";
+	#define texture2D   texture
+	#define textureCube texture
+	)";
 
-const auto vs_prefix = R"(
-#define vs_in attribute
-#define vs_out varying
-)";
+	const auto vs_prefix = R"(
+	#define vs_in attribute
+	#define vs_out varying
+	)";
 
-const auto fs_prefix = R"(
-#define fs_in varying
-out vec4 out_FragColor;
-)";
+	const auto fs_prefix = R"(
+	#define fs_in varying
+	out vec4 out_FragColor;
+	)";
 
 #else
 
-const auto common_prefix = R"(#version 150
+	const auto common_prefix = R"(#version 150
 
-#define lowp
-#define mediump
-#define highp
-#define precision
+	#define lowp
+	#define mediump
+	#define highp
+	#define precision
 
-#define texture2D   texture
-#define textureCube texture
-)";
+	#define texture2D   texture
+	#define textureCube texture
+	)";
 
-const auto vs_prefix = R"(
-#define vs_in in
-#define vs_out out
-)";
+	const auto vs_prefix = R"(
+	#define vs_in in
+	#define vs_out out
+	)";
 
-const auto fs_prefix = R"(
-#define fs_in in
-out vec4 out_FragColor;
-)";
+	const auto fs_prefix = R"(
+	#define fs_in in
+	out vec4 out_FragColor;
+	)";
 
 #endif
 

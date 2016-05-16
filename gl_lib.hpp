@@ -94,6 +94,7 @@ private:
 
 // ----------------------------------------------------------------------------
 
+// You must delete the returned Texture yourself.
 Texture* load_uncompressed_pvr_from_memory(
 	const void* data, size_t num_bytes,
 	TexParams params, std::string debug_name);

@@ -118,21 +118,24 @@ constexpr bool is_half(ImageFormat f)
 
 // ------------------------------------------------
 
-enum class TexFilter {
+enum class TexFilter
+{
 	Nearest,
 	Linear,
 	Mipmapped,
 	DontCare,    // Best based on size
 };
 
-enum class WrapMode {
+enum class WrapMode
+{
 	Repeat,
 	Mirror,
 	Clamp,
 	DontCare,
 };
 
-struct TexParams {
+struct TexParams
+{
 	TexFilter filter = TexFilter::Mipmapped;
 	std::pair<WrapMode, WrapMode> wrap = std::make_pair(WrapMode::Clamp, WrapMode::Clamp);
 
