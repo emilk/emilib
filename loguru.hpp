@@ -26,14 +26,15 @@ Website: www.ilikebigbits.com
 	* Version 0.70 - 2015-10-27 - Signals
 	* Version 0.80 - 2015-10-30 - Color logging.
 	* Version 0.90 - 2015-11-26 - ABORT_S and proper handling of FATAL
-	* Verison 1.00 - 2015-02-14 - ERROR_CONTEXT
-	* Verison 1.10 - 2015-02-19 - -v OFF, -v INFO etc
-	* Verison 1.11 - 2015-02-20 - textprintf vs strprintf
-	* Verison 1.12 - 2015-02-22 - Remove g_alsologtostderr
-	* Verison 1.13 - 2015-02-29 - ERROR_CONTEXT as linked list
-	* Verison 1.20 - 2015-03-19 - Add get_thread_name()
-	* Verison 1.21 - 2015-03-20 - Minor fixes
-	* Verison 1.22 - 2015-03-29 - Fix issues with set_fatal_handler throwing an exception
+	* Verison 1.00 - 2016-02-14 - ERROR_CONTEXT
+	* Verison 1.10 - 2016-02-19 - -v OFF, -v INFO etc
+	* Verison 1.11 - 2016-02-20 - textprintf vs strprintf
+	* Verison 1.12 - 2016-02-22 - Remove g_alsologtostderr
+	* Verison 1.13 - 2016-02-29 - ERROR_CONTEXT as linked list
+	* Verison 1.20 - 2016-03-19 - Add get_thread_name()
+	* Verison 1.21 - 2016-03-20 - Minor fixes
+	* Verison 1.22 - 2016-03-29 - Fix issues with set_fatal_handler throwing an exception
+	* Version 1.23 - 2016-05-16 - Log current working directory in loguru::init().
 
 # Compiling
 	Just include <loguru.hpp> where you want to use Loguru.
@@ -333,6 +334,9 @@ namespace loguru
 	   That is, if argv[0] is "../foo/app" this will return "app".
 	*/
 	const char* argv0_filename();
+
+	// Returns the path to the current working dir when loguru::init() was called.
+	const char* current_dir();
 
 	// Returns the part of the path after the last / or \ (if any).
 	const char* filename(const char* path);
@@ -1122,7 +1126,6 @@ This will define all the Loguru functions so that the linker may find them.
 #endif
 
 #ifdef __APPLE__
-	#include <inttypes.h> // PRIxPTR
 	#include "TargetConditionals.h"
 #endif
 
@@ -1189,6 +1192,7 @@ namespace loguru
 	static std::recursive_mutex  s_mutex;
 	static Verbosity             s_max_out_verbosity = Verbosity_OFF;
 	static std::string           s_argv0_filename;
+	static char                  s_current_dir[PATH_MAX];
 	static std::string           s_file_arguments;
 	static CallbackVec           s_callbacks;
 	static fatal_handler_t       s_fatal_handler   = nullptr;
@@ -1229,12 +1233,6 @@ namespace loguru
 			(void)pthread_key_create(&s_pthread_key_name, free);
 		}
 	#endif
-
-#ifdef __APPLE__
-	static char s_exe_path[PATH_MAX] = {0};
-
-    int _NSGetExecutablePath(char* buf, uint32_t* bufsize);
-#endif
 
 	// ------------------------------------------------------------------------------
 	// Colors
@@ -1445,24 +1443,36 @@ namespace loguru
 		}
 	}
 
+	std::string string_from_errno()
+	{
+		char buff[256];
+	#ifdef __linux__
+		return strerror_r(errno, buff, sizeof(buff));
+	#elif __APPLE__
+		strerror_r(errno, buff, sizeof(buff));
+		return buff;
+	#elif WINDOWS
+		_strerror_s(buff, sizeof(buff));
+		return buff;
+	#else
+		// Not thread-safe.
+		return strerror(errno);
+	#endif
+	}
+
 	void init(int& argc, char* argv[])
 	{
-#ifdef __APPLE__
-        // char path[ PATH_MAX ];
-        // uint32_t size = sizeof(path);
-        // if (_NSGetExecutablePath(path, &size) == 0) {
-        // 	printf("_NSGetExecutablePath: %s\n", path);
-        //     if (!realpath( path, s_exe_path)) {
-        //         strcpy(s_exe_path, path);
-        //     }
-        // 	printf("realpath: %s\n", s_exe_path);
-        // } else {
-        //     strcpy(s_exe_path, argv[0]);
-        // }
-        strcpy(s_exe_path, argv[0]);
-#endif __APPLE__
-
 		s_argv0_filename = filename(argv[0]);
+
+		#ifdef WINDOWS
+			#define getcwd _getcwd
+		#endif
+
+		if (!getcwd(s_current_dir, sizeof(s_current_dir)))
+		{
+			const auto error_str = string_from_errno();
+			LOG_F(WARNING, "Failed to get current working directory: %s", error_str.c_str());
+		}
 
 		s_file_arguments = "";
 		for (int i = 0; i < argc; ++i) {
@@ -1498,6 +1508,10 @@ namespace loguru
 			fflush(stderr);
 		}
 		LOG_F(INFO, "arguments: %s", s_file_arguments.c_str());
+		if (strlen(s_current_dir) != 0)
+		{
+			LOG_F(INFO, "Current dir: %s", s_current_dir);
+		}
 		LOG_F(INFO, "stderr verbosity: %d", g_stderr_verbosity);
 		LOG_F(INFO, "-----------------------------------");
 
@@ -1518,7 +1532,15 @@ namespace loguru
 			time_info.tm_hour, time_info.tm_min, time_info.tm_sec, ms_since_epoch % 1000);
 	}
 
-	const char* argv0_filename() { return s_argv0_filename.c_str(); }
+	const char* argv0_filename()
+	{
+		return s_argv0_filename.c_str();
+	}
+
+	const char* current_dir()
+	{
+		return s_current_dir;
+	}
 
 	const char* home_dir()
 	{
@@ -1613,7 +1635,14 @@ namespace loguru
 			fprintf(file, "\n\n\n\n\n");
 		}
 
-		fprintf(file, "arguments: %s\n", s_file_arguments.c_str());
+		if (!s_file_arguments.empty())
+		{
+			fprintf(file, "arguments: %s\n", s_file_arguments.c_str());
+		}
+		if (strlen(s_current_dir) != 0)
+		{
+			fprintf(file, "Current dir: %s\n", s_current_dir);
+		}
 		fprintf(file, "File verbosity level: %d\n", verbosity);
 		fprintf(file, "%s\n", PREAMBLE_EXPLAIN);
 		fflush(file);
@@ -1749,8 +1778,7 @@ namespace loguru
 	}
 
 	template <class T>
-	std::string type_name()
-	{
+	std::string type_name() {
 		auto demangled = demangle(typeid(T).name());
 		return demangled.c_str();
 	}
@@ -1800,121 +1828,19 @@ namespace loguru
 		return output;
 	}
 
-#ifdef __APPLE__
-    // Execute cmd store stdout into buf (up to bufSize).
-    bool execute(const char* cmd, char* buf, size_t bufSize)
-    {
-        char filename[512];
-        sprintf(filename, "%d.tmp", rand());
-
-        FILE* file = fopen(filename, "w");
-        if (!file)
-        {
-            printf("Failed to open %s\n", filename);
-            return false;
-        }
-
-        bool success = false;
-
-        if (FILE* ptr = popen(cmd, "r"))
-        {
-            while (fgets(buf, bufSize, ptr) != NULL)
-            {
-                fprintf(file, "%s", buf);
-            }
-            pclose(ptr);
-            success = true;
-        }
-        else
-        {
-        	printf("Failed to popen %s\n", cmd);
-        }
-        fclose(file);
-
-        unlink(filename);
-
-        return success;
-    }
-
-    // Resolve symbol name and source location given the path to the executable and an address
-    bool addr_to_line(const char* program_name, const void* addr, char* buff, size_t buffSize)
-    {
-        char addr2line_cmd[512] = {0};
-        sprintf(addr2line_cmd, "atos -o %.256s %p", program_name, addr);
-        printf("addr2line_cmd: %s\n", addr2line_cmd);
-        return execute(addr2line_cmd, buff, buffSize);
-    }
-
-    // Check if file exists.
-    bool file_exists(const char* filename)
-    {
-        if (FILE* fh = fopen(filename, "r"))
-        {
-            fclose(fh);
-            return true;
-        }
-
-        return false;
-    }
-#endif // __APPLE__
-
 	std::string stacktrace_as_stdstring(int skip)
 	{
 		// From https://gist.github.com/fmela/591333
-		// and http://stackoverflow.com/a/25552950
-
-        static const size_t MAX_FRAMES = 128;
-		void* callstack[MAX_FRAMES];
-		int num_frames = backtrace(callstack, MAX_FRAMES);
+		void* callstack[128];
+		const auto max_frames = sizeof(callstack) / sizeof(callstack[0]);
+		int num_frames = backtrace(callstack, max_frames);
 		char** symbols = backtrace_symbols(callstack, num_frames);
 
-#ifdef __APPLE__
-		const bool has_exe = file_exists(s_exe_path);
-#endif
-
 		std::string result;
-
 		// Print stack traces so the most relevant ones are written last
 		// Rationale: http://yellerapp.com/posts/2015-01-22-upside-down-stacktraces.html
 		for (int i = num_frames - 1; i >= skip; --i) {
-			char line_buff[4096];
-
-#if 0// def __APPLE__
-			int stackLevel;
-			char filename[ 512 ];
-			uintptr_t address;
-			char symbol[ 512 ];
-			uintptr_t symbolOffset;
-			uintptr_t functionOffset;
-			bool symbolOffsetValid = false;
-			bool somethingValid = true;
-
-			printf("symbols[i]: %s\n", symbols[i]);
-
-			if (sscanf(symbols[i], "%d%*[ \t]%s%*[ \t]%" SCNxPTR "%*[ \t]%" SCNxPTR "%*[ \t]+%*[ \t]%" SCNuPTR, &stackLevel, filename, &address, &symbolOffset, &functionOffset) == 5) {
-				symbolOffsetValid = true;
-			} else if (sscanf(symbols[i], "%d%*[ \t]%s%*[ \t]%" SCNxPTR "%*[ \t]%s%*[ \t]+%*[ \t]%" SCNuPTR, &stackLevel, filename, &address, symbol, &functionOffset) == 5) {
-			} else {
-				somethingValid = false;
-			}
-
-			char addr2line_buff[4096] = { '\0' };
-
-			if (somethingValid) {
-				if (symbolOffsetValid && symbolOffset == 0) {
-					snprintf(line_buff, sizeof(line_buff), "%3d %-32s   %#16" PRIxPTR "   %#" PRIxPTR " + %" PRIuPTR "\n", stackLevel, filename, address, symbolOffset, functionOffset);
-				} else if (has_exe && addr_to_line(s_exe_path, callstack[i], addr2line_buff, sizeof(addr2line_buff))) {
-					printf("addr_to_line: %s\n", addr2line_buff);
-					snprintf(line_buff, sizeof(line_buff), "%3d %-32s   %#16" PRIxPTR "   %s", stackLevel, filename, address, addr2line_buff);
-				} else {
-					snprintf(line_buff, sizeof(line_buff), "%3d %-32s   %#16" PRIxPTR "   %#" PRIxPTR " + %" PRIuPTR "\n", stackLevel, filename, address, symbolOffset, functionOffset);
-				}
-			} else {
-				snprintf(line_buff, sizeof(line_buff), "%s\n", symbols[i]);
-			}
-
-#else // !__APPLE__
-
+			char buf[1024];
 			Dl_info info;
 			if (dladdr(callstack[i], &info) && info.dli_sname) {
 				char* demangled = NULL;
@@ -1922,23 +1848,21 @@ namespace loguru
 				if (info.dli_sname[0] == '_') {
 					demangled = abi::__cxa_demangle(info.dli_sname, 0, 0, &status);
 				}
-				snprintf(line_buff, sizeof(line_buff), "%-3d %*p %s + %zd\n",
+				snprintf(buf, sizeof(buf), "%-3d %*p %s + %zd\n",
 						 i - skip, int(2 + sizeof(void*) * 2), callstack[i],
 						 status == 0 ? demangled :
 						 info.dli_sname == 0 ? symbols[i] : info.dli_sname,
 						 static_cast<char*>(callstack[i]) - static_cast<char*>(info.dli_saddr));
 				free(demangled);
 			} else {
-				snprintf(line_buff, sizeof(line_buff), "%-3d %*p %s\n",
+				snprintf(buf, sizeof(buf), "%-3d %*p %s\n",
 						 i - skip, int(2 + sizeof(void*) * 2), callstack[i], symbols[i]);
 			}
-#endif // !__APPLE__
-
-			result += line_buff;
+			result += buf;
 		}
 		free(symbols);
 
-		if (num_frames == MAX_FRAMES) {
+		if (num_frames == max_frames) {
 			result = "[truncated]\n" + result;
 		}
 
