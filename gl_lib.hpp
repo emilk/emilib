@@ -174,6 +174,7 @@ VertexShader:  vs_in/vs_out instead of attribute/varying.
 PixelShader:   fs_in instead of varying, write to out_FragColor.
 */
 Program compile_program(const std::string& vs, const std::string& fs, const std::string& debug_name);
+Program compile_program(const ProgramSource& program_source);
 
 // ----------------------------------------------------------------------------
 // Functionality for mimicking fixed function with shaders easily
@@ -188,6 +189,8 @@ namespace FF
 		dim3    = (1<<3),
 	};
 }
+
+ProgramSource create_ff(int flags);
 
 // `flags` should be a combo if FF::FF_Flags
 Program compile_ff_program(int flags);

@@ -105,15 +105,13 @@ struct TupleArrayRef<0> {
 
 // ------------------------------------------------
 
-}
+} // namespace emilib
 
 /* Hashing of tuples.
 From http://stackoverflow.com/questions/7110301/generic-hash-for-tuples-in-unordered-map-unordered-set
 */
-namespace std
-{
-namespace
-{
+namespace std {
+namespace {
 
 	// Code from boost
 	// Reciprocal of the golden ratio helps spread entropy
@@ -146,7 +144,7 @@ namespace
 			hash_combine(seed, get<0>(tuple));
 		}
 	};
-}
+} // anonymous namespace
 
 template <typename ... TT>
 struct hash<std::tuple<TT...>>
@@ -160,4 +158,4 @@ struct hash<std::tuple<TT...>>
 
 };
 
-} // namespace emilib
+} // namespace std

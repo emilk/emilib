@@ -5,6 +5,7 @@
 #include "gl_lib.cpp"
 #include "mem_map.cpp"
 #include "movement_tracker.cpp"
+#include "shader_mngr.cpp"
 #include "string_interning.cpp"
 #include "strprintf.cpp"
 #include "tga.cpp"

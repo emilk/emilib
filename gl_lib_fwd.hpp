@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <utility>
 
 #if __APPLE__
@@ -38,6 +39,13 @@ namespace gl {
 class Program;
 typedef std::unique_ptr<Program> Program_UP;
 typedef std::shared_ptr<Program> Program_SP;
+
+struct ProgramSource
+{
+	std::string debug_name;
+	std::string vs;
+	std::string fs;
+};
 
 class Texture;
 typedef std::unique_ptr<Texture> Texture_UP;
@@ -99,7 +107,7 @@ enum class ImageFormat
 	RGBAHF,  // RGBA Half-float
 	RGBAf,   // 32bit float RGBA
 
-	// Avilable as render-target:
+	// Available as render-target:
 	//RGBA16F_EXT                                  0x881A
 	//RGB16F_EXT                                   0x881B
 	//RG16F_EXT                                    0x822F
@@ -107,7 +115,8 @@ enum class ImageFormat
 };
 
 // byte size per pixel
-constexpr int format_size(ImageFormat format) {
+constexpr int format_size(ImageFormat format)
+{
 	return (format == ImageFormat::Alpha8 ? 1 : 4);
 }
 
@@ -152,7 +161,8 @@ struct TexParams
 	static TexParams repeated_mipmapped() { return repeated(TexFilter::Mipmapped); }
 	static TexParams mipmapped(WrapMode u, WrapMode v) { return TexParams(TexFilter::Mipmapped, u, v); }
 
-	friend bool operator<(const TexParams& a, const TexParams& b) {
+	friend bool operator<(const TexParams& a, const TexParams& b)
+	{
 		if (a.filter != b.filter) { return a.filter < b.filter; }
 		if (a.wrap   != b.wrap)   { return a.wrap   < b.wrap; }
 		return false; // Same

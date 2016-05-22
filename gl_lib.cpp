@@ -665,8 +665,7 @@ unsigned load_shader(GLenum type, const char* source, const char* debug_name)
 
 		CHECK_FOR_GL_ERROR;
 
-		if (log_length > 0)
-		{
+		if (log_length > 0) {
 			std::vector<GLchar> log((unsigned)log_length);
 			glGetShaderInfoLog(id, log_length, &log_length, log.data());
 			LOG_F(ERROR, "Shader log:\n%s", log.data());
@@ -1039,6 +1038,11 @@ Program compile_program(const std::string& vs, const std::string& fs, const std:
 		debug_name);
 }
 
+Program compile_program(const ProgramSource& program_source)
+{
+	return compile_program(program_source.vs, program_source.fs, program_source.debug_name);
+}
+
 // ----------------------------------------------------------------------------
 
 struct AttribInfo
@@ -1059,14 +1063,7 @@ struct AttribInfo
 	}
 };
 
-struct ShaderInput
-{
-	std::string debug_name;
-	std::string vs;
-	std::string fs;
-};
-
-ShaderInput create_ff(int flags)
+ProgramSource create_ff(int flags)
 {
 	const auto Dims = (flags & FF::dim3  ?  3 :  2);
 
@@ -1170,8 +1167,8 @@ ShaderInput create_ff(int flags)
 
 Program compile_ff_program(int flags)
 {
-	const auto shader_input = create_ff(flags);
-	return compile_program(shader_input.vs, shader_input.fs, shader_input.debug_name);
+	const auto program_source = create_ff(flags);
+	return compile_program(program_source.vs, program_source.fs, program_source.debug_name);
 }
 
 // ----------------------------------------------------------------------------

@@ -26,15 +26,18 @@ Website: www.ilikebigbits.com
 	* Version 0.70 - 2015-10-27 - Signals
 	* Version 0.80 - 2015-10-30 - Color logging.
 	* Version 0.90 - 2015-11-26 - ABORT_S and proper handling of FATAL
-	* Verison 1.00 - 2016-02-14 - ERROR_CONTEXT
-	* Verison 1.10 - 2016-02-19 - -v OFF, -v INFO etc
-	* Verison 1.11 - 2016-02-20 - textprintf vs strprintf
-	* Verison 1.12 - 2016-02-22 - Remove g_alsologtostderr
-	* Verison 1.13 - 2016-02-29 - ERROR_CONTEXT as linked list
-	* Verison 1.20 - 2016-03-19 - Add get_thread_name()
-	* Verison 1.21 - 2016-03-20 - Minor fixes
-	* Verison 1.22 - 2016-03-29 - Fix issues with set_fatal_handler throwing an exception
+	* Version 1.00 - 2016-02-14 - ERROR_CONTEXT
+	* Version 1.10 - 2016-02-19 - -v OFF, -v INFO etc
+	* Version 1.11 - 2016-02-20 - textprintf vs strprintf
+	* Version 1.12 - 2016-02-22 - Remove g_alsologtostderr
+	* Version 1.13 - 2016-02-29 - ERROR_CONTEXT as linked list
+	* Version 1.20 - 2016-03-19 - Add get_thread_name()
+	* Version 1.21 - 2016-03-20 - Minor fixes
+	* Version 1.22 - 2016-03-29 - Fix issues with set_fatal_handler throwing an exception
 	* Version 1.23 - 2016-05-16 - Log current working directory in loguru::init().
+	* Version 1.24 - 2016-05-18 - Custom replacement for -v in loguru::init() by bjoernpollex
+	* Version 1.25 - 2016-05-18 - Add ability to print ERROR_CONTEXT of parent thread.
+	* Version 1.26 - 2016-05-19 - Bug fix regarding VLOG verbosity argument lacking ().
 
 # Compiling
 	Just include <loguru.hpp> where you want to use Loguru.
@@ -310,22 +313,33 @@ namespace loguru
 	typedef void (*fatal_handler_t)(const Message& message);
 
 	/*  Should be called from the main thread.
-		You don't need to call this, but it's nice if you do.
-		This will look for arguments meant for loguru and remove them.
+		You don't *need* to call this, but if you do you get:
+			* Signal handlers installed
+			* Program arguments logged
+			* Working dir logged
+			* Optional -v verbosity flag parsed
+			* Main thread name set to "main thread"
+			* Explanation of the preamble (date, threanmae etc) logged
+
+		loguru::init() will look for arguments meant for loguru and remove them.
 		Arguments meant for loguru are:
-			-v n   Set stderr verbosity level. Examples:
-					   -v 3        Show verbosity level 3 and lower.
-					   -v 0        Only show INFO, WARNING, ERROR, FATAL (default).
-					   -v INFO     Only show INFO, WARNING, ERROR, FATAL (default).
-					   -v WARNING  Only show WARNING, ERROR, FATAL.
-					   -v ERROR    Only show ERROR, FATAL.
-					   -v FATAL    Only show FATAL.
-					   -v OFF      Turn off logging to stderr.
+			-v n   Set loguru::g_stderr_verbosity level. Examples:
+				-v 3        Show verbosity level 3 and lower.
+				-v 0        Only show INFO, WARNING, ERROR, FATAL (default).
+				-v INFO     Only show INFO, WARNING, ERROR, FATAL (default).
+				-v WARNING  Only show WARNING, ERROR, FATAL.
+				-v ERROR    Only show ERROR, FATAL.
+				-v FATAL    Only show FATAL.
+				-v OFF      Turn off logging to stderr.
 
 		Tip: You can set g_stderr_verbosity before calling loguru::init.
 		That way you can set the default but have the user override it with the -v flag.
+		Note that -v does not affect file logging (see loguru::add_file).
+
+		You can use something else instead of "-v" via verbosity_flag.
+		You can also set verbosity_flag to nullptr.
 	*/
-	void init(int& argc, char* argv[]);
+	void init(int& argc, char* argv[], const char* verbosity_flag = "-v");
 
 	// What ~ will be replaced with, e.g. "/home/your_user_name/"
 	const char* home_dir();
@@ -343,6 +357,9 @@ namespace loguru
 
 	// Writes date and time with millisecond precision, e.g. "20151017_161503.123"
 	void write_date_time(char* buff, unsigned buff_size);
+
+	// Helper: thread-safe version strerror
+	Text errno_as_text();
 
 	/* Given a prefix of e.g. "~/loguru/" this might return
 	   "/home/your_username/loguru/app_name/20151017_161503.123.log"
@@ -641,8 +658,36 @@ namespace loguru
 				[=](){ return loguru::ec_to_text(data); }))
 */
 
+	using EcHandle = const EcEntryBase*;
+
+	/*
+		Get a light-weight handle to the error context stack on this thread.
+		The handle is valid as long as the current thread has no changes to its error context stack.
+		You can pass the handle to loguru::get_error_context on another thread.
+		This can be very useful for when you have a parent thread spawning several working thread,
+		and you want the error context of the parent thread to get printed (too) when there is an
+		error on the child thread. You can accomplish this thusly:
+
+		void foo(const char* parameter)
+		{
+			ERROR_CONTEXT("parameter", parameter)
+			const auto parent_ec_handle = loguru::get_thread_ec_handle();
+
+			std::thread([=]{
+				loguru::set_thread_name("child thread");
+				ERROR_CONTEXT("parent context", parent_ec_handle);
+				dangerous_code();
+			}.join();
+		}
+
+	*/
+	EcHandle get_thread_ec_handle();
+
 	// Get a string describing the current stack of error context. Empty string if there is none.
 	Text get_error_context();
+
+	// Get a string describing the error context of the given thread handle.
+	Text get_error_context_for(EcHandle ec_handle);
 
 	// ------------------------------------------------------------------------
 
@@ -657,6 +702,7 @@ namespace loguru
 	Text ec_to_text(float data);
 	Text ec_to_text(double data);
 	Text ec_to_text(long double data);
+	Text ec_to_text(EcHandle);
 
 	/*
 	You can add ERROR_CONTEXT support for your own types by overloading ec_to_text. Here's how:
@@ -699,14 +745,14 @@ namespace loguru
 
 // LOG_F(2, "Only logged if verbosity is 2 or higher: %d", some_number);
 #define VLOG_F(verbosity, ...)                                                                     \
-	(verbosity > loguru::current_verbosity_cutoff()) ? (void)0                                     \
+	((verbosity) > loguru::current_verbosity_cutoff()) ? (void)0                                   \
 									  : loguru::log(verbosity, __FILE__, __LINE__, __VA_ARGS__)
 
 // LOG_F(INFO, "Foo: %d", some_number);
 #define LOG_F(verbosity_name, ...) VLOG_F(loguru::Verbosity_ ## verbosity_name, __VA_ARGS__)
 
 #define VLOG_IF_F(verbosity, cond, ...)                                                            \
-	(verbosity > loguru::current_verbosity_cutoff() || (cond) == false)                            \
+	((verbosity) > loguru::current_verbosity_cutoff() || (cond) == false)                          \
 		? (void)0                                                                                  \
 		: loguru::log(verbosity, __FILE__, __LINE__, __VA_ARGS__)
 
@@ -714,13 +760,13 @@ namespace loguru
 	VLOG_IF_F(loguru::Verbosity_ ## verbosity_name, cond, __VA_ARGS__)
 
 #define VLOG_SCOPE_F(verbosity, ...)                                                               \
-	loguru::LogScopeRAII LOGURU_ANONYMOUS_VARIABLE(error_context_RAII_) =                  \
+	loguru::LogScopeRAII LOGURU_ANONYMOUS_VARIABLE(error_context_RAII_) =                          \
 	((verbosity) > loguru::current_verbosity_cutoff()) ? loguru::LogScopeRAII() :                  \
 	loguru::LogScopeRAII{verbosity, __FILE__, __LINE__, __VA_ARGS__}
 
 // Raw logging - no preamble, no indentation. Slightly faster than full logging.
-#define RAW_VLOG_F(verbosity, ...)                                                                  \
-	(verbosity > loguru::current_verbosity_cutoff()) ? (void)0                                      \
+#define RAW_VLOG_F(verbosity, ...)                                                                 \
+	((verbosity) > loguru::current_verbosity_cutoff()) ? (void)0                                   \
 									  : loguru::raw_log(verbosity, __FILE__, __LINE__, __VA_ARGS__)
 
 #define RAW_LOG_F(verbosity_name, ...) RAW_VLOG_F(loguru::Verbosity_ ## verbosity_name, __VA_ARGS__)
@@ -958,7 +1004,7 @@ namespace loguru
 
 // usage:  LOG_STREAM(INFO) << "Foo " << std::setprecision(10) << some_value;
 #define VLOG_IF_S(verbosity, cond)                                                                 \
-	(verbosity > loguru::current_verbosity_cutoff() || (cond) == false)                                           \
+	((verbosity) > loguru::current_verbosity_cutoff() || (cond) == false)                          \
 		? (void)0                                                                                  \
 		: loguru::Voidify() & loguru::StreamLogger(verbosity, __FILE__, __LINE__)
 #define LOG_IF_S(verbosity_name, cond) VLOG_IF_S(loguru::Verbosity_ ## verbosity_name, cond)
@@ -1011,7 +1057,7 @@ namespace loguru
 #else // NDEBUG
 	// Release:
 	#define DVLOG_IF_S(verbosity, cond)                                                     \
-		(true || verbosity > loguru::current_verbosity_cutoff() || (cond) == false)                        \
+		(true || (verbosity) > loguru::current_verbosity_cutoff() || (cond) == false)       \
 			? (void)0                                                                       \
 			: loguru::Voidify() & loguru::StreamLogger(verbosity, __FILE__, __LINE__)
 
@@ -1123,6 +1169,10 @@ This will define all the Loguru functions so that the linker may find them.
 	#include <signal.h>
 	#include <sys/stat.h> // mkdir
 	#include <unistd.h>   // STDERR_FILENO
+#endif
+
+#ifdef __linux__
+	#include <linux/limits.h> // MAX_PATH
 #endif
 
 #ifdef __APPLE__
@@ -1321,7 +1371,7 @@ namespace loguru
 		return Text(static_cast<char*>(calloc(1, 1)));
 	}
 
-	const char* indentation(unsigned depth)
+	static const char* indentation(unsigned depth)
 	{
 		static const char buff[] =
 		".   .   .   .   .   .   .   .   .   .   " ".   .   .   .   .   .   .   .   .   .   "
@@ -1335,23 +1385,21 @@ namespace loguru
 		return buff + INDENTATION_WIDTH * (NUM_INDENTATIONS - depth);
 	}
 
-	static void parse_args(int& argc, char* argv[])
+	static void parse_args(int& argc, char* argv[], const char* verbosity_flag)
 	{
-		CHECK_GT_F(argc,       0,       "Expected proper argc/argv");
-		CHECK_EQ_F(argv[argc], nullptr, "Expected proper argc/argv");
-
 		int arg_dest = 1;
 		int out_argc = argc;
 
 		for (int arg_it = 1; arg_it < argc; ++arg_it) {
 			auto cmd = argv[arg_it];
-			if (strncmp(cmd, "-v", 2) == 0 && !std::isalpha(cmd[2])) {
+			auto arg_len = strlen(verbosity_flag);
+			if (strncmp(cmd, verbosity_flag, arg_len) == 0 && !std::isalpha(cmd[arg_len])) {
 				out_argc -= 1;
-				auto value_str = cmd + 2;
+				auto value_str = cmd + arg_len;
 				if (value_str[0] == '\0') {
 					// Value in separate argument
 					arg_it += 1;
-					CHECK_LT_F(arg_it, argc, "Missing verbosiy level after -v");
+					CHECK_LT_F(arg_it, argc, "Missing verbosiy level after %s", verbosity_flag);
 					value_str = argv[arg_it];
 					out_argc -= 1;
 				}
@@ -1406,22 +1454,22 @@ namespace loguru
 		flush();
 	}
 
-	void install_signal_handlers();
+	static void install_signal_handlers();
 
-	void write_hex_digit(std::string& out, unsigned num)
+	static void write_hex_digit(std::string& out, unsigned num)
 	{
 		DCHECK_LT_F(num, 16u);
 		if (num < 10u) { out.push_back(char('0' + num)); }
 		else { out.push_back(char('A' + num - 10)); }
 	}
 
-	void write_hex_byte(std::string& out, uint8_t n)
+	static void write_hex_byte(std::string& out, uint8_t n)
 	{
 		write_hex_digit(out, n >> 4u);
 		write_hex_digit(out, n & 0x0f);
 	}
 
-	void escape(std::string& out, const std::string& str)
+	static void escape(std::string& out, const std::string& str)
 	{
 		for (char c : str) {
 			/**/ if (c == '\a') { out += "\\a";  }
@@ -1443,25 +1491,28 @@ namespace loguru
 		}
 	}
 
-	std::string string_from_errno()
+	Text errno_as_text()
 	{
 		char buff[256];
 	#ifdef __linux__
-		return strerror_r(errno, buff, sizeof(buff));
+		return Text(strdup(strerror_r(errno, buff, sizeof(buff))));
 	#elif __APPLE__
 		strerror_r(errno, buff, sizeof(buff));
-		return buff;
+		return Text(strdup(buff));
 	#elif WINDOWS
 		_strerror_s(buff, sizeof(buff));
-		return buff;
+		return Text(strdup(buff));
 	#else
 		// Not thread-safe.
-		return strerror(errno);
+		return Text(strdup(strerror(errno)));
 	#endif
 	}
 
-	void init(int& argc, char* argv[])
+	void init(int& argc, char* argv[], const char* verbosity_flag)
 	{
+		CHECK_GT_F(argc,       0,       "Expected proper argc/argv");
+		CHECK_EQ_F(argv[argc], nullptr, "Expected proper argc/argv");
+
 		s_argv0_filename = filename(argv[0]);
 
 		#ifdef WINDOWS
@@ -1470,8 +1521,8 @@ namespace loguru
 
 		if (!getcwd(s_current_dir, sizeof(s_current_dir)))
 		{
-			const auto error_str = string_from_errno();
-			LOG_F(WARNING, "Failed to get current working directory: %s", error_str.c_str());
+			const auto error_text = errno_as_text();
+			LOG_F(WARNING, "Failed to get current working directory: %s", error_text.c_str());
 		}
 
 		s_file_arguments = "";
@@ -1482,7 +1533,9 @@ namespace loguru
 			}
 		}
 
-		parse_args(argc, argv);
+		if (verbosity_flag) {
+			parse_args(argc, argv, verbosity_flag);
+		}
 
 		#if LOGURU_PTLS_NAMES
 			set_thread_name("main thread");
@@ -2232,10 +2285,18 @@ namespace loguru
 
 	// ----------------------------------------------------------------------------
 
+	EcHandle get_thread_ec_handle()
+	{
+		return get_thread_ec_head_ref();
+	}
+
 	Text get_error_context()
 	{
-		const EcEntryBase* ec_head = get_thread_ec_head_ref();
+		return get_error_context_for(get_thread_ec_head_ref());
+	}
 
+	Text get_error_context_for(const EcEntryBase* ec_head)
+	{
 		std::vector<const EcEntryBase*> stack;
 		while (ec_head) {
 			stack.push_back(ec_head);
@@ -2336,6 +2397,17 @@ namespace loguru
 	DEFINE_EC(float)
 	DEFINE_EC(double)
 	DEFINE_EC(long double)
+
+	#undef DEFINE_EC
+
+	Text ec_to_text(EcHandle ec_handle)
+	{
+		Text parent_ec = get_error_context_for(ec_handle);
+		char* with_newline = (char*)malloc(strlen(parent_ec.c_str()) + 2);
+		with_newline[0] = '\n';
+		strcpy(with_newline + 1, parent_ec.c_str());
+		return Text(with_newline);
+	}
 
 	// ----------------------------------------------------------------------------
 

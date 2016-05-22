@@ -17,11 +17,6 @@ namespace fs {
 
 using namespace std;
 
-const char* getOSErrorString()
-{
-	return strerror(errno);
-}
-
 void throw_exception(const string& msg)
 {
 	throw runtime_error(msg);
@@ -32,12 +27,20 @@ inline bool starts_with(const std::string& str, const std::string& start)
 	return str.size() >= start.size() && str.substr(0, start.size()) == start;
 }
 
+std::string errno_str()
+{
+	const auto errno_text = loguru::errno_as_text();
+	return errno_text.c_str();
+}
+
 // ------------------------------------------------
 
 FILEWrapper::FILEWrapper(const string& path, const char* mode) : _fp(0)
 {
 	if (!try_open(path, mode)) {
-		throw_exception(loguru::strprintf("Failed to open file '%s' with mode '%s': %s", path.c_str(), mode, getOSErrorString()));
+		const auto errno_text = loguru::errno_as_text();
+		throw_exception(loguru::strprintf("Failed to open file '%s' with mode '%s': %s",
+		                                  path.c_str(), mode, errno_text.c_str()));
 	}
 }
 
@@ -68,7 +71,7 @@ bool FILEWrapper::end_of_file() const { return feof(_fp) != 0; }
 void FILEWrapper::read_or_die(void* dest, size_t nbytes)
 {
 	if (fread(dest, 1, nbytes, _fp) != nbytes) {
-		throw_exception("Failed to read " + std::to_string(nbytes) + " bytes: " + getOSErrorString());
+		throw_exception("Failed to read " + std::to_string(nbytes) + " bytes: " + errno_str());
 	}
 }
 
@@ -76,22 +79,24 @@ void FILEWrapper::read_or_die(void* dest, size_t nbytes)
 size_t FILEWrapper::try_read(void* dest, size_t nbytes)
 {
 	size_t n = fread(dest, 1, nbytes, _fp);
-	//if (n < nbytes)
-	//	throw_exception("Failed to read " + str(nbytes) + " bytes: " + getOSErrorString());
+	//if (n < nbytes) {
+	//	throw_exception("Failed to read " + str(nbytes) + " bytes: " + errno_str());
+	// }
 	return n;
 }
 
 void FILEWrapper::write(const void* src, size_t nbytes)
 {
 	if (fwrite(src, 1, nbytes, _fp) != nbytes) {
-		throw_exception("Failed to write " + std::to_string(nbytes) + " bytes: " + getOSErrorString());
+		throw_exception("Failed to write " + std::to_string(nbytes) + " bytes: " + errno_str());
 	}
 }
 
 void FILEWrapper::flush()
 {
 	if (fflush(_fp) != 0) {
-		LOG_F(WARNING, "fflush failed: %s", getOSErrorString());
+		const auto errno_text = loguru::errno_as_text();
+		LOG_F(WARNING, "fflush failed: %s", errno_text.c_str());
 	}
 }
 
@@ -99,7 +104,8 @@ void FILEWrapper::flush()
 void FILEWrapper::seek(int offset, int origin)
 {
 	if (fseek(_fp, offset, origin) != 0) {
-		throw_exception(loguru::strprintf("Failed to seek in FILE: %s", getOSErrorString()));
+		const auto errno_text = loguru::errno_as_text();
+		throw_exception(loguru::strprintf("Failed to seek in FILE: %s", errno_text.c_str()));
 	}
 }
 

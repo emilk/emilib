@@ -288,7 +288,8 @@ public:
 
 	// Insert an element, overwriting if key already exists.
 	// Returns a reference to the inserted value.
-	iterator insert(const KeyT& key, const ValueT& value) {
+	iterator insert(const KeyT& key, const ValueT& value)
+	{
 		check_expand_need();
 
 		auto bucket = find_or_allocate(key);
@@ -305,18 +306,21 @@ public:
 		return iterator(this, bucket);
 	}
 
-	void insert(const std::pair<KeyT, ValueT>& p) {
+	void insert(const std::pair<KeyT, ValueT>& p)
+	{
 		insert(p.first, p.second);
 	}
 
-	void insert(const_iterator begin, const_iterator end) {
+	void insert(const_iterator begin, const_iterator end)
+	{
 		for (; begin != end; ++begin) {
 			insert(begin->first, begin->second);
 		}
 	}
 
 	// Same as above, but contains(key) MUST be false
-	void insert_unique(const KeyT& key, const ValueT& value) {
+	void insert_unique(const KeyT& key, const ValueT& value)
+	{
 		DASSERT(!contains(key));
 		check_expand_need();
 		auto bucket = find_empty_bucket(key);
@@ -325,12 +329,14 @@ public:
 		_num_filled++;
 	}
 
-	void insert_unique(const std::pair<KeyT, ValueT>& p) {
+	void insert_unique(const std::pair<KeyT, ValueT>& p)
+	{
 		insert_unique(p.first, p.second);
 	}
 
 	// Return the old value or ValueT() if it didn't exist.
-	ValueT set_get(const KeyT& key, const ValueT& new_value) {
+	ValueT set_get(const KeyT& key, const ValueT& new_value)
+	{
 		check_expand_need();
 
 		auto bucket = find_or_allocate(key);
