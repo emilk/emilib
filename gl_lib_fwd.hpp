@@ -167,6 +167,11 @@ struct TexParams
 		if (a.wrap   != b.wrap)   { return a.wrap   < b.wrap; }
 		return false; // Same
 	}
+
+	friend bool operator==(const TexParams& a, const TexParams& b)
+	{
+		return a.filter == b.filter && a.wrap == b.wrap;
+	}
 };
 
 // ------------------------------------------------

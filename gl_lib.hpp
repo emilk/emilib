@@ -34,14 +34,32 @@ void init_glew();
 
 bool supports_mipmaps_for(Size size);
 
+/* A texture can be in three states:
+No id,
+id, no data,
+id and data.
+*/
 class Texture
 {
 public:
+	Texture();
+
 	Texture(GLuint id, Size size, ImageFormat format, TexParams params_arg, const std::string& debug_name);
 
 	Texture(const void* data, Size size, ImageFormat format, TexParams params,
 			  const std::string& debug_name);
 	~Texture();
+
+	Texture(const Texture&) = delete;
+	Texture& operator=(const Texture&) = delete;
+
+	Texture(Texture&& other) { this->swap(other); }
+	void operator=(Texture&& other) { this->swap(other); }
+
+	void swap(Texture& other);
+
+	// Free allocated texture, if any. sets id = 0.ß
+	void free();
 
 	void set_data(const void* data, Size size, ImageFormat format);
 
@@ -52,6 +70,9 @@ public:
 
 	const ImageFormat& format() const { return _format; }
 
+	const TexParams& params() const { return _params; }
+	void set_params(const TexParams& params);
+
 	bool has_data() const { return _has_data; }
 
 	bool is_power_of_two() const;
@@ -59,6 +80,7 @@ public:
 	const std::string& debug_name() const { return _debug_name; }
 	void set_debug_name(const std::string& debug_name);
 
+	// We must have an id
 	void bind(unsigned tu=0) const;
 
 	unsigned width()  const { return _size.x;  }
@@ -70,7 +92,9 @@ public:
 	unsigned bits_per_pixel() const;
 	size_t memory_usage() const; // in bytes
 
-	GLuint id() const {return _id;}
+	// 0 if not generated
+	GLuint id() const { return _id; }
+	bool has_id() const { return _id != 0; }
 
 	//void set_params(const TexParams& params);
 	void generate_mipmaps();
@@ -82,20 +106,19 @@ protected:
 	void set_filtering(TexFilter filter);
 
 private:
-	Size        _size;
+	Size        _size{0, 0};
 	ImageFormat _format;
 	TexParams   _params;
 	std::string _debug_name;
 
-	GLuint      _id       = -1;
+	GLuint      _id       = 0;
 	bool        _has_data = false;
 	unsigned    _bpp      = 0;
 };
 
 // ----------------------------------------------------------------------------
 
-// You must delete the returned Texture yourself.
-Texture* load_uncompressed_pvr_from_memory(
+Texture load_uncompressed_pvr_from_memory(
 	const void* data, size_t num_bytes,
 	TexParams params, std::string debug_name);
 

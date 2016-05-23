@@ -156,6 +156,10 @@ bool supports_mipmaps_for(Size size)
 #endif
 }
 
+Texture::Texture()
+{
+}
+
 Texture::Texture(
 	GLuint             id,
 	Size        size,
@@ -200,8 +204,7 @@ void Texture::init(const void* data_ptr)
 	// Check params
 
 #if GLLIB_GLES
-	if (is_half(_format))
-	{
+	if (is_half(_format)) {
 		// Just in case:
 		// FIXME: needed?
 		_params.wrap = std::make_pair(WrapMode::Clamp, WrapMode::Clamp);
@@ -234,10 +237,42 @@ void Texture::init(const void* data_ptr)
 	CHECK_FOR_GL_ERROR;
 }
 
+void Texture::set_params(const TexParams& params)
+{
+	if (params == _params) { return; }
+	_params = params;
+
+	if (_id) {
+		bind();
+		set_filtering(_params.filter);
+		set_wrap_mode(_params.wrap.first, _params.wrap.second);
+	}
+}
+
 Texture::~Texture()
 {
-	NAME_PAINT_FUNCTION();
-	glDeleteTextures(1, &_id);
+	free();
+}
+
+void Texture::swap(Texture& other)
+{
+	std::swap(_size,       other._size);
+	std::swap(_format,     other._format);
+	std::swap(_params,     other._params);
+	std::swap(_debug_name, other._debug_name);
+	std::swap(_id,         other._id);
+	std::swap(_has_data,   other._has_data);
+	std::swap(_bpp,        other._bpp);
+}
+
+void Texture::free()
+{
+	if (_id != 0) {
+		NAME_PAINT_FUNCTION();
+		glDeleteTextures(1, &_id);
+		_id = 0;
+		_has_data = false;
+	}
 }
 
 void Texture::set_debug_name(const std::string& debug_name)
@@ -245,7 +280,9 @@ void Texture::set_debug_name(const std::string& debug_name)
 	_debug_name = debug_name;
 
 #if TARGET_OS_IPHONE
-	glLabelObjectEXT(GL_TEXTURE, _id, 0, _debug_name.c_str());
+	if (_id) {
+		glLabelObjectEXT(GL_TEXTURE, _id, 0, _debug_name.c_str());
+	}
 #endif
 }
 
@@ -354,8 +391,7 @@ void Texture::set_mip_data(const void* data_ptr, Size size, unsigned mip_level)
 					 (GLsizei)size.x, (GLsizei)size.y, 0,
 					 src_format, element_format, data_ptr);
 
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  mip_level);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mip_level);
 
 	CHECK_FOR_GL_ERROR;
 
@@ -369,6 +405,7 @@ bool Texture::is_power_of_two() const
 
 void Texture::bind(unsigned tu) const
 {
+	CHECK_NE_F(_id, 0);
 	NAME_PAINT_FUNCTION();
 	CHECK_FOR_GL_ERROR;
 	glActiveTexture(GL_TEXTURE0 + tu);
@@ -556,7 +593,7 @@ struct PvrHeader
 static const uint32_t kA8       = 27;
 static const uint32_t kBGRA8888 = 26;
 
-Texture* load_uncompressed_pvr_from_memory(
+Texture load_uncompressed_pvr_from_memory(
 	const void* data, size_t num_bytes,
 	TexParams params, std::string debug_name)
 {
@@ -587,18 +624,18 @@ Texture* load_uncompressed_pvr_from_memory(
 	return new Texture(data_start, size, format, params, std::move(debug_name));
 #else
 	if (params.filter == TexFilter::Nearest || params.filter == TexFilter::Linear) {
-		return new Texture(data_start, size, format, params, std::move(debug_name));
+		return Texture(data_start, size, format, params, std::move(debug_name));
 	} else if (header->mipmap_count == 1) {
 		params.filter = TexFilter::Linear;
-		return new Texture(data_start, size, format, params, std::move(debug_name));
+		return Texture(data_start, size, format, params, std::move(debug_name));
 	} else {
 		params.filter = TexFilter::Mipmapped;
-		auto tex = new Texture(nullptr, size, format, params, std::move(debug_name));
+		Texture tex(nullptr, size, format, params, std::move(debug_name));
 
 		auto bytes_per_pixel = format_size(format);
 
 		for (unsigned level=0; level<header->mipmap_count; ++level) {
-			tex->set_mip_data(data_start, size, level);
+			tex.set_mip_data(data_start, size, level);
 
 			data_start += size.x * size.y * bytes_per_pixel;
 			size.x = std::max(1u, size.x/2);
