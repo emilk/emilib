@@ -8,6 +8,7 @@
 #include "shader_mngr.cpp"
 #include "string_interning.cpp"
 #include "strprintf.cpp"
+#include "texture_mngr.cpp"
 #include "tga.cpp"
 #include "timer.cpp"
 #include "utf8.cpp"

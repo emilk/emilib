@@ -112,7 +112,7 @@ iOS only: loading of compressed .pvr textures. Depends on gl_lib.
 ### shader_mngr.hpp/.cpp
 This is NOT a stand-alone library, but depends on other parts of emilib as well as loguru and configuru.
 ShaderMngr's job is to encapsulate loading, memoization and reloading of shader files.
-In particular, ShaderMngr can detect changes in .shader files and automatically reload (hot-reloading).
+In particular, ShaderMngr can detect changes in .shader files and automatically reload (hot-reloading) them.
 
 ### string_interning.hpp/.cpp
 Stupid simple thread-safe string interning.
@@ -124,6 +124,11 @@ Minimalistic string formating library. Provides two functions: `strprintf` and `
 Pretty multi-line Unicode text rendering for OSX and iOS. It lets you select font, size, alignment, wrapping size and allows you to colorize sub-ranges of the text.
 
 It draws the text to memory, so it is up to you to display it (e.g. upload it to a texture).
+
+### texture_mngr.hpp/.cpp
+This is NOT a stand-alone library, but depends on other parts of emilib as well as loguru.
+TextureMngr's job is to encapsulate loading, memoization and reloading of texture files.
+In particular, TextureMngr can detect changes in image files and automatically reload (hot-reloading) them.
 
 ### tga.hpp/.cpp
 Dump a tga image to disk.
