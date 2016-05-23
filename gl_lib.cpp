@@ -1,6 +1,7 @@
 #include "gl_lib.hpp"
 
 #include <algorithm>
+#include <cstdint>
 
 #define LOGURU_WITH_STREAMS 1
 #include <loguru.hpp>
@@ -215,8 +216,6 @@ void Texture::init(const void* data_ptr)
 
 	// ------------------------------------------------
 
-	//std::cout << "Uploading Texture..." << std::endl;
-
 	CHECK_FOR_GL_ERROR;
 
 	bind();
@@ -405,7 +404,7 @@ bool Texture::is_power_of_two() const
 
 void Texture::bind(unsigned tu) const
 {
-	CHECK_NE_F(_id, 0);
+	CHECK_NE_F(_id, 0, "Texture not loaded: '%s'", _debug_name.c_str());
 	NAME_PAINT_FUNCTION();
 	CHECK_FOR_GL_ERROR;
 	glActiveTexture(GL_TEXTURE0 + tu);

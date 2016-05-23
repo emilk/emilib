@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <cstdio>
 
 #include <loguru.hpp>
