@@ -106,6 +106,9 @@ Stream mp3 music on OSX and iOS.
 Track movement of some data, e.g. to estimate velocity from recent movement.
 For instance, you can use this to track a finger flicking something on a touch-screen to calculate the final velocity when the finger is released.
 
+### pvr.hpp/.mm
+iOS only: loading of compressed .pvr textures. Depends on gl_lib.
+
 ### shader_mngr.hpp/.cpp
 This is NOT a stand-alone library, but depends on other parts of emilib as well as loguru and configuru.
 ShaderMngr's job is to encapsulate loading, memoization and reloading of shader files.

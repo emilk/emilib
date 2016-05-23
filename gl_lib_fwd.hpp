@@ -37,8 +37,8 @@
 namespace gl {
 
 class Program;
-typedef std::unique_ptr<Program> Program_UP;
-typedef std::shared_ptr<Program> Program_SP;
+using Program_UP = std::unique_ptr<Program>;
+using Program_SP = std::shared_ptr<Program>;
 
 struct ProgramSource
 {
@@ -48,30 +48,30 @@ struct ProgramSource
 };
 
 class Texture;
-typedef std::unique_ptr<Texture> Texture_UP;
-typedef std::shared_ptr<Texture> Texture_SP;
+using Texture_UP = std::unique_ptr<Texture>;
+using Texture_SP = std::shared_ptr<Texture>;
 
 struct VertComp;
 class VertexFormat;
 
 class VBO;
-typedef std::unique_ptr<VBO> VBO_UP;
-typedef std::shared_ptr<VBO> VBO_SP;
+using VBO_UP = std::unique_ptr<VBO>;
+using VBO_SP = std::shared_ptr<VBO>;
 
 class VAO;
-typedef std::unique_ptr<VAO> VAO_UP;
-typedef std::shared_ptr<VAO> VAO_SP;
+using VAO_UP = std::unique_ptr<VAO>;
+using VAO_SP = std::shared_ptr<VAO>;
 
 class MeshPainter;
-typedef std::unique_ptr<MeshPainter> MeshPainter_UP;
-typedef std::shared_ptr<MeshPainter> MeshPainter_SP;
+using MeshPainter_UP = std::unique_ptr<MeshPainter>;
+using MeshPainter_SP = std::shared_ptr<MeshPainter>;
 
 template<typename Vertex>
 class TriangleStrip;
 
 class FBO;
-typedef std::unique_ptr<FBO> FBO_UP;
-typedef std::shared_ptr<FBO> FBO_SP;
+using FBO_UP = std::unique_ptr<FBO>;
+using FBO_SP = std::shared_ptr<FBO>;
 
 // FOr VBO:s and the like
 enum class Usage
