@@ -1,5 +1,4 @@
 /*
-Copyright 2016 Emil Ernerfeldt
 Created 2014-2015 for Ghostel
 Adapted 2016 for revived PipeDreams
 */
@@ -23,7 +22,7 @@ public:
 	explicit DirWatcher(std::string dir);
 	~DirWatcher();
 
-	// Returns a list of paths to files that where added, removed or changed.
+	// Returns a list of absolute paths to files that where added, removed or changed.
 	std::vector<std::string> poll_files();
 
 private:
@@ -34,7 +33,7 @@ private:
 
 	struct File
 	{
-		std::string       path;
+		std::string       path; // Full, absolute path.
 		std::string       file_name;
 		time_t            mtime;
 		bool              is_dir;

@@ -23,7 +23,7 @@ gl::ProgramSource load_shader_file(const std::string& shader_dir, const std::str
 		for (auto&& include_name : root["includes"].as_array()) {
 			auto include_path = shader_dir + (std::string)include_name;
 			auto contents = fs::read_text_file(include_path);
-			auto line = emilib::strprintf("\n#line 1 // %s\n", include_name.c_str());
+			auto line = strprintf("\n#line 1 // %s\n", include_name.c_str());
 			prefix += line + contents;
 		}
 	}
@@ -34,7 +34,7 @@ gl::ProgramSource load_shader_file(const std::string& shader_dir, const std::str
 		auto line = config.line();
 		if (line == -1) { line = 1; };
 
-		auto line_str = emilib::strprintf("\n#line %d // %s %s\n", line-1, name.c_str(), shader_name);
+		auto line_str = strprintf("\n#line %d // %s %s\n", line-1, name.c_str(), shader_name);
 		return prefix + line_str + code;
 	};
 
@@ -70,7 +70,7 @@ ShaderMngr::~ShaderMngr() = default;
 void ShaderMngr::update()
 {
 	if (!_dir_watcher) {
-		_dir_watcher = std::make_unique<emilib::DelayedDirWatcher>(_shader_dir);
+		_dir_watcher = std::make_unique<DelayedDirWatcher>(_shader_dir);
 	}
 
 	if (!_dir_watcher->poll_files().empty()) {

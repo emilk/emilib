@@ -1,6 +1,4 @@
-//  Created by emilk on 2012-11-11.
-//  Copyright (c) 2015 Emil Ernerfeldt. All rights reserved.
-//
+//  Created by Emil Ernerfeldt on 2012-11-11.
 
 #pragma once
 
@@ -162,7 +160,7 @@ protected:
 		if (_list.size() < 2) {
 			return false; // Not enough data
 		}
-		
+
 		auto duration = now - start_time();
 
 		if (duration < min_velocity_time()) {

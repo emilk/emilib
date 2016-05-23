@@ -1,6 +1,4 @@
-//  Created by emilk on 2012-11-11.
-//  Copyright (c) 2015 Emil Ernerfeldt. All rights reserved.
-//
+//  Created by Emil Ernerfeldt on 2012-11-11.
 
 #include "movement_tracker.hpp"
 

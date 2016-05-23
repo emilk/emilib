@@ -94,11 +94,11 @@ private:
 	using FFMap     = std::unordered_map<int,               gl::Program_UP>;
 	using FileMap   = std::unordered_map<std::string,       gl::Program_UP>;
 
-	std::string                  _shader_dir;
-	emilib::DelayedDirWatcher_UP _dir_watcher;
-	// SourceMap                    _source_map;
-	FFMap                        _ff_map;
-	FileMap                      _file_map;
+	std::string          _shader_dir;
+	DelayedDirWatcher_UP _dir_watcher;
+	// SourceMap            _source_map;
+	FFMap                _ff_map;
+	FileMap              _file_map;
 };
 
 } // namespace emilib
