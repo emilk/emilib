@@ -189,6 +189,28 @@ gl::Texture* TextureMngr::store(Texture_UP&& tex_up)
 }
 #endif
 
+gl::Texture create_black()
+{
+	unsigned width = 8;
+	unsigned height = 8;
+	std::vector<uint8_t> img(width * height * 4);
+	for (size_t i = 0; i < img.size(); i += 4)
+	{
+		img[0] = 0;
+		img[1] = 0;
+		img[2] = 0;
+		img[3] = 255;
+	}
+	gl::TexParams params(gl::TexFilter::Nearest, gl::WrapMode::DontCare);
+	return gl::Texture(img.data(), {width, height}, gl::ImageFormat::RGBA32, params, "black");
+}
+
+const gl::Texture* TextureMngr::black() const
+{
+	static gl::Texture s_black = create_black();
+	return &s_black;
+}
+
 gl::Texture create_white()
 {
 	unsigned width = 8;

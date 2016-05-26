@@ -46,6 +46,7 @@ public:
 	// While holding on to this shared_ptr handle, the texture won't get evicted.
 	gl::Texture_SP prefetch_retain(const std::string& name, const gl::TexParams& params);
 	gl::Texture_SP get_retain(const std::string& name, const gl::TexParams& params);
+	gl::Texture_SP get_retain(const std::string& name) { return get_retain(name, default_params()); }
 
 	gl::Texture* get(const std::string& name, const gl::TexParams& params);
 	gl::Texture* get(const std::string& name) { return get(name, default_params()); }
@@ -68,6 +69,7 @@ public:
 #if 0
 	const Texture* store(Texture_UP&& tex);
 #endif
+	const gl::Texture* black() const;
 	const gl::Texture* white() const;
 
 	gl::TexParams default_params() const
