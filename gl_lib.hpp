@@ -80,7 +80,7 @@ public:
 	void set_debug_name(const std::string& debug_name);
 
 	// We must have an id
-	void bind(unsigned tu=0) const;
+	void bind(unsigned tu = 0) const;
 
 	unsigned width()  const { return _size.x;  }
 	unsigned height() const { return _size.y; }
@@ -101,18 +101,21 @@ public:
 protected:
 	void init(const void* data);
 
-	void set_wrap_mode(WrapMode s, WrapMode t);
-	void set_filtering(TexFilter filter);
+	void set_wrap_mode(WrapMode s, WrapMode t) const;
+	void set_filtering(TexFilter filter) const;
 
 private:
 	Size        _size{0, 0};
 	ImageFormat _format;
-	TexParams   _params;
 	std::string _debug_name;
 
 	GLuint      _id       = 0;
 	bool        _has_data = false;
 	unsigned    _bpp      = 0;
+
+	// The effecto of set_params is deferred until bind() so we can set_params from non-render thread.
+	mutable TexParams _params;
+	mutable bool      _params_dirty = false;
 };
 
 // ----------------------------------------------------------------------------

@@ -218,10 +218,8 @@ void Texture::init(const void* data_ptr)
 
 	CHECK_FOR_GL_ERROR;
 
+	_params_dirty = true;
 	bind();
-
-	set_filtering(_params.filter);
-	set_wrap_mode(_params.wrap.first, _params.wrap.second);
 
 	// ------------------------------------------------
 
@@ -240,12 +238,7 @@ void Texture::set_params(const TexParams& params)
 {
 	if (params == _params) { return; }
 	_params = params;
-
-	if (_id) {
-		bind();
-		set_filtering(_params.filter);
-		set_wrap_mode(_params.wrap.first, _params.wrap.second);
-	}
+	_params_dirty = true;
 }
 
 Texture::~Texture()
@@ -406,27 +399,17 @@ void Texture::bind(unsigned tu) const
 {
 	CHECK_NE_F(_id, 0, "Texture not loaded: '%s'", _debug_name.c_str());
 	NAME_PAINT_FUNCTION();
-	CHECK_FOR_GL_ERROR;
 	glActiveTexture(GL_TEXTURE0 + tu);
 	glBindTexture(GL_TEXTURE_2D, _id);
-	CHECK_FOR_GL_ERROR;
+
+	if (_params_dirty) {
+		set_filtering(_params.filter);
+		set_wrap_mode(_params.wrap.first, _params.wrap.second);
+		_params_dirty = false;
+	}
 }
 
-// void Texture::set_params(const TexParams& params)
-// {
-// 	NAME_PAINT_FUNCTION();
-
-// 	if (_params.filter != params.filter) {
-// 		set_filtering(params.filter);
-// 	}
-// 	if (_params.wrap != params.wrap) {
-// 		set_wrap_mode(params.wrap.first, params.wrap.second);
-// 	}
-
-// 	_params = params;
-// }
-
-void Texture::set_wrap_mode(WrapMode s, WrapMode t)
+void Texture::set_wrap_mode(WrapMode s, WrapMode t) const
 {
 	NAME_PAINT_FUNCTION();
 
@@ -449,12 +432,11 @@ void Texture::set_wrap_mode(WrapMode s, WrapMode t)
 	}
 #endif
 
-	bind();
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, translate_mode(s));
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, translate_mode(t));
 }
 
-void Texture::set_filtering(TexFilter filter)
+void Texture::set_filtering(TexFilter filter) const
 {
 	NAME_PAINT_FUNCTION();
 
@@ -486,8 +468,6 @@ void Texture::set_filtering(TexFilter filter)
 #endif
 
 	_params.filter = filter;
-
-	bind();
 
 	if (filter == TexFilter::Nearest) {
 		// LOG_F(WARNING, "'%s' Filter: Nearest", _debug_name.c_str());
