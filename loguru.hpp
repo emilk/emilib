@@ -39,11 +39,16 @@ Website: www.ilikebigbits.com
 	* Version 1.25 - 2016-05-18 - Add ability to print ERROR_CONTEXT of parent thread.
 	* Version 1.26 - 2016-05-19 - Bug fix regarding VLOG verbosity argument lacking ().
 	* Version 1.27 - 2016-05-23 - Fix PATH_MAX problem.
+	* Version 1.28 - 2016-05-26 - Add shutdown() and remove_all_callbacks()
+	* Version 1.29 - 2016-06-09 - Use a monotonic clock for uptime.
+	* Version 1.30 - 2016-07-20 - Fix issues with callback flush/close not being called.
+	* Version 1.31 - 2016-07-20 - Add LOGURU_UNSAFE_SIGNAL_HANDLER to toggle stacktrace on signals.
+	* Version 1.32 - 2016-07-20 - Add loguru::arguments()
 
 # Compiling
 	Just include <loguru.hpp> where you want to use Loguru.
 	Then, in one .cpp file:
-		#define LOGURU_IMPLEMENTATION
+		#define LOGURU_IMPLEMENTATION 1
 		#include <loguru.hpp>
 	Make sure you compile with -std=c++11 -lpthread -ldl
 
@@ -103,19 +108,24 @@ Website: www.ilikebigbits.com
 
 	Before including <loguru.hpp> you may optionally want to define the following to 1:
 
-	LOGURU_REDEFINE_ASSERT:
+	LOGURU_REDEFINE_ASSERT (default 0):
 		Redefine "assert" call Loguru version (!NDEBUG only).
 
-	LOGURU_WITH_STREAMS:
+	LOGURU_WITH_STREAMS (default 0):
 		Add support for _S versions for all LOG and CHECK functions:
 			LOG_S(INFO) << "My vec3: " << x.cross(y);
 			CHECK_EQ_S(a, b) << "I expected a and b to be the same!";
 		This is off by default to keep down compilation times.
 
-	LOGURU_REPLACE_GLOG:
+	LOGURU_REPLACE_GLOG (default 0):
 		Make Loguru mimic GLOG as close as possible,
 		including #defining LOG, CHECK, VLOG_IS_ON etc.
 		LOGURU_REPLACE_GLOG implies LOGURU_WITH_STREAMS.
+
+	LOGURU_UNSAFE_SIGNAL_HANDLER (default 1):
+		Make Loguru try to do unsafe but useful things,
+		like printing a stack trace, when catching signals.
+		This may lead to bad things like deadlocks in certain situations.
 
 	You can also configure:
 	loguru::g_flush_interval_ms:
@@ -167,6 +177,10 @@ Website: www.ilikebigbits.com
 #if LOGURU_REPLACE_GLOG
 	#undef LOGURU_WITH_STREAMS
 	#define LOGURU_WITH_STREAMS 1
+#endif
+
+#ifndef LOGURU_UNSAFE_SIGNAL_HANDLER
+	#define LOGURU_UNSAFE_SIGNAL_HANDLER 1
 #endif
 
 #if LOGURU_IMPLEMENTATION
@@ -342,13 +356,19 @@ namespace loguru
 	*/
 	void init(int& argc, char* argv[], const char* verbosity_flag = "-v");
 
+	// Will call remove_all_callbacks(). After calling this, logging will still go to stderr.
+	void shutdown();
+
 	// What ~ will be replaced with, e.g. "/home/your_user_name/"
 	const char* home_dir();
 
-	/* Returns the name of the app as given in argv[0] but wtihout leadin path.
+	/* Returns the name of the app as given in argv[0] but without leading path.
 	   That is, if argv[0] is "../foo/app" this will return "app".
 	*/
 	const char* argv0_filename();
+
+	// Returns all arguments given to loguru::init(), but escaped with a single space as separator.
+	const char* arguments();
 
 	// Returns the path to the current working dir when loguru::init() was called.
 	const char* current_dir();
@@ -365,7 +385,7 @@ namespace loguru
 	/* Given a prefix of e.g. "~/loguru/" this might return
 	   "/home/your_username/loguru/app_name/20151017_161503.123.log"
 
-	   where "app_name" is a sanatized version of argv[0].
+	   where "app_name" is a sanitized version of argv[0].
 	*/
 	void suggest_log_path(const char* prefix, char* buff, unsigned buff_size);
 
@@ -376,6 +396,7 @@ namespace loguru
 		the given verbosity will be included.
 		The function will create all directories in 'path' if needed.
 		If path starts with a ~, it will be replaced with loguru::home_dir()
+		To stop the file logging, just call loguru::remove_callback(path) with the same path.
 	*/
 	bool add_file(const char* path, FileMode mode, Verbosity verbosity);
 
@@ -386,12 +407,18 @@ namespace loguru
 
 	/*  Will be called on each log messages with a verbosity less or equal to the given one.
 		Useful for displaying messages on-screen in a game, for example.
+		The given on_close is also expected to flush (if desired).
 	*/
 	void add_callback(const char* id, log_handler_t callback, void* user_data,
 					  Verbosity verbosity,
 					  close_handler_t on_close = nullptr,
 					  flush_handler_t on_flush = nullptr);
-	void remove_callback(const char* id);
+
+	// Returns true iff the callback was found (and removed).
+	bool remove_callback(const char* id);
+
+	// Shut down all file logging and any other callback hooks installed.
+	void remove_all_callbacks();
 
 	// Returns the maximum of g_stderr_verbosity and all file/custom outputs.
 	Verbosity current_verbosity_cutoff();
@@ -1142,7 +1169,7 @@ namespace loguru
 
 
 /* In one of your .cpp files you need to do the following:
-#define LOGURU_IMPLEMENTATION
+#define LOGURU_IMPLEMENTATION 1
 #include <loguru.hpp>
 
 This will define all the Loguru functions so that the linker may find them.
@@ -1240,7 +1267,7 @@ namespace loguru
 
 	const auto SCOPE_TIME_PRECISION = 3; // 3=ms, 6≈us, 9=ns
 
-	const auto s_start_time = system_clock::now();
+	const auto s_start_time = steady_clock::now();
 
 	Verbosity g_stderr_verbosity  = Verbosity_0;
 	bool      g_colorlogtostderr  = true;
@@ -1249,8 +1276,8 @@ namespace loguru
 	static std::recursive_mutex  s_mutex;
 	static Verbosity             s_max_out_verbosity = Verbosity_OFF;
 	static std::string           s_argv0_filename;
+	static std::string           s_arguments;
 	static char                  s_current_dir[PATH_MAX];
-	static std::string           s_file_arguments;
 	static CallbackVec           s_callbacks;
 	static fatal_handler_t       s_fatal_handler   = nullptr;
 	static StringPairList        s_user_stack_cleanups;
@@ -1532,11 +1559,11 @@ namespace loguru
 			LOG_F(WARNING, "Failed to get current working directory: %s", error_text.c_str());
 		}
 
-		s_file_arguments = "";
+		s_arguments = "";
 		for (int i = 0; i < argc; ++i) {
-			escape(s_file_arguments, argv[i]);
+			escape(s_arguments, argv[i]);
 			if (i + 1 < argc) {
-				s_file_arguments += " ";
+				s_arguments += " ";
 			}
 		}
 
@@ -1567,7 +1594,7 @@ namespace loguru
 			}
 			fflush(stderr);
 		}
-		LOG_F(INFO, "arguments: %s", s_file_arguments.c_str());
+		LOG_F(INFO, "arguments: %s", s_arguments.c_str());
 		if (strlen(s_current_dir) != 0)
 		{
 			LOG_F(INFO, "Current dir: %s", s_current_dir);
@@ -1578,6 +1605,13 @@ namespace loguru
 		install_signal_handlers();
 
 		atexit(on_atexit);
+	}
+
+	void shutdown()
+	{
+		LOG_F(INFO, "loguru::shutdown()");
+		remove_all_callbacks();
+		set_fatal_handler(nullptr);
 	}
 
 	void write_date_time(char* buff, size_t buff_size)
@@ -1595,6 +1629,11 @@ namespace loguru
 	const char* argv0_filename()
 	{
 		return s_argv0_filename.c_str();
+	}
+
+	const char* arguments()
+	{
+		return s_arguments.c_str();
 	}
 
 	const char* current_dir()
@@ -1689,15 +1728,15 @@ namespace loguru
 			LOG_F(ERROR, "Failed to open '%s'", path);
 			return false;
 		}
-		add_callback(path, file_log, file, verbosity, file_close, file_flush);
+		add_callback(path_in, file_log, file, verbosity, file_close, file_flush);
 
 		if (mode == FileMode::Append) {
 			fprintf(file, "\n\n\n\n\n");
 		}
 
-		if (!s_file_arguments.empty())
+		if (!s_arguments.empty())
 		{
-			fprintf(file, "arguments: %s\n", s_file_arguments.c_str());
+			fprintf(file, "arguments: %s\n", s_arguments.c_str());
 		}
 		if (strlen(s_current_dir) != 0)
 		{
@@ -1745,16 +1784,30 @@ namespace loguru
 		on_callback_change();
 	}
 
-	void remove_callback(const char* id)
+	bool remove_callback(const char* id)
 	{
 		std::lock_guard<std::recursive_mutex> lock(s_mutex);
 		auto it = std::find_if(begin(s_callbacks), end(s_callbacks), [&](const Callback& c) { return c.id == id; });
 		if (it != s_callbacks.end()) {
 			if (it->close) { it->close(it->user_data); }
 			s_callbacks.erase(it);
+			on_callback_change();
+			return true;
 		} else {
 			LOG_F(ERROR, "Failed to locate callback with id '%s'", id);
+			return false;
 		}
+	}
+
+	void remove_all_callbacks()
+	{
+		std::lock_guard<std::recursive_mutex> lock(s_mutex);
+		for (auto& callback : s_callbacks) {
+			if (callback.close) {
+				callback.close(callback.user_data);
+			}
+		}
+		s_callbacks.clear();
 		on_callback_change();
 	}
 
@@ -1957,13 +2010,12 @@ namespace loguru
 
 	static void print_preamble(char* out_buff, size_t out_buff_size, Verbosity verbosity, const char* file, unsigned line)
 	{
-		auto now = system_clock::now();
-		long long ms_since_epoch = duration_cast<milliseconds>(now.time_since_epoch()).count();
+		long long ms_since_epoch = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 		time_t sec_since_epoch = time_t(ms_since_epoch / 1000);
 		tm time_info;
 		localtime_r(&sec_since_epoch, &time_info);
 
-		auto uptime_ms = duration_cast<milliseconds>(now - s_start_time).count();
+		auto uptime_ms = duration_cast<milliseconds>(steady_clock::now() - s_start_time).count();
 		auto uptime_sec = uptime_ms / 1000.0;
 
 		char thread_name[THREAD_NAME_WIDTH + 1] = {0};
@@ -2056,7 +2108,9 @@ namespace loguru
 					message.indentation = indentation(p.indentation);
 				}
 				p.callback(p.user_data, message);
-				if (g_flush_interval_ms > 0) {
+				if (g_flush_interval_ms == 0) {
+					if (p.flush) { p.flush(p.user_data); }
+				} else {
 					s_needs_flushing = true;
 				}
 			}
@@ -2127,7 +2181,9 @@ namespace loguru
 		fflush(stderr);
 		for (const auto& callback : s_callbacks)
 		{
-			callback.flush(callback.user_data);
+			if (callback.flush) {
+				callback.flush(callback.user_data);
+			}
 		}
 		s_needs_flushing = false;
 	}
@@ -2493,7 +2549,6 @@ namespace loguru
 		   but writing to stderr is one of them.
 		   So we first print out what happened to stderr so we're sure that gets out,
 		   then we do the unsafe things, like logging the stack trace.
-		   In practice, I've never seen any problems with doing these unsafe things in the signal handler.
 		*/
 
 		if (g_colorlogtostderr && s_terminal_has_color) {
@@ -2511,6 +2566,13 @@ namespace loguru
 
 		// --------------------------------------------------------------------
 
+#if LOGURU_UNSAFE_SIGNAL_HANDLER
+		// --------------------------------------------------------------------
+		/* Now we do unsafe things. This can for example lead to deadlocks if
+		   the signal was triggered from the system's memory management functions
+		   and the code below tries to do allocations.
+		*/
+
 		flush();
 		char preamble_buff[128];
 		print_preamble(preamble_buff, sizeof(preamble_buff), Verbosity_FATAL, "", 0);
@@ -2522,6 +2584,9 @@ namespace loguru
 			write_to_stderr("Exception caught and ignored by Loguru signal handler.\n");
 		}
 		flush();
+
+		// --------------------------------------------------------------------
+#endif // LOGURU_UNSAFE_SIGNAL_HANDLER
 
 		call_default_signal_handler(signal_number);
 	}

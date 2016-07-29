@@ -13,10 +13,11 @@ www.github.com/emilk/configuru
 	If you find this library useful, send a tweet to [@ernerfeldt](https://twitter.com/ernerfeldt) or mail me at emil.ernerfeldt@gmail.com.
 
 # Version history
-	0.00: 2014-07-21 - Initial steps
-	0.10: 2015-11-08 - First commit as stand-alone library
-	0.20: 2016-03-25 - check_dangling changes
-	0.21: 2016-04-11 - mark_accessed in dump_string by default
+	0.0.0: 2014-07-21 - Initial steps
+	0.1.0: 2015-11-08 - First commit as stand-alone library
+	0.2.0: 2016-03-25 - check_dangling changes
+	0.2.1: 2016-04-11 - mark_accessed in dump_string by default
+	0.2.2: 2016-07-27 - optimizations
 
 # Getting started
 	For using:
@@ -1644,7 +1645,8 @@ namespace configuru
 		}
 	}
 
-	std::string quote(char c) {
+	std::string quote(char c)
+	{
 		if (c == 0)    { return "<eof>";   }
 		if (c == ' ')  { return "<space>"; }
 		if (c == '\n') { return "'\\n'";   }
@@ -1699,6 +1701,7 @@ namespace configuru
 		void parse_float(Config& out);
 		void parse_finite_number(Config& dst);
 		std::string parse_string();
+		std::string parse_c_sharp_string();
 		uint64_t parse_hex(int count);
 		void parse_macro(Config& dst);
 
@@ -1817,8 +1820,10 @@ namespace configuru
 		}
 
 	private:
-		bool IDENT_STARTERS[256] = { 0 };
-		bool IDENT_CHARS[256]    = { 0 };
+		bool IDENT_STARTERS[256]     = { 0 };
+		bool IDENT_CHARS[256]        = { 0 };
+		bool MAYBE_WHITE[256]        = { 0 };
+		bool SPECIAL_CHARACTERS[256] = { 0 };
 
 	private:
 		FormatOptions _options;
@@ -1857,6 +1862,18 @@ namespace configuru
 		set_range(IDENT_CHARS, 'A', 'Z');
 		set_range(IDENT_CHARS, '0', '9');
 
+		MAYBE_WHITE[static_cast<uint8_t>('\n')] = true;
+		MAYBE_WHITE[static_cast<uint8_t>('\r')] = true;
+		MAYBE_WHITE[static_cast<uint8_t>('\t')] = true;
+		MAYBE_WHITE[static_cast<uint8_t>(' ')]  = true;
+		MAYBE_WHITE[static_cast<uint8_t>('/')]  = true; // Maybe a comment
+
+		SPECIAL_CHARACTERS[static_cast<uint8_t>('\0')] = true;
+		SPECIAL_CHARACTERS[static_cast<uint8_t>('\\')] = true;
+		SPECIAL_CHARACTERS[static_cast<uint8_t>('\"')] = true;
+		SPECIAL_CHARACTERS[static_cast<uint8_t>('\n')] = true;
+		SPECIAL_CHARACTERS[static_cast<uint8_t>('\t')] = true;
+
 		CONFIGURU_ASSERT(_options.indentation != "" || !_options.enforce_indentation);
 	}
 
@@ -1871,7 +1888,7 @@ namespace configuru
 
 		const std::string& indentation = _options.indentation;
 
-		for (;;) {
+		while (MAYBE_WHITE[static_cast<uint8_t>(_ptr[0])]) {
 			if (_ptr[0] == '\n') {
 				// Unix style newline
 				_ptr += 1;
@@ -1891,7 +1908,7 @@ namespace configuru
 				if (break_on_newline) { return true; }
 				found_newline = true;
 			}
-			else if (indentation != "" &&
+			else if (!indentation.empty() &&
 					 strncmp(_ptr, indentation.c_str(), indentation.size()) == 0)
 			{
 				_ptr += indentation.size();
@@ -2127,9 +2144,10 @@ namespace configuru
 		}
 	}
 
-	void Parser::parse_array_contents(Config& array)
+	void Parser::parse_array_contents(Config& array_cfg)
 	{
-		array.make_array();
+		array_cfg.make_array();
+		auto& array_impl = array_cfg.as_array();
 
 		Comments next_prefix_comments;
 
@@ -2147,14 +2165,14 @@ namespace configuru
 					throw_indentation_error(_indentation - 1, line_indentation);
 				}
 				if (value.has_comments()) {
-					array.comments().pre_end_brace = value.comments().prefix;
+					array_cfg.comments().pre_end_brace = value.comments().prefix;
 				}
 				break;
 			}
 
 			if (!_ptr[0]) {
 				if (value.has_comments()) {
-					array.comments().pre_end_brace = value.comments().prefix;
+					array_cfg.comments().pre_end_brace = value.comments().prefix;
 				}
 				break;
 			}
@@ -2181,7 +2199,7 @@ namespace configuru
 				has_separator = true;
 			}
 
-			array.push_back(std::move(value));
+			array_impl.emplace_back(std::move(value));
 
 			bool is_last_element = !_ptr[0] || _ptr[0] == ']';
 
@@ -2416,46 +2434,51 @@ namespace configuru
 		return parse_int(out); // Exactly max int
 	}
 
-	std::string Parser::parse_string()
+	std::string Parser::parse_c_sharp_string()
 	{
+		// C# style verbatim string - everything until the next " except "" which is ":
 		auto state = get_state();
+		parse_assert(_options.str_csharp_verbatim, "C# @-style verbatim strings forbidden.");
+		swallow('@');
+		swallow('"');
 
-		if (_ptr[0] == '@') {
-			// C# style verbatim string - everything until the next " except "" which is ":
-			parse_assert(_options.str_csharp_verbatim, "C# @-style verbatim strings forbidden.");
-			_ptr += 1;
-			swallow('"');
+		std::string str;
 
-			std::string str;
-
-			for (;;) {
-				if (_ptr[0] == 0) {
-					set_state(state);
-					throw_error("Unterminated verbatim string");
-				}
-				else if (_ptr[0] == '\n') {
-					throw_error("Newline in verbatim string");
-				}
-				else if (_ptr[0] == '"' && _ptr[1] == '"') {
-					// Escaped quote
-					_ptr += 2;
-					str += '"';
-				}
-				else if (_ptr[0] == '"') {
-					_ptr += 1;
-					return str;
-				}
-				else {
-					str += _ptr[0];
-					_ptr += 1;
-				}
+		for (;;) {
+			if (_ptr[0] == 0) {
+				set_state(state);
+				throw_error("Unterminated verbatim string");
+			}
+			else if (_ptr[0] == '\n') {
+				throw_error("Newline in verbatim string");
+			}
+			else if (_ptr[0] == '"' && _ptr[1] == '"') {
+				// Escaped quote
+				_ptr += 2;
+				str.push_back('"');
+			}
+			else if (_ptr[0] == '"') {
+				_ptr += 1;
+				return str;
+			}
+			else {
+				str += _ptr[0];
+				_ptr += 1;
 			}
 		}
+	}
 
+	std::string Parser::parse_string()
+	{
+		if (_ptr[0] == '@') {
+			return parse_c_sharp_string();
+		}
+
+		auto state = get_state();
 		parse_assert(_ptr[0] == '"', "Quote (\") expected");
 
 		if (_ptr[1] == '"' && _ptr[2] == '"') {
-			// Multiline string - everything until the next """:
+			// Python style multiline string - everything until the next """:
 			parse_assert(_options.str_python_multiline, "Python \"\"\"-style multiline strings forbidden.");
 			_ptr += 3;
 			const char* start = _ptr;
@@ -2484,7 +2507,19 @@ namespace configuru
 			_ptr += 1; // Swallow quote
 
 			std::string str;
+
 			for (;;) {
+				// Handle larges swats of safe characters at once:
+				auto safe_end = _ptr;
+				while (!SPECIAL_CHARACTERS[static_cast<uint8_t>(*safe_end)]) {
+					++safe_end;
+				}
+
+				if (_ptr != safe_end) {
+					str.append(_ptr, safe_end - _ptr);
+					_ptr = safe_end;
+				}
+
 				if (_ptr[0] == 0) {
 					set_state(state);
 					throw_error("Unterminated string");
@@ -2505,28 +2540,28 @@ namespace configuru
 					_ptr += 1;
 
 					if (_ptr[0] == '"') {
-						str += '"';
+						str.push_back('"');
 						_ptr += 1;
 					} else if (_ptr[0] == '\\') {
-						str += '\\';
+						str.push_back('\\');
 						_ptr += 1;
 					} else if (_ptr[0] == '/') {
-						str += '/';
+						str.push_back('/');
 						_ptr += 1;
 					} else if (_ptr[0] == 'b') {
-						str += '\b';
+						str.push_back('\b');
 						_ptr += 1;
 					} else if (_ptr[0] == 'f') {
-						str += '\f';
+						str.push_back('\f');
 						_ptr += 1;
 					} else if (_ptr[0] == 'n') {
-						str += '\n';
+						str.push_back('\n');
 						_ptr += 1;
 					} else if (_ptr[0] == 'r') {
-						str += '\r';
+						str.push_back('\r');
 						_ptr += 1;
 					} else if (_ptr[0] == 't') {
-						str += '\t';
+						str.push_back('\t');
 						_ptr += 1;
 					} else if (_ptr[0] == 'u') {
 						// Four hexadecimal characters
@@ -2557,7 +2592,7 @@ namespace configuru
 						throw_error("Unknown escape character " + quote(_ptr[0]));
 					}
 				} else {
-					str += _ptr[0];
+					str.push_back(_ptr[0]);
 					_ptr += 1;
 				}
 			}
@@ -2736,13 +2771,34 @@ namespace configuru
 
 	struct Writer
 	{
-		DocInfo_SP    _doc;
-		FormatOptions _options;
 		std::string   _out;
+		bool          _compact;
+		FormatOptions _options;
+		bool          SAFE_CHARACTERS[256];
+		DocInfo_SP    _doc;
 
-		void write_indent(unsigned indent)
+		Writer(const FormatOptions& options, DocInfo_SP doc)
+			: _options(options), _doc(std::move(doc))
 		{
-			if (_options.compact()) { return; }
+			_compact = _options.compact();
+
+			for (int i = 0; i < 256; ++i) {
+				SAFE_CHARACTERS[i] = i >= 0x20;
+			}
+
+			SAFE_CHARACTERS[static_cast<uint8_t>('\\')] = false;
+			SAFE_CHARACTERS[static_cast<uint8_t>('\"')] = false;
+			SAFE_CHARACTERS[static_cast<uint8_t>('\0')] = false;
+			SAFE_CHARACTERS[static_cast<uint8_t>('\b')] = false;
+			SAFE_CHARACTERS[static_cast<uint8_t>('\f')] = false;
+			SAFE_CHARACTERS[static_cast<uint8_t>('\n')] = false;
+			SAFE_CHARACTERS[static_cast<uint8_t>('\r')] = false;
+			SAFE_CHARACTERS[static_cast<uint8_t>('\t')] = false;
+		}
+
+		inline void write_indent(unsigned indent)
+		{
+			if (_compact) { return; }
 			for (unsigned i=0; i<indent; ++i) {
 				_out += _options.indentation;
 			}
@@ -2752,7 +2808,7 @@ namespace configuru
 		{
 			if (!_options.write_comments) { return; }
 			if (!comments.empty()) {
-				_out += "\n";
+				_out.push_back('\n');
 				for (auto&& c : comments) {
 					write_indent(indent);
 					_out += c;
@@ -2774,7 +2830,7 @@ namespace configuru
 			if (!_options.write_comments) { return; }
 			(void)indent; // TODO: reindent comments
 			for (auto&& c : comments) {
-				_out += " ";
+				_out.push_back(' ');;
 				_out += c;
 			}
 		}
@@ -2791,7 +2847,7 @@ namespace configuru
 				dump_file(config.doc()->filename, config, _options);
 				_out += "#include <";
 				_out += config.doc()->filename;
-				_out += ">";
+				_out.push_back('>');
 				return;
 			}
 
@@ -2813,25 +2869,25 @@ namespace configuru
 				write_string(config.as_string());
 			} else if (config.is_array()) {
 				if (config.array_size() == 0 && !has_pre_end_brace_comments(config)) {
-					if (_options.compact()) {
+					if (_compact) {
 						_out += "[]";
 					} else {
 						_out += "[ ]";
 					}
-				} else if (_options.compact() || is_simple_array(config)) {
-					_out += "[";
-					if (!_options.compact()) {
-						_out += " ";
+				} else if (_compact || is_simple_array(config)) {
+					_out.push_back('[');
+					if (!_compact) {
+						_out.push_back(' ');
 					}
 					auto&& array = config.as_array();
 					for (size_t i = 0; i < array.size(); ++i) {
 						write_value(indent + 1, array[i], false, true);
-						if (_options.compact()) {
+						if (_compact) {
 							if (i + 1 < array.size()) {
-								_out += ",";
+								_out.push_back(',');
 							}
 						} else if (_options.array_omit_comma || i + 1 == array.size()) {
-							_out += " ";
+							_out.push_back(' ');
 						} else {
 							_out += ", ";
 						}
@@ -2846,7 +2902,7 @@ namespace configuru
 						write_indent(indent + 1);
 						write_value(indent + 1, array[i], false, true);
 						if (_options.array_omit_comma || i + 1 == array.size()) {
-							_out += "\n";
+							_out.push_back('\n');
 						} else {
 							_out += ",\n";
 						}
@@ -2857,20 +2913,20 @@ namespace configuru
 				}
 			} else if (config.is_object()) {
 				if (config.object_size() == 0 && !has_pre_end_brace_comments(config)) {
-					if (_options.compact()) {
+					if (_compact) {
 						_out += "{}";
 					} else {
 						_out += "{ }";
 					}
 				} else {
-					if (_options.compact()) {
-						_out += "{";
+					if (_compact) {
+						_out.push_back('{');
 					} else {
 						_out += "{\n";
 					}
 					write_object_contents(indent + 1, config);
 					write_indent(indent);
-					_out += "}";
+					_out.push_back('}');
 				}
 			} else {
 				if (_options.write_uninitialized) {
@@ -2892,11 +2948,15 @@ namespace configuru
 
 			using ObjIterator = Config::ConfigObjectImpl::const_iterator;
 			std::vector<ObjIterator> pairs;
+			pairs.reserve(object.size());
 
 			size_t longest_key = 0;
+
 			for (auto it=object.begin(); it!=object.end(); ++it) {
 				pairs.push_back(it);
-				longest_key = std::max(longest_key, it->first.size());
+				if (!_compact) {
+					longest_key = std::max(longest_key, it->first.size());
+				}
 			}
 
 			if (_options.sort_keys) {
@@ -2915,23 +2975,23 @@ namespace configuru
 				write_prefix_comments(indent, value);
 				write_indent(indent);
 				write_key(it->first);
-				if (_options.compact()) {
-					_out += ":";
+				if (_compact) {
+					_out.push_back(':');
 				} else if (_options.omit_colon_before_object && value.is_object() && value.object_size() != 0) {
-					_out += " ";
+					_out.push_back(' ');
 				} else {
 					_out += ": ";
 					for (size_t j=it->first.size(); j<longest_key; ++j) {
-						_out += " ";
+						_out.push_back(' ');
 					}
 				}
 				write_value(indent, value, false, true);
-				if (_options.compact()) {
+				if (_compact) {
 					if (i + 1 < pairs.size()) {
-						_out += ",";
+						_out.push_back(',');
 					}
 				} else if (_options.array_omit_comma || i + 1 == pairs.size()) {
-					_out += "\n";
+					_out.push_back('\n');
 				} else {
 					_out += ",\n";
 				}
@@ -3031,7 +3091,7 @@ namespace configuru
 		{
 			const size_t LONG_LINE = 240;
 
-			if (!_options.str_python_multiline       ||
+			if (!_options.str_python_multiline      ||
 				str.find('\n') == std::string::npos ||
 				str.length() < LONG_LINE            ||
 				str.find("\"\"\"") != std::string::npos)
@@ -3063,21 +3123,40 @@ namespace configuru
 			write_hex_16(c);
 		}
 
-		void write_quoted_string(const std::string& str) {
-			_out += '"';
+		bool all_safe_characters(const std::string& str)
+		{
 			for (char c : str) {
-				if      (c == '\\') { _out += "\\\\"; }
-				else if (c == '\"') { _out += "\\\""; }
-				//else if (c == '\'') { _out += "\\\'"; }
-				else if (c == '\0') { _out += "\\0";  }
-				else if (c == '\b') { _out += "\\b";  }
-				else if (c == '\f') { _out += "\\f";  }
-				else if (c == '\n') { _out += "\\n";  }
-				else if (c == '\r') { _out += "\\r";  }
-				else if (c == '\t') { _out += "\\t";  }
-				else if (0 <= c && c < 0x20) { write_unicode_16(static_cast<uint16_t>(c)); }
-				else { _out.push_back(c); } // TODO: add option to escape unicode
+				if (!SAFE_CHARACTERS[static_cast<uint8_t>(c)]) {
+					return false;
+				}
 			}
+			return true;
+		}
+
+		void write_quoted_string(const std::string& str)
+		{
+			_out.push_back('"');
+
+			if (all_safe_characters(str)) {
+				_out.append(str);
+			} else {
+				for (char c : str) {
+					if (SAFE_CHARACTERS[static_cast<uint8_t>(c)]) {
+						_out.push_back(c);
+					}
+					else if (c == '\\') { _out += "\\\\"; }
+					else if (c == '\"') { _out += "\\\""; }
+					//else if (c == '\'') { _out += "\\\'"; }
+					else if (c == '\0') { _out += "\\0";  }
+					else if (c == '\b') { _out += "\\b";  }
+					else if (c == '\f') { _out += "\\f";  }
+					else if (c == '\n') { _out += "\\n";  }
+					else if (c == '\r') { _out += "\\r";  }
+					else if (c == '\t') { _out += "\\t";  }
+					else /*if (0 <= c && c < 0x20)*/ { write_unicode_16(static_cast<uint16_t>(c)); }
+				}
+			}
+
 			_out.push_back('"');
 		}
 
@@ -3131,18 +3210,16 @@ namespace configuru
 
 	std::string dump_string(const Config& config, const FormatOptions& options)
 	{
-		Writer w;
-		w._options = options;
-		w._doc     = config.doc();
+		Writer w(options, config.doc());
 
 		if (options.implicit_top_object && config.is_object()) {
 			w.write_object_contents(0, config);
 		} else {
 			w.write_value(0, config, true, true);
 
-			if (options.end_with_newline &&  !options.compact())
+			if (options.end_with_newline && !options.compact())
 			{
-				w._out += "\n"; // Good form
+				w._out.push_back('\n'); // Good form
 			}
 		}
 
