@@ -41,8 +41,8 @@ public:
 	// Abort the inner thread, if not done().
 	void stop();
 
-	// dt = elapsed time since last call in seconds. Returns 'true' on done.
-	bool poll(double dt);
+	// dt = elapsed time since last call in seconds.
+	void poll(double dt);
 
 	// Has the inner thread finished its execution?
 	bool done() const { return _is_done; }
@@ -116,9 +116,10 @@ public:
 
 	// Remove it from the set. If there are no more handles left for the routine, it will be stopped.
 	// Returns false iff the given handle was not found.
-	bool erase(std::shared_ptr<Coroutine> cr);
+	bool erase(const std::shared_ptr<Coroutine>& cr);
 
 	// poll all contained coroutines. dt = elapsed time since last call in seconds.
+	// It is safe to call clear(), start() and erase() on this CoroutineSet from within a coroutine.
 	void poll(double dt);
 
 private:

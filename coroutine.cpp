@@ -84,13 +84,12 @@ void Coroutine::stop()
 }
 
 // Returns 'true' on done
-bool Coroutine::poll(double dt)
+void Coroutine::poll(double dt)
 {
 	CHECK_NOTNULL_F(_inner);
 	if (!_is_done) {
 		_inner->poll(dt);
 	}
-	return _is_done;
 }
 
 // ----------------------------------------------------------------------------
@@ -143,7 +142,9 @@ void InnerControl::poll(double dt)
 
 void CoroutineSet::clear()
 {
-	_list.clear();
+	for (auto& cr_ptr : _list) {
+		cr_ptr.reset();
+	}
 }
 
 std::shared_ptr<Coroutine> CoroutineSet::start(const char* debug_name, std::function<void(InnerControl& ic)> fun)
@@ -153,11 +154,13 @@ std::shared_ptr<Coroutine> CoroutineSet::start(const char* debug_name, std::func
 	return cr_ptr;
 }
 
-bool CoroutineSet::erase(std::shared_ptr<Coroutine> cr)
+bool CoroutineSet::erase(const std::shared_ptr<Coroutine>& cr_ptr)
 {
-	auto it = std::find(begin(_list), end(_list), cr);
+	auto it = std::find(begin(_list), end(_list), cr_ptr);
 	if (it != _list.end()) {
-		_list.erase(it);
+		// Do not modify _list - we might be currently iterating over it!
+		// Instead, just clear the pointer, and let poll() erase it later.
+		it->reset();
 		return true;
 	} else {
 		return false;
@@ -166,13 +169,20 @@ bool CoroutineSet::erase(std::shared_ptr<Coroutine> cr)
 
 void CoroutineSet::poll(double dt)
 {
-	for (auto it=begin(_list); it!=end(_list); ) {
-		if ((*it)->poll(dt)) {
-			it = _list.erase(it);
-		} else {
-			++it;
+	// Take care to allow calls to start(), erase() and clear() while this is running (from within poll()):
+	for (size_t i = 0; i < _list.size(); ++i) {
+		auto cr_ptr = _list[i];
+		if (cr_ptr) {
+			cr_ptr->poll(dt);
+			if (cr_ptr->done()) {
+				_list[i] = nullptr;
+			}
 		}
 	}
+
+	auto it = std::remove_if(_list.begin(), _list.end(),
+		[&](const auto& cr_ptr) { return cr_ptr == nullptr; } );
+	_list.erase(it, _list.end());
 }
 
 } // namespace cr
