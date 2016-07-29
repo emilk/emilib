@@ -33,7 +33,7 @@ std::string errno_str()
 
 // ------------------------------------------------
 
-FILEWrapper::FILEWrapper(const string& path, const char* mode) : _fp(0)
+FILEWrapper::FILEWrapper(const string& path, const char* mode) : _fp(nullptr)
 {
 	if (!try_open(path, mode)) {
 		const auto errno_text = loguru::errno_as_text();

@@ -162,15 +162,15 @@ Texture::Texture()
 }
 
 Texture::Texture(
-	GLuint             id,
+	GLuint      id,
 	Size        size,
-	ImageFormat        format,
-	TexParams          params_arg,
-	const std::string& debug_name)
+	ImageFormat format,
+	TexParams   params_arg,
+	std::string debug_name)
 	: _size(size)
 	, _format(format)
 	, _params(params_arg)
-	, _debug_name(debug_name)
+	, _debug_name(std::move(debug_name))
 {
 	NAME_PAINT_FUNCTION();
 	CHECK_FOR_GL_ERROR;
@@ -181,15 +181,15 @@ Texture::Texture(
 }
 
 Texture::Texture(
-	const void*        data,
+	const void* data,
 	Size        size,
-	ImageFormat        format,
-	TexParams          params_arg,
-	const std::string& debug_name)
+	ImageFormat format,
+	TexParams   params_arg,
+	std::string debug_name)
 	: _size(size)
 	, _format(format)
 	, _params(params_arg)
-	, _debug_name(debug_name)
+	, _debug_name(std::move(debug_name))
 {
 	NAME_PAINT_FUNCTION();
 	CHECK_FOR_GL_ERROR;
@@ -820,21 +820,21 @@ const char* type_to_string(GLenum type)
 
 // ---------------------------------------------------------------
 
-Program::Program(const std::string& vs, const std::string& fs, const std::string& debug_name)
-	: _debug_name(debug_name)
+Program::Program(const std::string& vs, const std::string& fs, std::string debug_name_arg)
+	: _debug_name(std::move(debug_name_arg))
 {
-	VLOG_SCOPE_F(1, "Compiling GLSL %s", debug_name.c_str());
+	VLOG_SCOPE_F(1, "Compiling GLSL %s", _debug_name.c_str());
 
 	CHECK_FOR_GL_ERROR;
 
-	GLuint vs_id = load_shader(GL_VERTEX_SHADER,   vs.c_str(), debug_name.c_str());
-	GLuint fs_id = load_shader(GL_FRAGMENT_SHADER, fs.c_str(), debug_name.c_str());
+	GLuint vs_id = load_shader(GL_VERTEX_SHADER,   vs.c_str(), _debug_name.c_str());
+	GLuint fs_id = load_shader(GL_FRAGMENT_SHADER, fs.c_str(), _debug_name.c_str());
 
 	_program = glCreateProgram();
 
 #if TARGET_OS_IPHONE
 	// For debugger:
-	glLabelObjectEXT(GL_PROGRAM_OBJECT_EXT, _program, 0, debug_name.c_str());
+	glLabelObjectEXT(GL_PROGRAM_OBJECT_EXT, _program, 0, _debug_name.c_str());
 #endif
 
 	glAttachShader(_program, vs_id);
@@ -843,7 +843,7 @@ Program::Program(const std::string& vs, const std::string& fs, const std::string
 	//GLuint color_number = 0;
 	//glBindFragDataLocation(_program, color_number, "out_frag_color");
 
-	link_program(_program, debug_name.c_str());
+	link_program(_program, _debug_name.c_str());
 
 	/* too early to validate: uniforms haven't been bound yet.
 	   Using two samplers of different type (sampler2D and sampler_cube)
@@ -856,7 +856,7 @@ Program::Program(const std::string& vs, const std::string& fs, const std::string
 	//debug_print();
 
 #if 0
-	LOG_F(INFO, "Shader: %s", debug_name.c_str());
+	LOG_F(INFO, "Shader: %s", _debug_name.c_str());
 	LOG_F(INFO, "-------------------------------------");
 	LOG_F(INFO, "%s", vs.c_str());
 	LOG_F(INFO, "-------------------------------------");

@@ -44,10 +44,9 @@ class Texture
 public:
 	Texture();
 
-	Texture(GLuint id, Size size, ImageFormat format, TexParams params_arg, const std::string& debug_name);
+	Texture(GLuint id, Size size, ImageFormat format, TexParams params_arg, std::string debug_name);
+	Texture(const void* data, Size size, ImageFormat format, TexParams params, std::string debug_name);
 
-	Texture(const void* data, Size size, ImageFormat format, TexParams params,
-			  const std::string& debug_name);
 	~Texture();
 
 	Texture(const Texture&) = delete;
@@ -151,7 +150,7 @@ public:
 	Program() {}
 
 	// Shader format must match the current OpenGl version
-	Program(const std::string& vs, const std::string& fs, const std::string& debug_name);
+	Program(const std::string& vs, const std::string& fs, std::string debug_name);
 	Program(Program&&);
 	Program& operator=(Program&&);
 	~Program();
