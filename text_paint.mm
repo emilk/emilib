@@ -121,44 +121,54 @@ NSDictionary* get_attributes(const TextInfo& ti, bool ignore_text_align)
 	return attributes;
 }
 
-NSAttributedString* get_attr_string(const TextInfo& ti, const ColoredString& colored_str, bool ignore_text_align)
+NSAttributedString* get_attr_string(const TextInfo& ti, const AttributeString& attrib_str, bool ignore_text_align)
 {
-	NSString* str = utf8_to_NSString(colored_str.utf8.c_str());
+	NSString* str = utf8_to_NSString(attrib_str.utf8.c_str());
 	auto attributes = get_attributes(ti, ignore_text_align);
-	auto attrib_str = [[NSMutableAttributedString alloc] initWithString:str attributes:attributes];
+	auto ns_attrib_str = [[NSMutableAttributedString alloc] initWithString:str attributes:attributes];
 
 	// NSMutableAttributedString assumes ranges of characters, not over bytes:
 	size_t start_bytes = 0;
 	size_t start_chars = 0;
-	for (auto& part : colored_str.colors) {
+	for (const auto& part : attrib_str.colors) {
 		id color = get_color(part.color);
-		auto length_chars = utf8_count_chars(colored_str.utf8.c_str() + start_bytes, part.length_bytes);
-		[attrib_str addAttribute:(id)kCTForegroundColorAttributeName value:color range:NSMakeRange(start_chars, length_chars)];
+		auto length_chars = utf8_count_chars(attrib_str.utf8.c_str() + start_bytes, part.length_bytes);
+		[ns_attrib_str addAttribute:(id)kCTForegroundColorAttributeName value:color range:NSMakeRange(start_chars, length_chars)];
 		start_bytes += part.length_bytes;
 		start_chars += length_chars;
 	}
 
-	return attrib_str;
+	for (const auto& part : attrib_str.fonts) {
+		NSString* font_name = utf8_to_NSString(part.font.c_str());
+		CTFontRef font = CTFontCreateWithName((CFStringRef)font_name, ti.font_size, nullptr);
+		id font_id = (__bridge id)font;
+
+		size_t begin_chars = utf8_count_chars(attrib_str.utf8.c_str(), part.begin);
+		size_t end_chars = utf8_count_chars(attrib_str.utf8.c_str(), part.end);
+		[ns_attrib_str addAttribute:(id)kCTFontAttributeName value:font_id range:NSMakeRange(begin_chars, end_chars - begin_chars)];
+	}
+
+	return ns_attrib_str;
 }
 
-Vec2 text_paint::text_size(const TextInfo& ti, const ColoredString& colored_str)
+Vec2 text_paint::text_size(const TextInfo& ti, const AttributeString& attrib_str)
 {
 	auto max_size = CGSizeMake(ti.max_size.x, ti.max_size.y);
 	bool ignore_text_align = true; // Can't specify TextAlign when figuring out the size.
-	auto attr_str = get_attr_string(ti, colored_str, ignore_text_align);
-	CGRect rect = [attr_str boundingRectWithSize: max_size
-	                                     options: NSStringDrawingOptions(NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading)
-	                                     context: nil];
+	auto ns_attrib_str = get_attr_string(ti, attrib_str, ignore_text_align);
+	CGRect rect = [ns_attrib_str boundingRectWithSize: max_size
+	                                          options: NSStringDrawingOptions(NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading)
+	                                          context: nil];
 	return {(float)rect.size.width, (float)rect.size.height};
 }
 
-void draw_text(const CGContextRef&  context,
-               const Vec2&          pos,
-               const TextInfo&      ti,
-               const ColoredString& str)
+void draw_text(const CGContextRef&    context,
+               const Vec2&            pos,
+               const TextInfo&        ti,
+               const AttributeString& str)
 {
 	bool ignore_text_align = false;
-	auto attr_str = get_attr_string(ti, str, ignore_text_align);
+	auto ns_attrib_str = get_attr_string(ti, str, ignore_text_align);
 
 #if 0
 	// Flip the Y axis:
@@ -178,7 +188,7 @@ void draw_text(const CGContextRef&  context,
 
 	// Create the framesetter with the attributed string.
 	CTFramesetterRef framesetter =
-         CTFramesetterCreateWithAttributedString((CFAttributedStringRef)attr_str);
+         CTFramesetterCreateWithAttributedString((CFAttributedStringRef)ns_attrib_str);
 
 	// Create a frame.
 	CTFrameRef frame = CTFramesetterCreateFrame(framesetter,
@@ -189,7 +199,7 @@ void draw_text(const CGContextRef&  context,
 }
 
 void text_paint::draw_text(uint8_t* bytes, size_t width, size_t height, bool rgba,
-                           const Vec2& pos, const TextInfo& ti, const ColoredString& str)
+                           const Vec2& pos, const TextInfo& ti, const AttributeString& str)
 {
 	CHECK_F(std::ceil(pos.x + ti.max_size.x) <= width && std::ceil(pos.y + ti.max_size.y) <= height,
 	    "The target must be large enough to fit draw area (pos + max_size)");
@@ -213,7 +223,7 @@ void text_paint::draw_text(uint8_t* bytes, size_t width, size_t height, bool rgb
 bool text_paint::test()
 {
 	// Create the text to draw:
-	ColoredString str;
+	AttributeString str;
 	str.append("Hello ", text_paint::RGBAf{0,0,0,1}); // Black
 	str.append("World!", text_paint::RGBAf{1,1,1,1}); // White
 
@@ -224,7 +234,7 @@ bool text_paint::test()
 	text_info.alignment  = TextAlign::CENTER;
 	text_info.max_size.x = 100; // Break to this width.
 
-	// Calulate the size of the text:
+	// Calculate the size of the text:
 	const auto size_pixels_float = text_paint::text_size(text_info, str);
 
 	// We must set max_size before calling draw_text:

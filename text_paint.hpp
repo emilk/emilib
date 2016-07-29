@@ -29,7 +29,7 @@ enum class TextAlign
 };
 
 // Multiline text where ranges can be colored differently.
-struct ColoredString
+struct AttributeString
 {
 	struct ColorRange
 	{
@@ -37,8 +37,22 @@ struct ColoredString
 		size_t length_bytes; // Use this color for this many bytes of utf8.
 	};
 
-	std::string utf8;
+	struct FontRange
+	{
+		size_t      begin, end;
+		std::string font;
+	};
+
+	std::string             utf8;
 	std::vector<ColorRange> colors;
+	std::vector<FontRange>  fonts;
+
+	AttributeString() {}
+
+	explicit AttributeString(const std::string& str, RGBAf color = {1, 1, 1, 1})
+	{
+		append(str, color);
+	}
 
 	void append(const std::string& str, RGBAf color = {1, 1, 1, 1})
 	{
@@ -47,10 +61,10 @@ struct ColoredString
 		colors.push_back(ColorRange{color, utf8.size() - pre_size});
 	}
 
-	ColoredString() {}
-	ColoredString(const std::string& str, RGBAf color = {1, 1, 1, 1})
+	/// Set different font for byte range [begin, end)
+	void set_font_range(size_t begin, size_t end, std::string font)
 	{
-		append(str, color);
+		fonts.emplace_back(FontRange{begin, end, std::move(font)});
 	}
 };
 
@@ -68,7 +82,7 @@ struct TextInfo
    If max_size.x is set, it will use it as the width to break the text to.
    Use the results as max_size when calling draw_text.
    To figure out the minimum size of the draw target you should round up the returned size. */
-Vec2 text_size(const TextInfo& ti, const ColoredString& str);
+Vec2 text_size(const TextInfo& ti, const AttributeString& str);
 
 /*
 This function does not care about retina, i.e. pixel==point.
@@ -79,7 +93,7 @@ The text will be drawn inside a rectangle starting at pos and ending at pos + ti
 The output image will be be written top-left to bottom-right, row by row.
 */
 void draw_text(uint8_t* bytes, size_t width, size_t height, bool rgba,
-               const Vec2& pos, const TextInfo& ti, const ColoredString& str);
+               const Vec2& pos, const TextInfo& ti, const AttributeString& str);
 
 // Should return true, unless something is broken.
 bool test();
