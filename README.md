@@ -109,6 +109,9 @@ For instance, you can use this to track a finger flicking something on a touch-s
 ### pvr.hpp/.mm
 iOS only: loading of compressed .pvr textures. Depends on gl_lib.
 
+### read_write_mutex.hpp
+Fast mutex for multiple-readers, single-writer scenarios written in pure C++11.
+
 ### shader_mngr.hpp/.cpp
 This is NOT a stand-alone library, but depends on other parts of emilib as well as loguru and configuru.
 ShaderMngr's job is to encapsulate loading, memoization and reloading of shader files.
