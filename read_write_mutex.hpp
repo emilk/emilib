@@ -21,6 +21,9 @@ Is ReadWriteMutex right for you?
     * Else if you almost always access the resource from one thread, ReadLock is slightly faster than std::mutex.
     * Else (if most access are read-only, and there is more than one thread): ReadWriteMutex will be up to 100x faster then std::mutex.
 
+ What about std::shared_timed_mutex?
+    * I benchmarked GCC5:s std::shared_timed_mutex in rw_mutex_benchmark.cpp, and it's SLOW. AVOID!
+
  The FastWriteLock will spin-wait for zero readers. This is the best choice when you expect the reader to be done quickly.
  With SlowWriteLock there is a std::mutex instead of a spin-lock in WriteLock. This is useful to save CPU if the read operation can take a long time, e.g. file or network access.
 
