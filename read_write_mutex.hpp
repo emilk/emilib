@@ -132,7 +132,7 @@ public:
 		while (_has_writer) {
 			// First check here to stop readers while write is in progress.
 			// This is to ensure _num_readers can go to zero (needed for write to start).
-			std::lock_guard<std::mutex> l(_write_mutex); // wait for the writer to be done
+			std::lock_guard<std::mutex>{_write_mutex}; // wait for the writer to be done
 		}
 
 		// If a writer starts here, it may think there are no readers, which is why we re-check _has_writer again.
@@ -144,7 +144,7 @@ public:
 			// A write is in progress or is waiting to start!
 			--_num_readers; // We changed our mind
 
-			std::lock_guard<std::mutex> l(_write_mutex); // wait for the writer to be done
+			std::lock_guard<std::mutex>{_write_mutex}; // wait for the writer to be done
 
 			++_num_readers; // Let's try again
 		}
@@ -212,8 +212,8 @@ public:
 
 		// Wait for all readers to finish.
 		if (_num_readers != 0) {
-			std::unique_lock<std::mutex> l(_reader_done_mutex); // TODO: this mutex isn't really needed, but can't use a condition_variable without it
-			_reader_done_cond.wait(l, [=]{ return _num_readers==0; });
+			std::unique_lock<std::mutex> lock{_reader_done_mutex};
+			_reader_done_cond.wait(lock, [=]{ return _num_readers==0; });
 		}
 
 		// All readers have finished - we are not locked exclusively!
@@ -260,7 +260,7 @@ public:
 		while (_has_writer) {
 			// First check here to stop readers while write is in progress.
 			// This is to ensure _num_readers can go to zero (needed for write to start).
-			std::lock_guard<std::mutex> l(_write_mutex); // wait for the writer to be done
+			std::lock_guard<std::mutex> lock{_write_mutex}; // wait for the writer to be done
 		}
 
 		// If a writer starts here, it may think there are no readers, which is why we re-check _has_writer again.
@@ -270,14 +270,15 @@ public:
 		// Check so no write began before we incremented _num_readers
 		while (_has_writer) {
 			// A write is in progress or is waiting to start!
-			--_num_readers; // We changed our mind
 
 			{
-				std::unique_lock<std::mutex> l(_reader_done_mutex);
-				_reader_done_cond.notify_one(); // Tell the writer we did (he may be waiting for _num_readers to go to zero)
+				std::lock_guard<std::mutex> lock{_reader_done_mutex};
+				--_num_readers; // We changed our mind
 			}
 
-			std::lock_guard<std::mutex> l(_write_mutex); // wait for the writer to be done
+			_reader_done_cond.notify_one(); // Tell the writer we did (he may be waiting for _num_readers to go to zero)
+
+			std::lock_guard<std::mutex>{_write_mutex}; // wait for the writer to be done
 
 			++_num_readers; // Let's try again
 		}
@@ -314,7 +315,6 @@ public:
 
 		if (_has_writer) {
 			// A writer is waiting for all readers to finish. Tell him one more has:
-			std::unique_lock<std::mutex> l(_reader_done_mutex);
 			_reader_done_cond.notify_one();
 		}
 	}
@@ -329,7 +329,7 @@ private:
 	std::atomic<bool>       _has_writer{false}; // Is there a writer working (or trying to) ?
 	std::mutex              _write_mutex;
 	std::condition_variable _reader_done_cond;  // Signals a waiting writer that a read has finishes
-	std::mutex              _reader_done_mutex; // TODO: this mutex isn't really needed, but can't use a condition_variable without it
+	std::mutex              _reader_done_mutex; // Synchronizes _num_readers vs _reader_done_cond
 };
 
 // ----------------------------------------------------------------------------
@@ -358,6 +358,15 @@ public:
 			_rw_mutex.lock_shared();
 			_locked = true;
 		}
+	}
+
+	// Does not block. Returns true iff the mutex is locked by this thread after the call.
+	bool try_lock()
+	{
+		if (!_locked) {
+			_locked = _rw_mutex.try_lock_shared();
+		}
+		return _locked;
 	}
 
 	// unlock, unless already unlocked.
@@ -405,6 +414,15 @@ public:
 			_rw_mutex.lock();
 			_locked = true;
 		}
+	}
+
+	// Does not block. Returns true iff the mutex is locked by this thread after the call.
+	bool try_lock()
+	{
+		if (!_locked) {
+			_locked = _rw_mutex.try_lock();
+		}
+		return _locked;
 	}
 
 	// unlock, unless already unlocked.
