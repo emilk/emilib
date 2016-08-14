@@ -114,7 +114,7 @@ public:
 			return true;
 		} else {
 			_has_writer = false;
-			return true;
+			return false;
 		}
 	}
 
@@ -242,7 +242,7 @@ public:
 			return true;
 		} else {
 			_has_writer = false;
-			return true;
+			return false;
 		}
 	}
 
