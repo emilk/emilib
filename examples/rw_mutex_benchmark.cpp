@@ -12,7 +12,7 @@ const size_t MIN_WRITES = 1;
 const double MIN_BENCHMARK_DURATION = 0.05; // Warn if a test is run for less time than this
 
 const std::vector<size_t> num_threads_vec     = {1, 2, 4, 6, 8, 10};
-const std::vector<size_t> reads_per_write_vec = {/*0, 1,*/ 10, 100, 1000, 100000};
+const std::vector<size_t> reads_per_write_vec = {0, 1, 2, 5, 10, 100, 1000, 100000};
 
 // ----------------------------------------------------------------------------
 
@@ -23,31 +23,31 @@ struct StdMutexDB
 
 	size_t read()
 	{
-		std::lock_guard<std::mutex> l(_mutex);
+		std::lock_guard<std::mutex> lock(_mutex);
 		return _resource;
 	}
 
 	void inc()
 	{
-		std::lock_guard<std::mutex> l(_mutex);
+		std::lock_guard<std::mutex> lock(_mutex);
 		++_resource;
 	}
 };
 
 struct StdSharedMutexDB
 {
-	std::shared_timed_mutex _mutex;
-	size_t                  _resource = 0;
+	std::shared_mutex _mutex;
+	size_t            _resource = 0;
 
 	size_t read()
 	{
-		std::shared_lock<std::shared_timed_mutex> lhs(_mutex);
+		std::shared_lock<std::shared_mutex> lock(_mutex);
 		return _resource;
 	}
 
 	void inc()
 	{
-		std::unique_lock<std::shared_timed_mutex> lhs(_mutex);
+		std::unique_lock<std::shared_mutex> lock(_mutex);
 		++_resource;
 	}
 };
@@ -59,13 +59,15 @@ struct FastRwMutexDB
 
 	size_t read()
 	{
-		FastReadLock l(_mutex);
+		ReadLock<FastReadWriteMutex> lock(_mutex);
+		// std::shared_lock<FastReadWriteMutex> lock(_mutex); // Equivalent
 		return _resource;
 	}
 
 	void inc()
 	{
-		FastWriteLock l(_mutex);
+		WriteLock<FastReadWriteMutex> lock(_mutex);
+		// std::unique_lock<FastReadWriteMutex> lock(_mutex); // Equivalent
 		++_resource;
 	}
 };
@@ -77,13 +79,15 @@ struct SlowRwMutexDB
 
 	size_t read()
 	{
-		SlowReadLock l(_mutex);
+		ReadLock<SlowReadWriteMutex> lock(_mutex);
+		// std::shared_lock<SlowReadWriteMutex> lock(_mutex); // Equivalent
 		return _resource;
 	}
 
 	void inc()
 	{
-		SlowWriteLock l(_mutex);
+		WriteLock<SlowReadWriteMutex> lock(_mutex);
+		// std::unique_lock<SlowReadWriteMutex> lock(_mutex); // Equivalent
 		++_resource;
 	}
 };
@@ -196,8 +200,10 @@ void testAll(const size_t num_threads, const size_t reads_per_write)
 	if (setup_std_mutex.num_threads > 1) {
 		if (reads_per_write == 0) {
 			setup_rw_mutex.num_writes /= 200;
-		} else if (reads_per_write == 1) {
+		} else if (reads_per_write < 5) {
 			setup_rw_mutex.num_writes /= 100;
+		} else if (reads_per_write == 5) {
+			setup_rw_mutex.num_writes /= 10;
 		} else {
 			setup_rw_mutex.num_writes /= 4;
 		}
@@ -206,9 +212,8 @@ void testAll(const size_t num_threads, const size_t reads_per_write)
 	}
 
 	Setup setup_std_shared_mutex = setup_rw_mutex;
-	setup_std_shared_mutex.num_writes /= setup_std_mutex.num_threads;
-	if (setup_std_mutex.num_threads > 1) {
-		setup_std_shared_mutex.num_writes /= 5;
+	if (reads_per_write > 1) {
+		setup_std_shared_mutex.num_writes /= 4;
 	}
 
 	Results results;
@@ -220,7 +225,7 @@ void testAll(const size_t num_threads, const size_t reads_per_write)
 		results.slow_rw          = std::min(results.slow_rw,          benchDataBase<SlowRwMutexDB>(setup_rw_mutex));
 	}
 
-	printf("  %6.3f           %6.3f         %6.3f              %6.3f  μs/access (lower is better)\n",
+	printf("  %6.3f        %6.3f      %6.3f              %6.3f  μs/access (lower is better)\n",
 	       1e6 * results.std_mutex, 1e6 * results.std_shared_mutex, 1e6 * results.fast_rw, 1e6 * results.slow_rw);
 	fflush(stdout);
 }
@@ -232,7 +237,7 @@ int main()
 {
 	for (const size_t reads_per_write : reads_per_write_vec) {
 		printf("%lu reads per write:\n", reads_per_write);
-		printf("           std::mutex  std::shared_timed_mutex  FastReadWriteMutex  SlowReadWriteMutex\n");
+		printf("           std::mutex  std::shared_mutex  FastReadWriteMutex  SlowReadWriteMutex\n");
 		for (const size_t num_threads : num_threads_vec) {
 			printf("%2lu threads:  ", num_threads);
 			fflush(stdout);
@@ -360,5 +365,79 @@ GCC5:
 	 6 threads:     4.631            9.159          0.058               0.062  μs/access (lower is better)
 	 8 threads:     4.628            9.301          0.057               0.060  μs/access (lower is better)
 	10 threads:     4.407            8.874          0.056               0.060  μs/access (lower is better)
+
+
+GCC6:
+	0 reads per write:
+	           std::mutex  std::shared_mutex  FastReadWriteMutex  SlowReadWriteMutex
+	 1 threads:     0.023         0.049       0.050               0.049  μs/access (lower is better)
+	 2 threads:     3.116         2.271       3.526               3.483  μs/access (lower is better)
+	 4 threads:     3.915         2.560       3.946               3.967  μs/access (lower is better)
+	 6 threads:     3.884         2.706       3.930               3.978  μs/access (lower is better)
+	 8 threads:     3.933         2.757       3.968               4.026  μs/access (lower is better)
+	10 threads:     3.929         2.793       3.984               4.011  μs/access (lower is better)
+
+	1 reads per write:
+	           std::mutex  std::shared_mutex  FastReadWriteMutex  SlowReadWriteMutex
+	 1 threads:     0.023         0.048       0.030               0.030  μs/access (lower is better)
+	 2 threads:     3.166         2.302       1.776               1.810  μs/access (lower is better)
+	 4 threads:     3.867         2.865       1.971               1.992  μs/access (lower is better)
+	 6 threads:     3.878         2.860       1.970               2.002  μs/access (lower is better)
+	 8 threads:     3.978         2.881       2.011               2.073  μs/access (lower is better)
+	10 threads:     3.938         2.833       2.018               2.006  μs/access (lower is better)
+
+	2 reads per write:
+	           std::mutex  std::shared_mutex  FastReadWriteMutex  SlowReadWriteMutex
+	 1 threads:     0.023         0.048       0.024               0.024  μs/access (lower is better)
+	 2 threads:     3.444         1.756       1.185               1.203  μs/access (lower is better)
+	 4 threads:     3.863         1.959       1.321               1.331  μs/access (lower is better)
+	 6 threads:     3.903         2.474       1.325               1.337  μs/access (lower is better)
+	 8 threads:     3.918         2.688       1.332               1.337  μs/access (lower is better)
+	10 threads:     3.921         2.665       1.333               1.346  μs/access (lower is better)
+
+	5 reads per write:
+	           std::mutex  std::shared_mutex  FastReadWriteMutex  SlowReadWriteMutex
+	 1 threads:     0.023         0.048       0.018               0.018  μs/access (lower is better)
+	 2 threads:     3.482         0.987       0.600               0.609  μs/access (lower is better)
+	 4 threads:     3.845         1.205       0.694               0.673  μs/access (lower is better)
+	 6 threads:     3.984         2.275       0.697               0.691  μs/access (lower is better)
+	 8 threads:     4.253         3.345       0.714               0.711  μs/access (lower is better)
+	10 threads:     4.061         3.360       0.691               0.682  μs/access (lower is better)
+
+	10 reads per write:
+	           std::mutex  std::shared_mutex  FastReadWriteMutex  SlowReadWriteMutex
+	 1 threads:     0.023         0.049       0.016               0.016  μs/access (lower is better)
+	 2 threads:     2.935         0.575       0.333               0.336  μs/access (lower is better)
+	 4 threads:     3.866         0.817       0.379               0.374  μs/access (lower is better)
+	 6 threads:     3.874         1.611       0.380               0.379  μs/access (lower is better)
+	 8 threads:     3.956         2.044       0.371               0.372  μs/access (lower is better)
+	10 threads:     3.953         2.238       0.370               0.371  μs/access (lower is better)
+
+	100 reads per write:
+	           std::mutex  std::shared_mutex  FastReadWriteMutex  SlowReadWriteMutex
+	 1 threads:     0.023         0.048       0.013               0.013  μs/access (lower is better)
+	 2 threads:     3.113         0.116       0.041               0.042  μs/access (lower is better)
+	 4 threads:     3.886         0.220       0.042               0.042  μs/access (lower is better)
+	 6 threads:     3.893         0.276       0.042               0.042  μs/access (lower is better)
+	 8 threads:     3.923         0.323       0.042               0.042  μs/access (lower is better)
+	10 threads:     3.952         0.327       0.042               0.042  μs/access (lower is better)
+
+	1000 reads per write:
+	           std::mutex  std::shared_mutex  FastReadWriteMutex  SlowReadWriteMutex
+	 1 threads:     0.023         0.048       0.013               0.013  μs/access (lower is better)
+	 2 threads:     3.262         0.131       0.050               0.056  μs/access (lower is better)
+	 4 threads:     3.890         0.153       0.048               0.058  μs/access (lower is better)
+	 6 threads:     3.882         0.180       0.047               0.068  μs/access (lower is better)
+	 8 threads:     3.904         0.203       0.046               0.073  μs/access (lower is better)
+	10 threads:     3.914         0.201       0.047               0.066  μs/access (lower is better)
+
+	100000 reads per write:
+	           std::mutex  std::shared_mutex  FastReadWriteMutex  SlowReadWriteMutex
+	 1 threads:     0.023         0.049       0.013               0.013  μs/access (lower is better)
+	 2 threads:     2.989         0.121       0.054               0.055  μs/access (lower is better)
+	 4 threads:     3.857         0.151       0.054               0.054  μs/access (lower is better)
+	 6 threads:     3.896         0.172       0.056               0.060  μs/access (lower is better)
+	 8 threads:     3.962         0.185       0.053               0.059  μs/access (lower is better)
+	10 threads:     3.956         0.162       0.050               0.052  μs/access (lower is better)
 
 */
