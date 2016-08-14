@@ -1,4 +1,10 @@
-//  Created by Emil Ernerfeldt on 2012-11-11.
+// By Emil Ernerfeldt 2012-2016
+// LICENSE:
+//   This software is dual-licensed to the public domain and under the following
+//   license: you are granted a perpetual, irrevocable license to copy, modify,
+//   publish, and distribute this file as you see fit.
+// HISTORY:
+//   Created in 2012-11-11
 
 #pragma once
 

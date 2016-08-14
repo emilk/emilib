@@ -1,8 +1,13 @@
-/*
-Made by Emil Ernerfeldt.
-Created for Ghostel 2014-12
-Cleaned up as separate library 2016-02
+// By Emil Ernerfeldt 2014-2016
+// LICENSE:
+//   This software is dual-licensed to the public domain and under the following
+//   license: you are granted a perpetual, irrevocable license to copy, modify,
+//   publish, and distribute this file as you see fit.
+// HISTORY:
+//   Created in 2014-12 for Ghostel
+//   Cleaned up as separate library 2016-02
 
+/*
 Library for drawing colored, multiline strings on iOS and OSX.
 
 Requires Foundation and CoreText on both iOS and OSX.

@@ -1,4 +1,11 @@
-//  Created by Emil Ernerfeldt on 2012-10-07.
+// By Emil Ernerfeldt 2014-2016
+// LICENSE:
+//   This software is dual-licensed to the public domain and under the following
+//   license: you are granted a perpetual, irrevocable license to copy, modify,
+//   publish, and distribute this file as you see fit.
+// HISTORY:
+//   Created in 2012-10-07 for Ghostel
+//   Cleaned up as separate library 2016-02
 
 #pragma once
 

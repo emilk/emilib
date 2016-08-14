@@ -1,4 +1,8 @@
-#include "mem_map.hpp"
+// By Emil Ernerfeldt 2014-2016
+// LICENSE:
+//   This software is dual-licensed to the public domain and under the following
+//   license: you are granted a perpetual, irrevocable license to copy, modify,
+//   publish, and distribute this file as you see fit.
 
 #include <stdexcept>
 #include <string>

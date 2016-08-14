@@ -1,7 +1,13 @@
-// Created by Emil Ernerfeldt on 2013-01-24.
-// Cleaned up 2016-01-28.
-// Added to emilib on 2016-08-09.
-// Made more like std::shared_mutex on 2016-08-14
+// By Emil Ernerfeldt 2013-2016
+// LICENSE:
+//   This software is dual-licensed to the public domain and under the following
+//   license: you are granted a perpetual, irrevocable license to copy, modify,
+//   publish, and distribute this file as you see fit.
+// HISTORY
+//                 - 2013-01-24 - Initial conception
+//                 - 2016-01-28 - Cleaned up.
+//                 - 2016-08-09 - Added to emilib.
+//   Version 1.0.0 - 2016-08-14 - Made into a drop-in std::shared_mutex replacement.
 #pragma once
 
 #include <atomic>

@@ -1,3 +1,9 @@
+// By Emil Ernerfeldt 2014-2016
+// LICENSE:
+//   This software is dual-licensed to the public domain and under the following
+//   license: you are granted a perpetual, irrevocable license to copy, modify,
+//   publish, and distribute this file as you see fit.
+
 // include this file to build all of emilib except for iOS/Mac-specific stuff (.mm files).
 #include "coroutine.cpp"
 #include "dir_watcher.cpp"

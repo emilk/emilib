@@ -1,7 +1,12 @@
-/*
-Created 2014-2015 for Ghostel
-Adapted 2016 for revived PipeDreams
-*/
+// By Emil Ernerfeldt 2014-2016
+// LICENSE:
+//   This software is dual-licensed to the public domain and under the following
+//   license: you are granted a perpetual, irrevocable license to copy, modify,
+//   publish, and distribute this file as you see fit.
+// HISTORY
+//   2014 - Created for Ghostel
+//   2016 - revived PipeDreams
+//   2016 - added to emilib
 
 #pragma once
 

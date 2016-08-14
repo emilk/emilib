@@ -1,8 +1,12 @@
-/* Made by Emil Ernerfeldt
-Some code dating back to 2012 (at least).
-Made into free-standing library for face_morpher in late 2015.
-Adopted for PipeDreams 2016-02
-*/
+// By Emil Ernerfeldt 2012-2016
+// LICENSE:
+//   This software is dual-licensed to the public domain and under the following
+//   license: you are granted a perpetual, irrevocable license to copy, modify,
+//   publish, and distribute this file as you see fit.
+// HISTORY:
+//   Some code dating back to 2012 (at least).
+//   Made into free-standing library for face_morpher in late 2015.
+//   Adopted for PipeDreams 2016-02
 
 #pragma once
 

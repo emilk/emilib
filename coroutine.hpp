@@ -1,6 +1,14 @@
+// By Emil Ernerfeldt 2014-2016
+// LICENSE:
+//   This software is dual-licensed to the public domain and under the following
+//   license: you are granted a perpetual, irrevocable license to copy, modify,
+//   publish, and distribute this file as you see fit.
+// HISTORY
+//   Originally made for Ghostel in 2014.
+
 /*
 Coroutine-ish feature implemented using a thread.
-Useful for implmenting a script of some sort where a state-machine would be cumbersome.
+Useful for implementing a script of some sort where a state-machine would be cumbersome.
 The coroutine (inner) thread is executed only when the owning (outer) thread is paused, and vice versa.
 
 The coroutine has helper functions for waiting for a certain amount of time etc.
