@@ -8,6 +8,7 @@
 //                 - 2016-01-28 - Cleaned up.
 //                 - 2016-08-09 - Added to emilib.
 //   Version 1.0.0 - 2016-08-14 - Made into a drop-in std::shared_mutex replacement.
+//   Version 1.0.1 - 2016-08-24 - Bug fix in try_lock (thanks, Ninja101!)
 #pragma once
 
 #include <atomic>
@@ -113,6 +114,7 @@ public:
 		if (_num_readers == 0) {
 			return true;
 		} else {
+			_write_mutex.unlock();
 			_has_writer = false;
 			return false;
 		}
@@ -241,6 +243,7 @@ public:
 		if (_num_readers == 0) {
 			return true;
 		} else {
+			_write_mutex.unlock();
 			_has_writer = false;
 			return false;
 		}
