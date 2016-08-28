@@ -18,6 +18,8 @@ www.github.com/emilk/configuru
 	0.2.0: 2016-03-25 - check_dangling changes
 	0.2.1: 2016-04-11 - mark_accessed in dump_string by default
 	0.2.2: 2016-07-27 - optimizations
+	0.2.3: 2016-08-09 - optimizations + add Config::emplace(key, value)
+	0.2.4: 2016-08-18 - fix compilation error for when CONFIGURU_VALUE_SEMANTICS=0
 
 # Getting started
 	For using:
@@ -28,7 +30,7 @@ www.github.com/emilk/configuru
 		#define CONFIGURU_IMPLEMENTATION 1
 		#include <configuru.hpp>
 
-	For more info, please se README.md (at www.github.com/emilk/configuru).
+	For more info, please see README.md (at www.github.com/emilk/configuru).
 */
 
 //  dP""b8  dP"Yb  88b 88 888888 88  dP""b8 88   88 88""Yb 88   88
@@ -128,6 +130,9 @@ namespace configuru
 		Config_T     _value;
 		unsigned     _nr       = BAD_INDEX; // Size of the object prior to adding this entry
 		mutable bool _accessed = false;     // Set to true if accessed.
+
+		Config_Entry() {}
+		Config_Entry(Config_T value, unsigned nr) : _value(std::move(value)), _nr(nr) {}
 	};
 
 	using Comment = std::string;
@@ -392,8 +397,13 @@ namespace configuru
 		}
 #endif
 
-		const std::string& as_string() const { assert_type(String); return *_u.str; }
-		const char* c_str() const { assert_type(String); return _u.str->c_str(); }
+		const std::string& as_string() const
+		{
+			assert_type(String);
+			return *reinterpret_cast<const std::string*>(&_u.str[0]);
+		}
+
+		const char* c_str() const { assert_type(String); return as_string().c_str(); }
 
 		bool as_bool() const
 		{
@@ -518,7 +528,10 @@ namespace configuru
 		bool has_key(const std::string& key) const;
 		size_t count(const std::string& key) const { return has_key(key) ? 1 : 0; }
 
-		void insert_or_assign(const std::string& key, Config&& config);
+		// Returns true iff the value was inserted, false if they key was already there.
+		bool emplace(std::string key, Config value);
+
+		void insert_or_assign(const std::string& key, Config&& value);
 
 		bool erase(const std::string& key);
 
@@ -618,21 +631,20 @@ namespace configuru
 
 		using ConfigComments_UP = std::unique_ptr<ConfigComments>;
 
-		Type  _type = Uninitialized;
-
 		union {
 			bool               b;
 			int64_t            i;
 			double             f;
-			const std::string* str;
+			uint8_t            str[sizeof(std::string)]; // Put the std::string here inline.
 			ConfigObject*      object;
 			ConfigArray*       array;
 			BadLookupInfo*     bad_lookup;
 		} _u;
 
 		DocInfo_SP        _doc; // So we can name the file
-		unsigned          _line = BAD_INDEX; // Where in the source, or -1. Lines are 1-indexed.
 		ConfigComments_UP _comments;
+		unsigned          _line = BAD_INDEX; // Where in the source, or -1. Lines are 1-indexed.
+		Type              _type = Uninitialized;
 	};
 
 	// ------------------------------------------------------------------------
@@ -1105,12 +1117,12 @@ namespace configuru
 	Config::Config(const char* str) : _type(String)
 	{
 		CONFIGURU_ASSERT(str != nullptr);
-		_u.str = new std::string(str);
+		new(_u.str) std::string(str);
 	}
 
 	Config::Config(std::string str) : _type(String)
 	{
-		_u.str = new std::string(move(str));
+		new(_u.str) std::string(move(str));
 	}
 
 	Config::Config(std::initializer_list<std::pair<std::string, Config>> values) : _type(Uninitialized)
@@ -1229,7 +1241,7 @@ namespace configuru
 
 		#if CONFIGURU_VALUE_SEMANTICS
 			if (_type == String) {
-				_u.str = new std::string(*o._u.str);
+				new(_u.str) std::string(o.as_string());
 			} else if (_type == BadLookupType) {
 				_u.bad_lookup = new BadLookupInfo(*o._u.bad_lookup);
 			} else if (_type == Object) {
@@ -1241,7 +1253,7 @@ namespace configuru
 			}
 		#else // !CONFIGURU_VALUE_SEMANTICS:
 			if (_type == String) {
-				_u.str = new std::string(*o._u.str);
+				new(_u.str) std::string(o.as_string());
 			} else {
 				memcpy(&_u, &o._u, sizeof(_u));
 				if (_type == BadLookupType) { ++_u.bad_lookup->_ref_count; }
@@ -1274,6 +1286,8 @@ namespace configuru
 
 	void Config::free()
 	{
+		using Str = std::string; // HACK for ->~Str()
+
 		#if CONFIGURU_VALUE_SEMANTICS
 			if (_type == BadLookupType) {
 				delete _u.bad_lookup;
@@ -1282,7 +1296,7 @@ namespace configuru
 			} else if (_type == Array) {
 				delete _u.array;
 			} else if (_type == String) {
-				delete _u.str;
+				reinterpret_cast<std::string*>(&_u.str[0])->~Str();
 			}
 		#else // !CONFIGURU_VALUE_SEMANTICS:
 			if (_type == BadLookupType) {
@@ -1298,7 +1312,7 @@ namespace configuru
 					delete _u.array;
 				}
 			} else if (_type == String) {
-				delete _u.str;
+				reinterpret_cast<std::string*>(&_u.str[0])->~Str();
 			}
 		#endif // !CONFIGURU_VALUE_SEMANTICS
 
@@ -1347,6 +1361,14 @@ namespace configuru
 		return as_object()._impl.count(key) != 0;
 	}
 
+	bool Config::emplace(std::string key, Config value)
+	{
+		auto&& object = as_object()._impl;
+		return object.emplace(
+			std::move(key),
+			Config::ObjectEntry{std::move(value), (unsigned)object.size()}).second;
+	}
+
 	void Config::insert_or_assign(const std::string& key, Config&& config)
 	{
 		auto&& object = as_object()._impl;
@@ -1379,7 +1401,7 @@ namespace configuru
 		if (a._type == Bool)   { return a._u.b    == b._u.b;    }
 		if (a._type == Int)    { return a._u.i    == b._u.i;    }
 		if (a._type == Float)  { return a._u.f    == b._u.f;    }
-		if (a._type == String) { return *a._u.str == *b._u.str; }
+		if (a._type == String) { return a.as_string() == b.as_string(); }
 		if (a._type == Object)    {
 			if (a._u.object == b._u.object) { return true; }
 			auto&& a_object = a.as_object()._impl;
@@ -1478,10 +1500,11 @@ namespace configuru
 		}
 	}
 
-	const char* Config::debug_descr() const {
+	const char* Config::debug_descr() const
+	{
 		switch (_type) {
 			case Bool:   return _u.b ? "true" : "false";
-			case String: return _u.str->c_str();
+			case String: return c_str();
 			default:     return type_str(_type);
 		}
 	}
@@ -1669,11 +1692,20 @@ namespace configuru
 
 		bool skip_white(Comments* out_comments, int& out_indentation, bool break_on_newline);
 
-		bool skip_white_ignore_comments() {
+		bool skip_white_ignore_comments()
+		{
 			int indentation;
 			return skip_white(nullptr, indentation, false);
 		}
-		bool skip_pre_white(Config* config, int& out_indentation) {
+
+		bool skip_pre_white(Config* config, int& out_indentation)
+		{
+			if (!MAYBE_WHITE[static_cast<uint8_t>(_ptr[0])]) {
+				// Early out
+				out_indentation = -1;
+				return false;
+			}
+
 			Comments comments;
 			bool did_skip = skip_white(&comments, out_indentation, false);
 			if (!comments.empty()) {
@@ -1681,7 +1713,14 @@ namespace configuru
 			}
 			return did_skip;
 		}
-		bool skip_post_white(Config* config) {
+
+		bool skip_post_white(Config* config)
+		{
+			if (!MAYBE_WHITE[static_cast<uint8_t>(_ptr[0])]) {
+				// Early out
+				return false;
+			}
+
 			Comments comments;
 			int indentation;
 			bool did_skip = skip_white(&comments, indentation, true);
@@ -2298,7 +2337,7 @@ namespace configuru
 				_ptr += 1;
 				skip_white_ignore_comments();
 			} else if (_options.omit_colon_before_object && (_ptr[0] == '{' || _ptr[0] == '#')) {
-				// Ok to ommit : in this case
+				// Ok to omit : in this case
 			} else {
 				if (_options.object_separator_equal && _options.omit_colon_before_object) {
 					throw_error("Expected one of '=', ':', '{' or '#' after object key");
@@ -2321,7 +2360,7 @@ namespace configuru
 				has_separator = true;
 			}
 
-			object.insert_or_assign(key, std::move(value));
+			object.emplace(std::move(key), std::move(value));
 
 			bool is_last_element = !_ptr[0] || _ptr[0] == '}';
 
@@ -2363,11 +2402,11 @@ namespace configuru
 		if (_ptr[0] == '+') {
 			parse_assert(_options.unary_plus, "Prefixing numbers with + is forbidden.");
 			_ptr += 1;
-			skip_white_ignore_comments();
+			// skip_white_ignore_comments();
 		}
 		if (_ptr[0] == '-') {
 			_ptr += 1;
-			skip_white_ignore_comments();
+			// skip_white_ignore_comments();
 			sign = -1;
 		}
 
@@ -3123,38 +3162,35 @@ namespace configuru
 			write_hex_16(c);
 		}
 
-		bool all_safe_characters(const std::string& str)
-		{
-			for (char c : str) {
-				if (!SAFE_CHARACTERS[static_cast<uint8_t>(c)]) {
-					return false;
-				}
-			}
-			return true;
-		}
-
 		void write_quoted_string(const std::string& str)
 		{
 			_out.push_back('"');
 
-			if (all_safe_characters(str)) {
-				_out.append(str);
-			} else {
-				for (char c : str) {
-					if (SAFE_CHARACTERS[static_cast<uint8_t>(c)]) {
-						_out.push_back(c);
-					}
-					else if (c == '\\') { _out += "\\\\"; }
-					else if (c == '\"') { _out += "\\\""; }
-					//else if (c == '\'') { _out += "\\\'"; }
-					else if (c == '\0') { _out += "\\0";  }
-					else if (c == '\b') { _out += "\\b";  }
-					else if (c == '\f') { _out += "\\f";  }
-					else if (c == '\n') { _out += "\\n";  }
-					else if (c == '\r') { _out += "\\r";  }
-					else if (c == '\t') { _out += "\\t";  }
-					else /*if (0 <= c && c < 0x20)*/ { write_unicode_16(static_cast<uint16_t>(c)); }
+			const char* ptr = str.c_str();
+			const char* end = ptr + str.size();
+			while (ptr < end) {
+				// Output large swats of safe characters at once:
+				auto start = ptr;
+				while (SAFE_CHARACTERS[static_cast<uint8_t>(*ptr)]) {
+					++ptr;
 				}
+				if (start < ptr) {
+					_out.append(start, ptr - start);
+				}
+				if (ptr == end) { break; }
+
+				char c = *ptr;
+				++ptr;
+				if (c == '\\') { _out += "\\\\"; }
+				else if (c == '\"') { _out += "\\\""; }
+				//else if (c == '\'') { _out += "\\\'"; }
+				else if (c == '\0') { _out += "\\0";  }
+				else if (c == '\b') { _out += "\\b";  }
+				else if (c == '\f') { _out += "\\f";  }
+				else if (c == '\n') { _out += "\\n";  }
+				else if (c == '\r') { _out += "\\r";  }
+				else if (c == '\t') { _out += "\\t";  }
+				else /*if (0 <= c && c < 0x20)*/ { write_unicode_16(static_cast<uint16_t>(c)); }
 			}
 
 			_out.push_back('"');
