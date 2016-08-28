@@ -419,16 +419,16 @@ public:
 			throw std::bad_alloc();
 		}
 
-		auto old_num_filled  = _num_filled;
+		// auto old_num_filled  = _num_filled;
 		auto old_num_buckets = _num_buckets;
 		auto old_states      = _states;
-		auto old_keys       = _keys;
+		auto old_keys        = _keys;
 
 		_num_filled  = 0;
 		_num_buckets = num_buckets;
 		_mask        = _num_buckets - 1;
 		_states      = new_states;
-		_keys       = new_keys;
+		_keys        = new_keys;
 
 		std::fill_n(_states, num_buckets, State::INACTIVE);
 
@@ -449,7 +449,7 @@ public:
 			}
 		}
 
-		DCHECK_EQ_F(old_num_filled, _num_filled);
+		// DCHECK_EQ_F(old_num_filled, _num_filled);
 
 		free(old_states);
 		free(old_keys);
@@ -553,7 +553,7 @@ private:
 	size_t  _num_buckets      =  0;
 	size_t  _num_filled       =  0;
 	int     _max_probe_length = -1; // Our longest bucket-brigade is this long. ONLY when we have zero elements is this ever negative (-1).
-	size_t  _mask;            // _num_buckets minus one
+	size_t  _mask             = 0;  // _num_buckets minus one
 };
 
 } // namespace emilib

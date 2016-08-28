@@ -608,7 +608,7 @@ private:
 	size_t  _num_buckets      =  0;
 	size_t  _num_filled       =  0;
 	int     _max_probe_length = -1; // Our longest bucket-brigade is this long. ONLY when we have zero elements is this ever negative (-1).
-	size_t  _mask;            // _num_buckets minus one
+	size_t  _mask             = 0;  // _num_buckets minus one
 };
 
 } // namespace emilib
