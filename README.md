@@ -74,6 +74,9 @@ Depends on OpenGL and GLEW.
 
 Include `gl_lib.hpp` and link with `gl_lib.cpp`. You can also make use of `gl_lib_fwd.hpp` to bring in forward declarations for most things in gl_lib. To do OpenGL calls you can include `gl_lib_opengl.hpp` (which just includes the correct OpenGL and/or glew headers for you system).
 
+### hash_cache.hpp
+HashCache wraps a value and memoizes the hash of that value. Can speed up hash sets and maps by a lot.
+
 ### hash_map.hpp / hash_set.hpp
 Cache-friendly hash map/set with open addressing, linear probing and power-of-two capacity. Acts mostly like `std::unordered_map/std::unordered_set` except for:
 
