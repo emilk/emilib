@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cstdlib> // malloc
 #include <iterator>
 #include <utility>
 
@@ -23,7 +24,7 @@ struct HashSetEqualTo
 	}
 };
 
-/* A cache-firendly hash set with open adressing, linear probing and power-of-two capacity */
+// A cache-friendly hash set with open addressing, linear probing and power-of-two capacity
 template <typename KeyT, typename HashT = std::hash<KeyT>, typename CompT = HashSetEqualTo<KeyT>>
 class HashSet
 {
@@ -48,40 +49,48 @@ public:
 
 		iterator() { }
 
-		iterator(MyType* hash_set, size_t bucket) : _set(hash_set), _bucket(bucket) {
+		iterator(MyType* hash_set, size_t bucket) : _set(hash_set), _bucket(bucket)
+		{
 		}
 
-		iterator& operator++() {
+		iterator& operator++()
+		{
 			this->goto_next_element();
 			return *this;
 		}
 
-		iterator operator++(int) {
+		iterator operator++(int)
+		{
 			size_t old_index = _bucket;
 			this->goto_next_element();
 			return iterator(_set, old_index);
 		}
 
-		reference operator*() const {
+		reference operator*() const
+		{
 			return _set->_keys[_bucket];
 		}
 
-		pointer operator->() const {
+		pointer operator->() const
+		{
 			return _set->_keys + _bucket;
 		}
 
-		bool operator==(const iterator& rhs) {
+		bool operator==(const iterator& rhs)
+		{
 			DCHECK_EQ_F(_set, rhs._set);
 			return this->_bucket == rhs._bucket;
 		}
 
-		bool operator!=(const iterator& rhs) {
+		bool operator!=(const iterator& rhs)
+		{
 			DCHECK_EQ_F(_set, rhs._set);
 			return this->_bucket != rhs._bucket;
 		}
 
 	private:
-		void goto_next_element() {
+		void goto_next_element()
+		{
 			DCHECK_LT_F(_bucket, _set->_num_buckets);
 			do {
 				_bucket++;
@@ -107,43 +116,52 @@ public:
 
 		const_iterator() { }
 
-		const_iterator(iterator proto) : _set(proto._set), _bucket(proto._bucket) {
+		const_iterator(iterator proto) : _set(proto._set), _bucket(proto._bucket)
+		{
 		}
 
-		const_iterator(const MyType* hash_set, size_t bucket) : _set(hash_set), _bucket(bucket) {
+		const_iterator(const MyType* hash_set, size_t bucket) : _set(hash_set), _bucket(bucket)
+		{
 		}
 
-		const_iterator& operator++() {
+		const_iterator& operator++()
+		{
 			this->goto_next_element();
 			return *this;
 		}
 
-		const_iterator operator++(int) {
+		const_iterator operator++(int)
+		{
 			size_t old_index = _bucket;
 			this->goto_next_element();
 			return const_iterator(_set, old_index);
 		}
 
-		reference operator*() const {
+		reference operator*() const
+		{
 			return _set->_keys[_bucket];
 		}
 
-		pointer operator->() const {
+		pointer operator->() const
+		{
 			return _set->_keys + _bucket;
 		}
 
-		bool operator==(const const_iterator& rhs) {
+		bool operator==(const const_iterator& rhs)
+		{
 			DCHECK_EQ_F(_set, rhs._set);
 			return this->_bucket == rhs._bucket;
 		}
 
-		bool operator!=(const const_iterator& rhs) {
+		bool operator!=(const const_iterator& rhs)
+		{
 			DCHECK_EQ_F(_set, rhs._set);
 			return this->_bucket != rhs._bucket;
 		}
 
 	private:
-		void goto_next_element() {
+		void goto_next_element()
+		{
 			DCHECK_LT_F(_bucket, _set->_num_buckets);
 			do {
 				_bucket++;
@@ -161,46 +179,57 @@ public:
 
 	HashSet() = default;
 
-	HashSet(const HashSet& other) {
+	HashSet(const HashSet& other)
+	{
 		reserve(other.size());
 		insert(cbegin(other), cend(other));
 	}
 
-	HashSet(HashSet&& other) {
+	HashSet(HashSet&& other)
+	{
 		*this = std::move(other);
 	}
 
-	HashSet& operator=(const HashSet& other) {
+	HashSet& operator=(const HashSet& other)
+	{
 		clear();
 		reserve(other.size());
 		insert(cbegin(other), cend(other));
 		return *this;
 	}
 
-	void operator=(HashSet&& other) {
-		free_all();
-		_hasher           = std::move(other._hasher);
-		_states           = other._states;
-		_keys             = other._keys;
-		_num_buckets      = other._num_buckets;
-		_num_filled       = other._num_filled;
-		_max_probe_length = other._max_probe_length;
-		_mask             = other._mask;
-
-		other._states           = nullptr;
-		other._keys             = nullptr;
-		other._num_buckets      = 0;
-		other._num_filled       = 0;
-		other._max_probe_length = -1;
+	void operator=(HashSet&& other)
+	{
+		this->swap(other);
 	}
 
-	~HashSet() {
-		free_all();
+	~HashSet()
+	{
+		for (size_t bucket=0; bucket<_num_buckets; ++bucket) {
+			if (_states[bucket] == State::FILLED) {
+				_keys[bucket].~KeyT();
+			}
+		}
+		free(_states);
+		free(_keys);
+	}
+
+	void swap(HashSet& other)
+	{
+		std::swap(_hasher,           other._hasher);
+		std::swap(_comp,             other._comp);
+		std::swap(_states,           other._states);
+		std::swap(_keys,             other._keys);
+		std::swap(_num_buckets,      other._num_buckets);
+		std::swap(_num_filled,       other._num_filled);
+		std::swap(_max_probe_length, other._max_probe_length);
+		std::swap(_mask,             other._mask);
 	}
 
 	// -------------------------------------------------------------
 
-	iterator begin() {
+	iterator begin()
+	{
 		size_t bucket = 0;
 		while (bucket<_num_buckets && _states[bucket] != State::FILLED) {
 			++bucket;
@@ -208,7 +237,8 @@ public:
 		return iterator(this, bucket);
 	}
 
-	const_iterator begin() const {
+	const_iterator begin() const
+	{
 		size_t bucket = 0;
 		while (bucket<_num_buckets && _states[bucket] != State::FILLED) {
 			++bucket;
@@ -222,17 +252,20 @@ public:
 	const_iterator end() const
 	{ return const_iterator(this, _num_buckets); }
 
-	size_t size() const {
+	size_t size() const
+	{
 		return _num_filled;
 	}
 
-	bool empty() const {
+	bool empty() const
+	{
 		return _num_filled==0;
 	}
 
 	// ------------------------------------------------------------
 
-	iterator find(const KeyT& key) {
+	iterator find(const KeyT& key)
+	{
 		auto bucket = this->find_filled_bucket(key);
 		if (bucket == (size_t)-1) {
 			return this->end();
@@ -240,7 +273,8 @@ public:
 		return iterator(this, bucket);
 	}
 
-	const_iterator find(const KeyT& key) const {
+	const_iterator find(const KeyT& key) const
+	{
 		auto bucket = this->find_filled_bucket(key);
 		if (bucket == (size_t)-1) {
 			return this->end();
@@ -248,11 +282,13 @@ public:
 		return const_iterator(this, bucket);
 	}
 
-	bool contains(const KeyT& k) const {
+	bool contains(const KeyT& k) const
+	{
 		return find_filled_bucket(k) != (size_t)-1;
 	}
 
-	size_t count(const KeyT& k) const {
+	size_t count(const KeyT& k) const
+	{
 		return find_filled_bucket(k) != (size_t)-1 ? 1 : 0;
 	}
 
@@ -312,12 +348,13 @@ public:
 	}
 
 	// Same as above, but contains(key) MUST be false
-	void insert_unique(const KeyT& key) {
+	void insert_unique(KeyT&& key)
+	{
 		DASSERT(!contains(key));
 		check_expand_need();
 		auto bucket = find_empty_bucket(key);
 		_states[bucket] = State::FILLED;
-		new(_keys + bucket) KeyT(key);
+		new(_keys + bucket) KeyT(std::move(key));
 		_num_filled++;
 	}
 
@@ -325,7 +362,8 @@ public:
 
 	/* Erase an element from the hash set.
 	   return false if element was not found */
-	bool erase(const KeyT& key) {
+	bool erase(const KeyT& key)
+	{
 		auto bucket = find_filled_bucket(key);
 		if (bucket != (size_t)-1) {
 			_states[bucket] = State::ACTIVE;
@@ -339,7 +377,8 @@ public:
 
 	/* Erase an element using an iterator.
 	   Returns an iterator to the next element (or end()). */
-	iterator erase(iterator it) {
+	iterator erase(iterator it)
+	{
 		DCHECK_EQ_F(it._set, this);
 		DCHECK_LT_F(it._bucket, _num_buckets);
 		_states[it._bucket] = State::ACTIVE;
@@ -349,7 +388,8 @@ public:
 	}
 
 	// Remove all elements, keeping full capacity.
-	void clear() {
+	void clear()
+	{
 		for (size_t bucket=0; bucket<_num_buckets; ++bucket) {
 			if (_states[bucket] == State::FILLED) {
 				_states[bucket] = State::INACTIVE;
@@ -361,7 +401,8 @@ public:
 	}
 
 	// Make room for this many elements
-	void reserve(size_t num_elems) {
+	void reserve(size_t num_elems)
+	{
 		size_t required_buckets = num_elems + num_elems/2 + 1;
 		if (required_buckets <= _num_buckets) {
 			return;
@@ -415,23 +456,15 @@ public:
 	}
 
 private:
-	void free_all() {
-		for (size_t bucket=0; bucket<_num_buckets; ++bucket) {
-			if (_states[bucket] == State::FILLED) {
-				_keys[bucket].~KeyT();
-			}
-		}
-		free(_states);
-		free(_keys);
-	}
-
 	// Can we fit another element?
-	void check_expand_need() {
+	void check_expand_need()
+	{
 		reserve(_num_filled + 1);
 	}
 
 	// Find the bucket with this key, or return nullptr
-	size_t find_filled_bucket(const KeyT& key) const {
+	size_t find_filled_bucket(const KeyT& key) const
+	{
 		if (empty()) { return (size_t)-1; } // Optimization
 
 		auto hash_value = _hasher(key);
@@ -506,7 +539,8 @@ private:
 	}
 
 private:
-	enum class State : uint8_t {
+	enum class State : uint8_t
+	{
 		INACTIVE, // Never been touched
 		ACTIVE,   // Is inside a search-chain, but is empty
 		FILLED    // Is set with key/value
