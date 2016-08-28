@@ -1,4 +1,5 @@
 #include <limits>
+#include <random>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -6,37 +7,37 @@
 #include <emilib/hash_cache.hpp>
 #include <emilib/hash_set.hpp>
 #include <emilib/timer.cpp>
+#include <emilib/strprintf.cpp>
 
 #define LOGURU_IMPLEMENTATION 1
 #include <loguru.hpp>
 
-std::vector<std::string> generateKeys(const std::string& prefix, const std::string& suffix)
+std::vector<size_t> integerKeys()
 {
-	std::vector<std::string> results;
+    std::mt19937_64 rd(0);
 
-	for (char a='a'; a<='z'; ++a) {
-		for (char b='a'; b<='z'; ++b) {
-			for (char c='a'; c<='z'; ++c) {
-				for (char d='a'; d<='z'; ++d) {
-					std::string str;
-					str.reserve(prefix.size() + 4 + suffix.size());
-					str += prefix;
-					str += a;
-					str += b;
-					str += c;
-					str += d;
-					str += suffix;
-					results.emplace_back(std::move(str));
-				}
-			}
-		}
+	std::vector<size_t> numbers;
+	for (size_t i = 0; i < 1000000; ++i) {
+		numbers.push_back(rd());
 	}
 
+	return numbers;
+}
+
+std::vector<std::string> generateKeys(
+    const std::string& prefix, const std::vector<size_t>& integer_keys, const std::string& suffix)
+{
+	std::vector<std::string> results;
+	results.reserve(integer_keys.size());
+	for (const auto& int_key : integer_keys) {
+		results.emplace_back(prefix + std::to_string(int_key) + suffix);
+		// results.emplace_back(prefix + std::string((const char*)&int_key, sizeof(int_key)) + suffix);
+	}
 	return results;
 }
 
-template<typename HashSet>
-double time_once(const std::vector<std::string>& keys)
+template<typename HashSet, typename Keys>
+double time_once(const Keys& keys)
 {
 	emilib::Timer timer;
 	HashSet set;
@@ -49,11 +50,11 @@ double time_once(const std::vector<std::string>& keys)
 	return timer.secs();
 }
 
-template<typename HashSet>
-double time_best_of_five(const std::vector<std::string>& keys)
+template<typename HashSet, typename Keys>
+double best_of_many(const Keys& keys)
 {
 	double best_time = std::numeric_limits<double>::infinity();
-	for (size_t i = 0; i < 5; ++i) {
+	for (size_t i = 0; i < 10; ++i) {
 		best_time = std::min(best_time, time_once<HashSet>(keys));
 	}
 	return best_time;
@@ -64,25 +65,32 @@ int main()
 	using namespace std;
 	using namespace emilib;
 
-	std::vector<std::string> short_keys  = generateKeys("", "");
-	std::vector<std::string> long_prefix = generateKeys(std::string(64, 'x'), "");
-	std::vector<std::string> long_suffix = generateKeys("", std::string(64, 'x'));
+	const auto integer_keys  = integerKeys();
+	const auto short_keys    = generateKeys("", integer_keys, "");
+	const auto long_prefix   = generateKeys(std::string(81, 'x'), integer_keys, "");
+	const auto long_suffix   = generateKeys("", integer_keys, std::string(81, 'x'));
 
-	printf("\nShort keys:\n");
-	printf("unordered_set<string>:            %5.3f s\n", time_best_of_five<unordered_set<string>>(short_keys));
-	printf("unordered_set<HashCache<string>>: %5.3f s\n", time_best_of_five<unordered_set<HashCache<string>>>(short_keys));
-	printf("HashSet<string>:                  %5.3f s\n", time_best_of_five<HashSet<string>>(short_keys));
-	printf("HashSet<HashCache<string>>:       %5.3f s\n", time_best_of_five<HashSet<HashCache<string>>>(short_keys));
+	printf("\nInteger keys (e.g. %lu):\n", integer_keys[0]);
+	printf("unordered_set<size_t>:            %5.0f ms\n", 1e3 * best_of_many<unordered_set<size_t>>(integer_keys));
+	printf("unordered_set<HashCache<size_t>>: %5.0f ms\n", 1e3 * best_of_many<unordered_set<HashCache<size_t>>>(integer_keys));
+	printf("HashSet<size_t>:                  %5.0f ms\n", 1e3 * best_of_many<HashSet<size_t>>(integer_keys));
+	printf("HashSet<HashCache<size_t>>:       %5.0f ms\n", 1e3 * best_of_many<HashSet<HashCache<size_t>>>(integer_keys));
 
-	printf("\nLong prefixes:\n");
-	printf("unordered_set<string>:            %5.3f s\n", time_best_of_five<unordered_set<string>>(long_prefix));
-	printf("unordered_set<HashCache<string>>: %5.3f s\n", time_best_of_five<unordered_set<HashCache<string>>>(long_prefix));
-	printf("HashSet<string>:                  %5.3f s\n", time_best_of_five<HashSet<string>>(long_prefix));
-	printf("HashSet<HashCache<string>>:       %5.3f s\n", time_best_of_five<HashSet<HashCache<string>>>(long_prefix));
+	printf("\nShort keys (e.g. \"%s\"):\n", short_keys[0].c_str());
+	printf("unordered_set<string>:            %5.0f ms\n", 1e3 * best_of_many<unordered_set<string>>(short_keys));
+	printf("unordered_set<HashCache<string>>: %5.0f ms\n", 1e3 * best_of_many<unordered_set<HashCache<string>>>(short_keys));
+	printf("HashSet<string>:                  %5.0f ms\n", 1e3 * best_of_many<HashSet<string>>(short_keys));
+	printf("HashSet<HashCache<string>>:       %5.0f ms\n", 1e3 * best_of_many<HashSet<HashCache<string>>>(short_keys));
 
-	printf("\nLong suffxes:\n");
-	printf("unordered_set<string>:            %5.3f s\n", time_best_of_five<unordered_set<string>>(long_suffix));
-	printf("unordered_set<HashCache<string>>: %5.3f s\n", time_best_of_five<unordered_set<HashCache<string>>>(long_suffix));
-	printf("HashSet<string>:                  %5.3f s\n", time_best_of_five<HashSet<string>>(long_suffix));
-	printf("HashSet<HashCache<string>>:       %5.3f s\n", time_best_of_five<HashSet<HashCache<string>>>(long_suffix));
+	printf("\nLong suffixes (e.g. \"%s\"):\n", long_suffix[0].c_str());
+	printf("unordered_set<string>:            %5.0f ms\n", 1e3 * best_of_many<unordered_set<string>>(long_suffix));
+	printf("unordered_set<HashCache<string>>: %5.0f ms\n", 1e3 * best_of_many<unordered_set<HashCache<string>>>(long_suffix));
+	printf("HashSet<string>:                  %5.0f ms\n", 1e3 * best_of_many<HashSet<string>>(long_suffix));
+	printf("HashSet<HashCache<string>>:       %5.0f ms\n", 1e3 * best_of_many<HashSet<HashCache<string>>>(long_suffix));
+
+	printf("\nLong prefixes (e.g. \"%s\"):\n", long_prefix[0].c_str());
+	printf("unordered_set<string>:            %5.0f ms\n", 1e3 * best_of_many<unordered_set<string>>(long_prefix));
+	printf("unordered_set<HashCache<string>>: %5.0f ms\n", 1e3 * best_of_many<unordered_set<HashCache<string>>>(long_prefix));
+	printf("HashSet<string>:                  %5.0f ms\n", 1e3 * best_of_many<HashSet<string>>(long_prefix));
+	printf("HashSet<HashCache<string>>:       %5.0f ms\n", 1e3 * best_of_many<HashSet<HashCache<string>>>(long_prefix));
 }
