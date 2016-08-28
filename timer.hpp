@@ -29,8 +29,8 @@ public:
 	void set_secs(double s);
 	void set_nanoseconds(double s);
 
-	// The abolute value of this is dubious, but
-	static double current_time_secs();
+	// Seconds since start of program. The value of this is dubious.
+	static double seconds_since_startup();
 
 private:
 	using Clock = std::chrono::steady_clock; // Always counting up.

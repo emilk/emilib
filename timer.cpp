@@ -8,7 +8,7 @@
 
 namespace emilib {
 
-static Timer s_sw;
+static Timer s_startup_timer;
 
 Timer::Timer()
 {
@@ -41,13 +41,13 @@ void Timer::set_secs(double s)
 
 void Timer::set_nanoseconds(double ns_f)
 {
-	std::chrono::duration<int, std::nano> dur( (long long)ns_f );
+	std::chrono::nanoseconds dur(static_cast<unsigned long long>(ns_f));
 	_start = Clock::now() - dur;
 }
 
-double Timer::current_time_secs()
+double Timer::seconds_since_startup()
 {
-	return s_sw.secs();
+	return s_startup_timer.secs();
 }
 
 } // namespace emilib
