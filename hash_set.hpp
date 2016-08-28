@@ -258,24 +258,54 @@ public:
 
 	// -----------------------------------------------------
 
-	// Insert an element, overwriting if key already exists.
-	// Returns a reference to the inserted value.
-	iterator insert(const KeyT& key) {
+	// Insert an element, unless it already exists.
+	// Returns a pair consisting of an iterator to the inserted element
+	// (or to the element that prevented the insertion)
+	// and a bool denoting whether the insertion took place.
+	std::pair<iterator, bool> insert(const KeyT& key)
+	{
 		check_expand_need();
 
 		auto bucket = find_or_allocate(key);
 
-		// Check if inserting a new value rather than overwriting an old entry
-		if (_states[bucket] != State::FILLED) {
+		if (_states[bucket] == State::FILLED) {
+			return { iterator(this, bucket), false };
+		} else {
 			_states[bucket] = State::FILLED;
 			new(_keys + bucket) KeyT(key);
 			_num_filled++;
+			return { iterator(this, bucket), true };
 		}
-
-		return iterator(this, bucket);
 	}
 
-	void insert(const_iterator begin, const_iterator end) {
+	// Insert an element, unless it already exists.
+	// Returns a pair consisting of an iterator to the inserted element
+	// (or to the element that prevented the insertion)
+	// and a bool denoting whether the insertion took place.
+	std::pair<iterator, bool> insert(KeyT&& key)
+	{
+		check_expand_need();
+
+		auto bucket = find_or_allocate(key);
+
+		if (_states[bucket] == State::FILLED) {
+			return { iterator(this, bucket), false };
+		} else {
+			_states[bucket] = State::FILLED;
+			new(_keys + bucket) KeyT(std::move(key));
+			_num_filled++;
+			return { iterator(this, bucket), true };
+		}
+	}
+
+	template<class... Args>
+	std::pair<iterator, bool> emplace(Args&&... args)
+	{
+		return insert(KeyT(std::forward<Args>(args)...));
+	}
+
+	void insert(const_iterator begin, const_iterator end)
+	{
 		for (; begin != end; ++begin) {
 			insert(*begin);
 		}

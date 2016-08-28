@@ -292,29 +292,28 @@ public:
 
 	// -----------------------------------------------------
 
-	// Insert an element, overwriting if key already exists.
-	// Returns a reference to the inserted value.
-	iterator insert(const KeyT& key, const ValueT& value)
+	// Returns a pair consisting of an iterator to the inserted element
+	// (or to the element that prevented the insertion)
+	// and a bool denoting whether the insertion took place.
+	std::pair<iterator, bool> insert(const KeyT& key, const ValueT& value)
 	{
 		check_expand_need();
 
 		auto bucket = find_or_allocate(key);
 
-		// Check if inserting a new value rather than overwriting an old entry
 		if (_states[bucket] == State::FILLED) {
-			_pairs[bucket].second = value;
+			return { iterator(this, bucket), false };
 		} else {
 			_states[bucket] = State::FILLED;
 			new(_pairs + bucket) PairT(key, value);
 			_num_filled++;
+			return { iterator(this, bucket), true };
 		}
-
-		return iterator(this, bucket);
 	}
 
-	void insert(const std::pair<KeyT, ValueT>& p)
+	std::pair<iterator, bool> insert(const std::pair<KeyT, ValueT>& p)
 	{
-		insert(p.first, p.second);
+		return insert(p.first, p.second);
 	}
 
 	void insert(const_iterator begin, const_iterator end)
