@@ -1,5 +1,5 @@
-#include <coroutine.cpp>
-#include <timer.cpp>
+#include <emilib/coroutine.cpp>
+#include <emilib/timer.cpp>
 
 // emilib::cr uses loguru:
 #define LOGURU_IMPLEMENTATION 1

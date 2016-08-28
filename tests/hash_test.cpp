@@ -2,8 +2,8 @@
 
 #include <catch.hpp>
 
-#include <hash_map.hpp>
-#include <hash_set.hpp>
+#include <emilib/hash_map.hpp>
+#include <emilib/hash_set.hpp>
 
 using namespace std;
 
