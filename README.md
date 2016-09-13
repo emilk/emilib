@@ -147,6 +147,9 @@ Include `gl_lib.hpp` and link with `gl_lib.cpp`. You can also make use of `gl_li
 #### imgui_gl_lib.hpp/.cpp
 Provides bindings between my `gl_lib` and the wonderful [Dear Imgui](https://github.com/ocornut/imgui) GUI library. Can be used alone or together with `emilib/imgui_sdl.hpp/.cpp`.
 
+#### imgui_helpers.hpp/.cpp
+Helpers for working with the wonderful [Dear Imgui](https://github.com/ocornut/imgui) GUI library.
+
 #### imgui_sdl.hpp/.cpp
 Bindings between [SDL2](https://www.libsdl.org/) and the wonderful [Dear Imgui](https://github.com/ocornut/imgui) GUI library. Can be used alone or together with `emilib/imgui_gl_lib.hpp/.cpp`..
 

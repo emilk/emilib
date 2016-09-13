@@ -10,6 +10,7 @@
 #include "file_system.cpp"
 #include "gl_lib.cpp"
 #include "imgui_gl_lib.cpp"
+#include "imgui_helpers.cpp"
 #include "imgui_sdl.cpp"
 #include "mem_map.cpp"
 #include "movement_tracker.cpp"
