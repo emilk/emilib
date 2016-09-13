@@ -24,7 +24,7 @@ To use a single library, just `#include` the header, and if there is a `.cpp` (o
 	#include <emilib/coroutine.hpp>
 	#include <emilib/coroutine.cpp> // Do this only in one of your .cpp files
 
-You can also make use of `unit_build.cpp` to compile all of emilib all at once. To use the iOS/OSX specific libraries, use `unit_build.mm` instead.
+You can also make use of `unity_build.cpp` to compile all of emilib all at once. To use the iOS/OSX specific libraries, use `unity_build.mm` instead.
 
 You also need to compile Loguru. Luckily, `loguru.hpp` is included in this repo, and to compile it you just need to add the following to one of your .cpp files:
 
