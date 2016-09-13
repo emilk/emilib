@@ -12,7 +12,7 @@ namespace emilib {
 
 /*
 Provides bindings between Dear ImGui and SDL. Handles input, copy-past etc.
-Does NOT handle painting! Please use gl_lib_imgui.hpp for that.
+Does NOT handle painting! Please use imgui_gl_lib.hpp for that.
 You should have your own even loop and feed the events to ImGui_SDL;
 */
 class ImGui_SDL

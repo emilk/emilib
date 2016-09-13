@@ -9,7 +9,7 @@
 #include "dir_watcher.cpp"
 #include "file_system.cpp"
 #include "gl_lib.cpp"
-#include "gl_lib_imgui.cpp"
+#include "imgui_gl_lib.cpp"
 #include "imgui_sdl.cpp"
 #include "mem_map.cpp"
 #include "movement_tracker.cpp"
