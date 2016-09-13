@@ -94,7 +94,7 @@ std::pair<std::string, gl::Texture> load_texture(
 	const auto img_path = gfx_dir + name;
 	size_t w,h;
 	ImageData data = load_image_rgba(image_loader, img_path.c_str(), &w, &h);
-	return {img_path, gl::Texture(data.get(), {(unsigned)w, (unsigned)h}, gl::ImageFormat::RGBA32, params, name)};
+	return {img_path, gl::Texture{name, gl::ImageFormat::RGBA32, params, {(unsigned)w, (unsigned)h}, data.get()}};
 }
 
 // --------------------------------------------------------------------
@@ -206,7 +206,7 @@ gl::Texture create_black()
 		img[3] = 255;
 	}
 	gl::TexParams params(gl::TexFilter::Nearest, gl::WrapMode::DontCare);
-	return gl::Texture(img.data(), {width, height}, gl::ImageFormat::RGBA32, params, "black");
+	return gl::Texture{"black", gl::ImageFormat::RGBA32, params, {width, height}, img.data()};
 }
 
 const gl::Texture* TextureMngr::black() const
@@ -221,7 +221,7 @@ gl::Texture create_white()
 	unsigned height = 8;
 	std::vector<uint8_t> img(width * height * 4, 255);
 	gl::TexParams params(gl::TexFilter::Nearest, gl::WrapMode::DontCare);
-	return gl::Texture(img.data(), {width, height}, gl::ImageFormat::RGBA32, params, "white");
+	return gl::Texture{"white", gl::ImageFormat::RGBA32, params, {width, height}, img.data()};
 }
 
 const gl::Texture* TextureMngr::white() const

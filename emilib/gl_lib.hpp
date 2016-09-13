@@ -46,10 +46,11 @@ id and data.
 class Texture
 {
 public:
+	/// Will create an invalid texture!
 	Texture();
 
 	Texture(GLuint id, Size size, ImageFormat format, TexParams params_arg, std::string debug_name);
-	Texture(const void* data, Size size, ImageFormat format, TexParams params, std::string debug_name);
+	Texture(std::string debug_name, ImageFormat format = {}, TexParams params = {}, Size size = {0, 0}, const void* data = nullptr);
 
 	~Texture();
 
@@ -526,7 +527,8 @@ public:
 	// Call after painting if color_mipmap is set.
 	void generate_color_mipmap();
 
-	const gl::Texture& color_texture() { return _color_tex; }
+	const gl::Texture& color_texture() const { return _color_tex; }
+	gl::Texture release_color_texture() { return std::move(_color_tex); }
 
 private:
 	std::string _debug_name;
