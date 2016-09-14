@@ -63,7 +63,7 @@ InitResult init(const Params& params)
 
 #if GLLIB_GLES
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 #else
 	auto major = GLLIB_OPENGL_VERSION / 100;
 	auto minor = (GLLIB_OPENGL_VERSION % 100) / 10;
@@ -77,6 +77,8 @@ InitResult init(const Params& params)
 
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,  1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, params.depth_buffer);
+	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, params.stencil_buffer);
+	//SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1); // TODO?
 
 	if (params.msa != 0) {
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
@@ -94,21 +96,22 @@ InitResult init(const Params& params)
 	InitResult results;
 	results.window = SDL_CreateWindow(params.window_name,
 		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-		params.width_points, params.height_points, window_flags);
+		(int)params.width_points, (int)params.height_points, window_flags);
 	CHECK_F(results.window != nullptr);
 
 	// SDL_SysWMinfo info;
 	// SDL_VERSION(&info.version);
 
 #if TARGET_OS_IPHONE
-	const auto size_points = os::screen_size_points();
-	const int width_points = (int)std::round(size_points.width);
-	const int height_points = (int)std::round(size_points.height);
+	const auto size_points   = os::screen_size_points();
+	results.pixels_per_point = os::pixels_per_point();
+	results.width_points     = static_cast<size_t>(size_points.width);
+	results.height_points    = static_cast<size_t>(size_points.height);
+	results.width_pixels     = static_cast<size_t>(size_points.width  * results.pixels_per_point);
+	results.height_pixels    = static_cast<size_t>(size_points.height * results.pixels_per_point);
 #else
-	// Returns points on iOS >:(
 	int width_points, height_points;
 	SDL_GetWindowSize(results.window, &width_points, &height_points);
-#endif
 
 	int width_pixels, height_pixels;
 	SDL_GL_GetDrawableSize(results.window, &width_pixels, &height_pixels);
@@ -118,9 +121,10 @@ InitResult init(const Params& params)
 	results.width_pixels     = width_pixels;
 	results.height_pixels    = height_pixels;
 	results.pixels_per_point = (float)width_pixels / (float)width_points;
+#endif
 
-	LOG_F(INFO, "Points size: %dx%d", width_points, height_points);
-	LOG_F(INFO, "Pixel size: %dx%d", width_pixels, height_pixels);
+	LOG_F(INFO, "Points size: %lux%lu", results.width_points, results.height_points);
+	LOG_F(INFO, "Pixel size: %lux%lu", results.width_pixels, results.height_pixels);
 	LOG_F(INFO, "Pixels per point: %f", results.pixels_per_point);
 
 	results.gl_context = SDL_GL_CreateContext(results.window);

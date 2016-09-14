@@ -18,8 +18,9 @@ struct Params
 	size_t width_points  = 0;
 	size_t height_points = 0;
 
-	int depth_buffer = 0; // e.g. 24
-	int msa          = 0; // e.g. 8 for 8-point anti-aliasing.
+	int depth_buffer   = 0; // e.g. 24
+	int stencil_buffer = 0; // e.g. 8
+	int msa            = 0; // e.g. 8 for 8-point anti-aliasing.
 };
 
 struct InitResult

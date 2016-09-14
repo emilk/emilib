@@ -54,7 +54,7 @@ Size screen_size_points()
 	UIScreen* screen = [UIScreen mainScreen];
 	CGRect screenRect = [screen bounds];
 	CGSize size = screenRect.size;
-	return Size{size.width, size.height};
+	return Size{(float)size.width, (float)size.height};
 }
 #endif // TARGET_OS_IPHONE
 
