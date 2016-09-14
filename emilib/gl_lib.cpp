@@ -48,7 +48,7 @@ void check_for_gl_error(const char* file, int line)
 
 		//glInsertEventMarkerEXT(0, "com.apple.GPUTools.event.debug-frame"); // Frame capture what went wrong
 
-		ABORT_F("GL error: %s at %s:%d", err_str, file, line);
+		loguru::log_and_abort(1, "", file, line, "GL error: %s at %s:%d", err_str, file, line);
 	}
 }
 
