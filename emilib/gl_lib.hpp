@@ -49,8 +49,8 @@ public:
 	/// Will create an invalid texture!
 	Texture();
 
-	Texture(GLuint id, Size size, ImageFormat format, TexParams params_arg, std::string debug_name);
-	Texture(std::string debug_name, ImageFormat format = {}, TexParams params = {}, Size size = {0, 0}, const void* data = nullptr);
+	Texture(GLuint id, Size size, TexParams params_arg, ImageFormat format, std::string debug_name);
+	Texture(std::string debug_name, TexParams params = {}, ImageFormat format = {}, Size size = {0, 0}, const void* data = nullptr);
 
 	~Texture();
 

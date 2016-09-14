@@ -78,7 +78,7 @@ gl::Texture load_pvr(const char* path, gl::TexParams params)
 	params.filter = tex_info.containsMipmaps ? gl::TexFilter::Mipmapped : gl::TexFilter::Linear;
 
 	gl::Size size{tex_info.width, tex_info.height};
-	gl::Texture texture(tex_info.name, size, gl::ImageFormat::RGBA32, params, loguru::filename(path));
+	gl::Texture texture(tex_info.name, size, params, gl::ImageFormat::RGBA32, loguru::filename(path));
 	texture.set_bits_per_pixel(4);
 	return texture;
 }

@@ -94,7 +94,7 @@ std::pair<std::string, gl::Texture> load_texture(
 	const auto img_path = gfx_dir + name;
 	size_t w,h;
 	ImageData data = load_image_rgba(image_loader, img_path.c_str(), &w, &h);
-	return {img_path, gl::Texture{name, gl::ImageFormat::RGBA32, params, {(unsigned)w, (unsigned)h}, data.get()}};
+	return {img_path, gl::Texture{name, params, gl::ImageFormat::RGBA32, {(unsigned)w, (unsigned)h}, data.get()}};
 }
 
 // --------------------------------------------------------------------
@@ -164,8 +164,8 @@ gl::Texture_SP TextureMngr::get_retain(const std::string& name, const gl::TexPar
 	if (tex_info->texture->has_data()) {
 		tex_info->texture->set_params(params);
 	} else {
-		LOG_IF_F(WARNING, !_is_evicting,
-			"Hot-loading texture '%s' - you should mark this during eviction", name.c_str());
+		// LOG_IF_F(WARNING, !_is_evicting,
+		// 	"Hot-loading texture '%s' - you should mark this during eviction", name.c_str());
 		std::tie(tex_info->abs_path, *tex_info->texture) =
 			load_texture(_image_loader, _gfx_dir, name, params);
 	}
@@ -206,7 +206,7 @@ gl::Texture create_black()
 		img[3] = 255;
 	}
 	gl::TexParams params(gl::TexFilter::Nearest, gl::WrapMode::DontCare);
-	return gl::Texture{"black", gl::ImageFormat::RGBA32, params, {width, height}, img.data()};
+	return gl::Texture{"black", params, gl::ImageFormat::RGBA32, {width, height}, img.data()};
 }
 
 const gl::Texture* TextureMngr::black() const
@@ -221,7 +221,7 @@ gl::Texture create_white()
 	unsigned height = 8;
 	std::vector<uint8_t> img(width * height * 4, 255);
 	gl::TexParams params(gl::TexFilter::Nearest, gl::WrapMode::DontCare);
-	return gl::Texture{"white", gl::ImageFormat::RGBA32, params, {width, height}, img.data()};
+	return gl::Texture{"white", params, gl::ImageFormat::RGBA32, {width, height}, img.data()};
 }
 
 const gl::Texture* TextureMngr::white() const

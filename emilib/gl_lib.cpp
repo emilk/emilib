@@ -170,8 +170,8 @@ Texture::Texture()
 Texture::Texture(
 	GLuint      id,
 	Size        size,
-	ImageFormat format,
 	TexParams   params_arg,
+	ImageFormat format,
 	std::string debug_name)
 	: _size(size)
 	, _format(format)
@@ -186,7 +186,12 @@ Texture::Texture(
 	init(nullptr);
 }
 
-Texture::Texture(std::string debug_name, ImageFormat format, TexParams params_arg, Size size, const void* data)
+Texture::Texture(
+	std::string debug_name,
+	TexParams   params_arg,
+	ImageFormat format,
+	Size        size,
+	const void* data)
 	: _size(size)
 	, _format(format)
 	, _params(params_arg)
@@ -601,16 +606,16 @@ Texture load_uncompressed_pvr_from_memory(
 	}
 
 #if 0
-	return new Texture{std::move(debug_name), format, params, size, data_start};
+	return new Texture{std::move(debug_name), params, format, size, data_start};
 #else
 	if (params.filter == TexFilter::Nearest || params.filter == TexFilter::Linear) {
-		return Texture{std::move(debug_name), format, params, size, data_start};
+		return Texture{std::move(debug_name), params, format, size, data_start};
 	} else if (header->mipmap_count == 1) {
 		params.filter = TexFilter::Linear;
-		return Texture{std::move(debug_name), format, params, size, data_start};
+		return Texture{std::move(debug_name), params, format, size, data_start};
 	} else {
 		params.filter = TexFilter::Mipmapped;
-		Texture tex{std::move(debug_name), format, params, size, nullptr};
+		Texture tex{std::move(debug_name), params, format, size, nullptr};
 
 		auto bytes_per_pixel = format_size(format);
 
@@ -1524,7 +1529,7 @@ const char* framebuffer_completion_to_string(GLenum err)
 
 FBO::FBO(const std::string& debug_name, Size size, const Params& params)
 	: _debug_name(debug_name), _size(size), _params(params)
-	, _color_tex(debug_name + "_color", params.color_format, TexParams::clamped_linear(), size, nullptr)
+	, _color_tex(debug_name + "_color", TexParams::clamped_linear(), params.color_format, size, nullptr)
 {
 	VLOG_SCOPE_F(1, "FBO %s", debug_name.c_str());
 
