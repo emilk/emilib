@@ -6,6 +6,8 @@
 
 // iOS/Mac: include this file to build all of emilib
 #include "unity_build.cpp"
+
+#include "os.mm"
 #include "music.mm"
 #include "pvr.mm"
 #include "text_paint.mm"

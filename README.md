@@ -119,6 +119,9 @@ Parse WAVE (.wav) sound files.
 #### music.hpp/.mm
 Stream mp3 music on OSX and iOS.
 
+#### os.hpp/.mm
+Device information like screen size and orientation.
+
 #### pvr.hpp/.mm
 Loading of compressed .pvr textures. Depends on gl_lib.
 
@@ -143,6 +146,9 @@ Code for doing simple things in OpenGL and/or OpenGL ES (GLES). It has classes a
 Depends on OpenGL and GLEW.
 
 Include `gl_lib.hpp` and link with `gl_lib.cpp`. You can also make use of `gl_lib_fwd.hpp` to bring in forward declarations for most things in gl_lib. To do OpenGL calls you can include `gl_lib_opengl.hpp` (which just includes the correct OpenGL and/or glew headers for you system).
+
+#### gl_lib_sdl.hpp/.cpp
+Helper functions for creating an SDL2 OpenGL window.
 
 #### imgui_gl_lib.hpp/.cpp
 Provides bindings between my `gl_lib` and the wonderful [Dear Imgui](https://github.com/ocornut/imgui) GUI library. Can be used alone or together with `emilib/imgui_sdl.hpp/.cpp`.
