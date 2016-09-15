@@ -17,33 +17,34 @@ Website: www.ilikebigbits.com
 	and his wonderful stb libraries at https://github.com/nothings/stb.
 
 # Version history
-	* Version 0.10 - 2015-03-22 - Works great on Mac.
-	* Version 0.20 - 2015-09-17 - Removed the only dependency.
-	* Version 0.30 - 2015-10-02 - Drop-in replacement for most of GLOG
-	* Version 0.40 - 2015-10-07 - Single-file!
-	* Version 0.50 - 2015-10-17 - Improved file logging
-	* Version 0.60 - 2015-10-24 - Add stack traces
-	* Version 0.70 - 2015-10-27 - Signals
-	* Version 0.80 - 2015-10-30 - Color logging.
-	* Version 0.90 - 2015-11-26 - ABORT_S and proper handling of FATAL
-	* Version 1.00 - 2016-02-14 - ERROR_CONTEXT
-	* Version 1.10 - 2016-02-19 - -v OFF, -v INFO etc
-	* Version 1.11 - 2016-02-20 - textprintf vs strprintf
-	* Version 1.12 - 2016-02-22 - Remove g_alsologtostderr
-	* Version 1.13 - 2016-02-29 - ERROR_CONTEXT as linked list
-	* Version 1.20 - 2016-03-19 - Add get_thread_name()
-	* Version 1.21 - 2016-03-20 - Minor fixes
-	* Version 1.22 - 2016-03-29 - Fix issues with set_fatal_handler throwing an exception
-	* Version 1.23 - 2016-05-16 - Log current working directory in loguru::init().
-	* Version 1.24 - 2016-05-18 - Custom replacement for -v in loguru::init() by bjoernpollex
-	* Version 1.25 - 2016-05-18 - Add ability to print ERROR_CONTEXT of parent thread.
-	* Version 1.26 - 2016-05-19 - Bug fix regarding VLOG verbosity argument lacking ().
-	* Version 1.27 - 2016-05-23 - Fix PATH_MAX problem.
-	* Version 1.28 - 2016-05-26 - Add shutdown() and remove_all_callbacks()
-	* Version 1.29 - 2016-06-09 - Use a monotonic clock for uptime.
-	* Version 1.30 - 2016-07-20 - Fix issues with callback flush/close not being called.
-	* Version 1.31 - 2016-07-20 - Add LOGURU_UNSAFE_SIGNAL_HANDLER to toggle stacktrace on signals.
-	* Version 1.32 - 2016-07-20 - Add loguru::arguments()
+	* Version 0.1.0 - 2015-03-22 - Works great on Mac.
+	* Version 0.2.0 - 2015-09-17 - Removed the only dependency.
+	* Version 0.3.0 - 2015-10-02 - Drop-in replacement for most of GLOG
+	* Version 0.4.0 - 2015-10-07 - Single-file!
+	* Version 0.5.0 - 2015-10-17 - Improved file logging
+	* Version 0.6.0 - 2015-10-24 - Add stack traces
+	* Version 0.7.0 - 2015-10-27 - Signals
+	* Version 0.8.0 - 2015-10-30 - Color logging.
+	* Version 0.9.0 - 2015-11-26 - ABORT_S and proper handling of FATAL
+	* Version 1.0.0 - 2016-02-14 - ERROR_CONTEXT
+	* Version 1.1.0 - 2016-02-19 - -v OFF, -v INFO etc
+	* Version 1.1.1 - 2016-02-20 - textprintf vs strprintf
+	* Version 1.1.2 - 2016-02-22 - Remove g_alsologtostderr
+	* Version 1.1.3 - 2016-02-29 - ERROR_CONTEXT as linked list
+	* Version 1.2.0 - 2016-03-19 - Add get_thread_name()
+	* Version 1.2.1 - 2016-03-20 - Minor fixes
+	* Version 1.2.2 - 2016-03-29 - Fix issues with set_fatal_handler throwing an exception
+	* Version 1.2.3 - 2016-05-16 - Log current working directory in loguru::init().
+	* Version 1.2.4 - 2016-05-18 - Custom replacement for -v in loguru::init() by bjoernpollex
+	* Version 1.2.5 - 2016-05-18 - Add ability to print ERROR_CONTEXT of parent thread.
+	* Version 1.2.6 - 2016-05-19 - Bug fix regarding VLOG verbosity argument lacking ().
+	* Version 1.2.7 - 2016-05-23 - Fix PATH_MAX problem.
+	* Version 1.2.8 - 2016-05-26 - Add shutdown() and remove_all_callbacks()
+	* Version 1.2.9 - 2016-06-09 - Use a monotonic clock for uptime.
+	* Version 1.3.0 - 2016-07-20 - Fix issues with callback flush/close not being called.
+	* Version 1.3.1 - 2016-07-20 - Add LOGURU_UNSAFE_SIGNAL_HANDLER to toggle stacktrace on signals.
+	* Version 1.3.2 - 2016-07-20 - Add loguru::arguments()
+	* Version 1.4.0 - 2016-09-15 - Semantic versioning + expose add loguru::create_directories
 
 # Compiling
 	Just include <loguru.hpp> where you want to use Loguru.
@@ -149,6 +150,10 @@ Website: www.ilikebigbits.com
 #ifndef LOGURU_HAS_DECLARED_FORMAT_HEADER
 #define LOGURU_HAS_DECLARED_FORMAT_HEADER
 
+#if defined(_MSC_VER)
+#include <sal.h>	// Needed for _In_z_ etc annotations
+#endif
+
 // ----------------------------------------------------------------------------
 
 #ifndef LOGURU_SCOPE_TEXT_SIZE
@@ -214,10 +219,23 @@ Website: www.ilikebigbits.com
 #endif
 
 // Used to mark log_and_abort for the benefit of the static analyzer and optimizer.
+#if defined(_MSC_VER)
+#define LOGURU_NORETURN
+#else
 #define LOGURU_NORETURN __attribute__((noreturn))
+#endif
 
+#if defined(_MSC_VER)
+#define LOGURU_PREDICT_FALSE(x) (x)
+#define LOGURU_PREDICT_TRUE(x)  (x)
+#else
 #define LOGURU_PREDICT_FALSE(x) (__builtin_expect(x,     0))
 #define LOGURU_PREDICT_TRUE(x)  (__builtin_expect(!!(x), 1))
+#endif
+
+#if defined(_MSC_VER) && !defined(__PRETTY_FUNCTION__)
+#define __PRETTY_FUNCTION__ __FUNCTION__
+#endif
 
 // --------------------------------------------------------------------
 
@@ -375,6 +393,9 @@ namespace loguru
 
 	// Returns the part of the path after the last / or \ (if any).
 	const char* filename(const char* path);
+
+	// e.g. "foo/bar/baz.ext" will create the directories "foo/" and "foo/bar/"
+	bool create_directories(const char* file_path_const);
 
 	// Writes date and time with millisecond precision, e.g. "20151017_161503.123"
 	void write_date_time(char* buff, unsigned buff_size);
@@ -1193,6 +1214,8 @@ This will define all the Loguru functions so that the linker may find them.
 
 #ifdef _MSC_VER
 	#include <direct.h>
+
+	#define localtime_r(a, b) localtime_s(b, a) // No localtime_r with MSVC, but arguments are swapped for localtime_s
 #else
 	#include <signal.h>
 	#include <sys/stat.h> // mkdir
@@ -1377,11 +1400,11 @@ namespace loguru
 	static Text vtextprintf(const char* format, va_list vlist)
 	{
 #ifdef _MSC_VER
-		int bytes_needed = vsnprintf(nullptr, 0, format, vlist);
+		int bytes_needed = _vscprintf(format, vlist);
 		CHECK_F(bytes_needed >= 0, "Bad string format: '%s'", format);
-		char* buff = (char*)malloc(bytes_needed + 1);
-		vsnprintf(buff, bytes_needed, format, vlist);
-		return buff;
+		char* buff = (char*)malloc(bytes_needed+1);
+		vsnprintf(buff, bytes_needed+1, format, vlist);
+		return Text(buff);
 #else
 		char* buff = nullptr;
 		int result = vasprintf(&buff, format, vlist);
@@ -1427,7 +1450,7 @@ namespace loguru
 		for (int arg_it = 1; arg_it < argc; ++arg_it) {
 			auto cmd = argv[arg_it];
 			auto arg_len = strlen(verbosity_flag);
-			if (strncmp(cmd, verbosity_flag, arg_len) == 0 && !std::isalpha(cmd[arg_len])) {
+			if (strncmp(cmd, verbosity_flag, arg_len) == 0 && !std::isalpha(cmd[arg_len], std::locale(""))) {
 				out_argc -= 1;
 				auto value_str = cmd + arg_len;
 				if (value_str[0] == '\0') {
@@ -1678,7 +1701,7 @@ namespace loguru
 		strncat(buff, ".log",                   buff_size - strlen(buff) - 1);
 	}
 
-	bool mkpath(const char* file_path_const)
+	bool create_directories(const char* file_path_const)
 	{
 		CHECK_F(file_path_const && *file_path_const);
 		char* file_path = strdup(file_path_const);
@@ -1718,7 +1741,7 @@ namespace loguru
 			snprintf(path, sizeof(path) - 1, "%s", path_in);
 		}
 
-		if (!mkpath(path)) {
+		if (!create_directories(path)) {
 			LOG_F(ERROR, "Failed to create directories to '%s'", path);
 		}
 
@@ -1994,7 +2017,11 @@ namespace loguru
 
 	std::string stacktrace_as_stdstring(int)
 	{
+		#if defined(_MSC_VER)
+		#pragma message ( "Loguru: No stacktraces available on this platform" )
+		#else
 		#warning "Loguru: No stacktraces available on this platform"
+		#endif
 		return "";
 	}
 
@@ -2487,7 +2514,11 @@ namespace loguru
 namespace loguru {
 	void install_signal_handlers()
 	{
+		#if defined(_MSC_VER)
+		#pragma message ( "No signal handlers on Win32" )
+		#else
 		#warning "No signal handlers on Win32"
+		#endif
 	}
 } // namespace loguru
 
