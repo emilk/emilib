@@ -7,8 +7,11 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
+#include <vector>
 
-struct ImVec2;
+#include <imgui/imgui.h>
+
 using GLuint = uint32_t;
 
 namespace imgui_helpers {
@@ -18,4 +21,19 @@ ImVec2 aspect_correct_image_size(const ImVec2& desired_size, const ImVec2& canva
 
 void gl_texture(GLuint tex_id, const ImVec2& size);
 
-}
+} // namespace imgui_helpers
+
+// ----------------------------------------------------------------------------
+
+// Helper C++ bindings for ImGui
+namespace ImGuiPP {
+
+bool InputText(const std::string& label, std::string& text, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = NULL, void* user_data = NULL);
+void Text(const std::string& text);
+void LabelText(const std::string& label, const std::string& text);
+bool Button(const std::string& text);
+
+bool ListBox(const std::string& label, std::string& current_item, const std::vector<std::string>& items, int height_in_items = -1);
+bool Combo(const std::string& label, std::string& current_item, const std::vector<std::string>& items, int height_in_items = -1);
+
+} // namespace ImGuiPP
