@@ -20,6 +20,9 @@ www.github.com/emilk/configuru
 	0.2.2: 2016-07-27 - optimizations
 	0.2.3: 2016-08-09 - optimizations + add Config::emplace(key, value)
 	0.2.4: 2016-08-18 - fix compilation error for when CONFIGURU_VALUE_SEMANTICS=0
+	0.3.0: 2016-09-15 - Add option to not align values (object_align_values)
+	0.3.1: 2016-09-19 - Fix crashes on some compilers/stdlibs
+	0.3.2: 2016-09-22 - Add support for Json::array(some_container)
 
 # Getting started
 	For using:
@@ -48,16 +51,16 @@ www.github.com/emilk/configuru
 #ifndef CONFIGURU_HEADER_HPP
 #define CONFIGURU_HEADER_HPP
 
-#include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <cstddef>
 #include <cstring>
+#include <functional>
 #include <initializer_list>
+#include <iosfwd>
 #include <iterator>
-#include <limits>
 #include <map>
 #include <memory>
-#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -106,10 +109,10 @@ namespace configuru
 	struct Include
 	{
 		DocInfo_SP doc;
-		unsigned line = BAD_INDEX;
+		Index      line = BAD_INDEX;
 
 		Include() {}
-		Include(DocInfo_SP d, unsigned l) : doc(d), line(l) {}
+		Include(DocInfo_SP d, Index l) : doc(d), line(l) {}
 	};
 
 	struct DocInfo
@@ -128,11 +131,11 @@ namespace configuru
 	struct Config_Entry
 	{
 		Config_T     _value;
-		unsigned     _nr       = BAD_INDEX; // Size of the object prior to adding this entry
+		Index        _nr       = BAD_INDEX; // Size of the object prior to adding this entry
 		mutable bool _accessed = false;     // Set to true if accessed.
 
 		Config_Entry() {}
-		Config_Entry(Config_T value, unsigned nr) : _value(std::move(value)), _nr(nr) {}
+		Config_Entry(Config_T value, Index nr) : _value(std::move(value)), _nr(nr) {}
 	};
 
 	using Comment = std::string;
@@ -271,7 +274,7 @@ namespace configuru
 		// Used by the parser - no need to use directly.
 		void make_object();
 		void make_array();
-		void tag(const DocInfo_SP& doc, unsigned line, unsigned column);
+		void tag(const DocInfo_SP& doc, Index line, Index column);
 
 		// Preferred way to create objects!
 		static Config object();
@@ -281,6 +284,19 @@ namespace configuru
 		static Config array();
 		static Config array(std::initializer_list<Config> values);
 
+		template<typename Container>
+		static Config array(const Container& container)
+		{
+			Config ret;
+			ret.make_array();
+			auto& impl = ret._u.array->_impl;
+			impl.reserve(container.size());
+			for (auto&& v : container) {
+				impl.emplace_back(v);
+			}
+			return ret;
+		}
+
 		// ----------------------------------------
 
 		~Config();
@@ -289,7 +305,7 @@ namespace configuru
 		Config(Config&& o) noexcept;
 		Config& operator=(const Config& o);
 
-		// Will still remmeber file/line when assigned an object which has no file/line
+		// Will still remember file/line when assigned an object which has no file/line
 		Config& operator=(Config&& o) noexcept;
 
 		// Swaps file/line too.
@@ -317,8 +333,8 @@ namespace configuru
 		// Returns file:line iff available.
 		std::string where() const;
 
-		// -1 if not set.
-		unsigned line() const { return _line; }
+		// BAD_INDEX if not set.
+		Index line() const { return _line; }
 
 		// Handle to document.
 		const DocInfo_SP& doc() const { return _doc; }
@@ -397,13 +413,8 @@ namespace configuru
 		}
 #endif
 
-		const std::string& as_string() const
-		{
-			assert_type(String);
-			return *reinterpret_cast<const std::string*>(&_u.str[0]);
-		}
-
-		const char* c_str() const { assert_type(String); return as_string().c_str(); }
+		const std::string& as_string() const { assert_type(String); return *_u.str; }
+		const char* c_str() const { assert_type(String); return _u.str->c_str(); }
 
 		bool as_bool() const
 		{
@@ -635,7 +646,7 @@ namespace configuru
 			bool               b;
 			int64_t            i;
 			double             f;
-			uint8_t            str[sizeof(std::string)]; // Put the std::string here inline.
+			const std::string* str;
 			ConfigObject*      object;
 			ConfigArray*       array;
 			BadLookupInfo*     bad_lookup;
@@ -643,7 +654,7 @@ namespace configuru
 
 		DocInfo_SP        _doc; // So we can name the file
 		ConfigComments_UP _comments;
-		unsigned          _line = BAD_INDEX; // Where in the source, or -1. Lines are 1-indexed.
+		Index             _line = BAD_INDEX; // Where in the source, or BAD_INDEX. Lines are 1-indexed.
 		Type              _type = Uninitialized;
 	};
 
@@ -839,7 +850,7 @@ namespace configuru
 	class ParseError : public std::exception
 	{
 	public:
-		ParseError(const DocInfo_SP& doc, unsigned line, unsigned column, const std::string& msg)
+		ParseError(const DocInfo_SP& doc, Index line, Index column, const std::string& msg)
 			: _line(line), _column(column)
 		{
 			_what = doc->filename + ":" + std::to_string(line) + ":" + std::to_string(column);
@@ -852,11 +863,11 @@ namespace configuru
 			return _what.c_str();
 		}
 
-		unsigned line()   const noexcept { return _line; }
-		unsigned column() const noexcept { return _column; }
+		Index line()   const noexcept { return _line; }
+		Index column() const noexcept { return _column; }
 
 	private:
-		unsigned _line, _column;
+		Index _line, _column;
 		std::string _what;
 	};
 
@@ -903,6 +914,7 @@ namespace configuru
 		bool        object_omit_comma        = true;  // Allow {a:1 b:2}
 		bool        object_trailing_comma    = true;  // Allow {a:1, b:2,}
 		bool        object_duplicate_keys    = false; // Allow {"a":1, "a":2}
+		bool        object_align_values      = true;  // Add spaces after keys to align subsequent values.
 
 		// Strings
 		bool        str_csharp_verbatim      = true;  // Allow @"Verbatim\strings"
@@ -965,6 +977,7 @@ namespace configuru
 		options.object_omit_comma        = false;
 		options.object_trailing_comma    = false;
 		options.object_duplicate_keys    = false; // To be 100% JSON compatile, this should be true, but it is error prone.
+		options.object_align_values      = true;  // Looks better.
 
 		// Strings
 		options.str_csharp_verbatim      = false;
@@ -1040,7 +1053,8 @@ namespace configuru
 	static const FormatOptions JSON      = make_json_options();
 	static const FormatOptions FORGIVING = make_forgiving_options();
 
-	struct ParseInfo {
+	struct ParseInfo
+	{
 		std::map<std::string, Config> parsed_files; // Two #include gives same Config tree.
 	};
 
@@ -1084,6 +1098,10 @@ This will define all the Configuru functions so that the linker may find them.
 #if defined(CONFIGURU_IMPLEMENTATION) && !defined(CONFIGURU_HAS_BEEN_IMPLEMENTED)
 #define CONFIGURU_HAS_BEEN_IMPLEMENTED
 
+#include <algorithm>
+#include <limits>
+#include <ostream>
+
 // ----------------------------------------------------------------------------
 namespace configuru
 {
@@ -1110,19 +1128,19 @@ namespace configuru
 			std::atomic<unsigned> _ref_count { 1 };
 		#endif
 
-		BadLookupInfo(DocInfo_SP doc_, unsigned line_, std::string key_)
+		BadLookupInfo(DocInfo_SP doc_, Index line_, std::string key_)
 			: doc(std::move(doc_)), line(line_), key(std::move(key_)) {}
 	};
 
 	Config::Config(const char* str) : _type(String)
 	{
 		CONFIGURU_ASSERT(str != nullptr);
-		new(_u.str) std::string(str);
+		_u.str = new std::string(str);
 	}
 
 	Config::Config(std::string str) : _type(String)
 	{
-		new(_u.str) std::string(move(str));
+		_u.str = new std::string(move(str));
 	}
 
 	Config::Config(std::initializer_list<std::pair<std::string, Config>> values) : _type(Uninitialized)
@@ -1182,7 +1200,7 @@ namespace configuru
 		return ret;
 	}
 
-	void Config::tag(const DocInfo_SP& doc, unsigned line, unsigned column)
+	void Config::tag(const DocInfo_SP& doc, Index line, Index column)
 	{
 		_doc = doc;
 		_line = line;
@@ -1241,7 +1259,7 @@ namespace configuru
 
 		#if CONFIGURU_VALUE_SEMANTICS
 			if (_type == String) {
-				new(_u.str) std::string(o.as_string());
+				_u.str = new std::string(*o._u.str);
 			} else if (_type == BadLookupType) {
 				_u.bad_lookup = new BadLookupInfo(*o._u.bad_lookup);
 			} else if (_type == Object) {
@@ -1253,7 +1271,7 @@ namespace configuru
 			}
 		#else // !CONFIGURU_VALUE_SEMANTICS:
 			if (_type == String) {
-				new(_u.str) std::string(o.as_string());
+				_u.str = new std::string(*o._u.str);
 			} else {
 				memcpy(&_u, &o._u, sizeof(_u));
 				if (_type == BadLookupType) { ++_u.bad_lookup->_ref_count; }
@@ -1286,8 +1304,6 @@ namespace configuru
 
 	void Config::free()
 	{
-		using Str = std::string; // HACK for ->~Str()
-
 		#if CONFIGURU_VALUE_SEMANTICS
 			if (_type == BadLookupType) {
 				delete _u.bad_lookup;
@@ -1296,7 +1312,7 @@ namespace configuru
 			} else if (_type == Array) {
 				delete _u.array;
 			} else if (_type == String) {
-				reinterpret_cast<std::string*>(&_u.str[0])->~Str();
+				delete _u.str;
 			}
 		#else // !CONFIGURU_VALUE_SEMANTICS:
 			if (_type == BadLookupType) {
@@ -1312,7 +1328,7 @@ namespace configuru
 					delete _u.array;
 				}
 			} else if (_type == String) {
-				reinterpret_cast<std::string*>(&_u.str[0])->~Str();
+				delete _u.str;
 			}
 		#endif // !CONFIGURU_VALUE_SEMANTICS
 
@@ -1401,7 +1417,7 @@ namespace configuru
 		if (a._type == Bool)   { return a._u.b    == b._u.b;    }
 		if (a._type == Int)    { return a._u.i    == b._u.i;    }
 		if (a._type == Float)  { return a._u.f    == b._u.f;    }
-		if (a._type == String) { return a.as_string() == b.as_string(); }
+		if (a._type == String) { return *a._u.str == *b._u.str; }
 		if (a._type == Object)    {
 			if (a._u.object == b._u.object) { return true; }
 			auto&& a_object = a.as_object()._impl;
@@ -1504,7 +1520,7 @@ namespace configuru
 	{
 		switch (_type) {
 			case Bool:   return _u.b ? "true" : "false";
-			case String: return c_str();
+			case String: return _u.str->c_str();
 			default:     return type_str(_type);
 		}
 	}
@@ -1525,7 +1541,7 @@ namespace configuru
 		return "BROKEN Config";
 	}
 
-	std::string where_is(const DocInfo_SP& doc, unsigned line)
+	std::string where_is(const DocInfo_SP& doc, Index line)
 	{
 		if (doc) {
 			std::string ret = doc->filename;
@@ -1760,7 +1776,7 @@ namespace configuru
 			_line_start = s.line_start;
 		}
 
-		unsigned column() const
+		Index column() const
 		{
 			return static_cast<unsigned>(_ptr - _line_start + 1);
 		}
@@ -1870,7 +1886,7 @@ namespace configuru
 		ParseInfo&    _info;
 
 		const char*   _ptr;
-		unsigned      _line_nr;
+		Index         _line_nr;
 		const char*   _line_start;
 		int           _indentation = 0; // Expected number of tabs between a \n and the next key/value
 	};
@@ -2402,11 +2418,9 @@ namespace configuru
 		if (_ptr[0] == '+') {
 			parse_assert(_options.unary_plus, "Prefixing numbers with + is forbidden.");
 			_ptr += 1;
-			// skip_white_ignore_comments();
 		}
 		if (_ptr[0] == '-') {
 			_ptr += 1;
-			// skip_white_ignore_comments();
 			sign = -1;
 		}
 
@@ -2990,10 +3004,11 @@ namespace configuru
 			pairs.reserve(object.size());
 
 			size_t longest_key = 0;
+			bool align_values = !_compact && _options.object_align_values;
 
 			for (auto it=object.begin(); it!=object.end(); ++it) {
 				pairs.push_back(it);
-				if (!_compact) {
+				if (align_values) {
 					longest_key = std::max(longest_key, it->first.size());
 				}
 			}
@@ -3020,8 +3035,10 @@ namespace configuru
 					_out.push_back(' ');
 				} else {
 					_out += ": ";
-					for (size_t j=it->first.size(); j<longest_key; ++j) {
-						_out.push_back(' ');
+					if (align_values) {
+						for (size_t j=it->first.size(); j<longest_key; ++j) {
+							_out.push_back(' ');
+						}
 					}
 				}
 				write_value(indent, value, false, true);
