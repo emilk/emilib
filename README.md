@@ -101,6 +101,9 @@ Minimalistic string formating library. Provides two functions: `strprintf` and `
 #### tga.hpp/.cpp
 Dump a tga image to disk.
 
+#### thread_pool.hpp/.cpp
+A simple thread pool.
+
 #### timer.hpp/.cpp
 Monotonic wall time chronometer.
 

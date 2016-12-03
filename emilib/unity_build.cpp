@@ -20,6 +20,7 @@
 #include "strprintf.cpp"
 #include "texture_mngr.cpp"
 #include "tga.cpp"
+#include "thread_pool.cpp"
 #include "timer.cpp"
 #include "utf8.cpp"
 #include "wav.cpp"
