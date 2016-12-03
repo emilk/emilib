@@ -14,6 +14,7 @@
 #include <emilib/irange.hpp>
 #include <emilib/mem_map.hpp>
 #include <emilib/pvr.hpp>
+#include <emilib/thread_pool.hpp>
 #include <loguru.hpp>
 
 namespace emilib {
@@ -56,45 +57,57 @@ ImageData load_image_rgba(const ImageLoader& image_loader, const char* path, siz
 
 // ------------------------------------------------
 
-gl::Texture load_uncompressed_pvr(const char* path, gl::TexParams params, std::string debug_name)
+gl::Texture load_uncompressed_pvr2(const char* path, gl::TexParams params, std::string debug_name)
 {
 	ERROR_CONTEXT("path", path);
 
 	emilib::MemMap mem_map(path);
-	return gl::load_uncompressed_pvr_from_memory(mem_map.data(), mem_map.size(), params, std::move(debug_name));
+	return gl::load_uncompressed_pvr2_from_memory(mem_map.data(), mem_map.size(), params, std::move(debug_name));
 }
 
 // ------------------------------------------------
 
-// file_path, Texture
-std::pair<std::string, gl::Texture> load_texture(
-	const ImageLoader& image_loader, const std::string& gfx_dir, std::string name, gl::TexParams params)
+std::string get_abs_path(const std::string& gfx_dir, std::string name)
 {
 	if (fs::file_ending(name) == "") {
 		name += ".png";
 	}
-
-	ERROR_CONTEXT("texture_name", name.c_str());
-
-#if TARGET_OS_IPHONE
 	auto pvr_path = gfx_dir + name.substr(0, name.size()-4) + ".pvr";
 	if (fs::file_exists(pvr_path.c_str())) {
-		return {pvr_path, gl::load_pvr(pvr_path.c_str(), params)};
+		return pvr_path;
 	}
-#endif
 
 	auto uncompressed_pvr_path = gfx_dir + name.substr(0, name.size()-4) + "_uncompressed.pvr";
 	if (fs::file_exists(uncompressed_pvr_path.c_str())) {
-		return {uncompressed_pvr_path, load_uncompressed_pvr(uncompressed_pvr_path.c_str(), params, name)};
+		return uncompressed_pvr_path;
+	}
+
+	return gfx_dir + name;
+}
+
+// file_path, Texture
+std::pair<std::string, gl::Texture> load_texture(
+	const ImageLoader& image_loader, const std::string& gfx_dir, const std::string& name, gl::TexParams params)
+{
+	ERROR_CONTEXT("texture_name", name.c_str());
+	const std::string abs_path = get_abs_path(gfx_dir, name);
+
+	if (ends_with(abs_path,  "_uncompressed.pvr")) {
+		return {abs_path, load_uncompressed_pvr2(abs_path.c_str(), params, name)};
 	}
 
 #if TARGET_OS_IPHONE
-	LOG_F(WARNING, "Loading non-pvr image file '%s'", name.c_str());
+	if (ends_with(abs_path,  ".pvr") {
+		return {abs_path, gl::load_pvr(abs_path.c_str(), params)};
+	}
 #endif
-	const auto img_path = gfx_dir + name;
-	size_t w,h;
-	ImageData data = load_image_rgba(image_loader, img_path.c_str(), &w, &h);
-	return {img_path, gl::Texture{name, params, gl::ImageFormat::RGBA32, {(unsigned)w, (unsigned)h}, data.get()}};
+
+#if TARGET_OS_IPHONE
+	LOG_F(WARNING, "Loading non-pvr image file at %s", abs_path.c_str());
+#endif
+	size_t w, h;
+	ImageData data = load_image_rgba(image_loader, abs_path.c_str(), &w, &h);
+	return {abs_path, gl::Texture{name, params, gl::ImageFormat::RGBA32, {(unsigned)w, (unsigned)h}, data.get()}};
 }
 
 // --------------------------------------------------------------------
@@ -297,30 +310,59 @@ void TextureMngr::prepare_eviction()
 void TextureMngr::finalize_eviction()
 {
 	// print_memory_usage("Before eviction: ");
+	LOG_SCOPE_F(INFO, "TextureMngr::finalize_eviction");
 
 	CHECK_F(_is_evicting);
 	_is_evicting = false;
 
-	unsigned num_evicted = 0;
 	for (auto&& p: _file_map) {
 		auto& tex_info = p.second;
 		if (!tex_info.used && tex_info.texture.unique() && tex_info.texture->has_id()) {
-			num_evicted += 1;
 			tex_info.texture->free();
 		}
 	}
 
 	// print_memory_usage("Before loading:  ");
 
-	unsigned num_loaded  = 0;
+	struct TextureData
+	{
+		std::string key, path;
+		size_t width, height;
+		ImageData data;
+	};
+
+	std::vector<std::future<TextureData>> futures;
+
+	ThreadPool pool;
+
 	for (auto&& p: _file_map) {
 		auto& tex_info = p.second;
-		if (tex_info.used) {
-			if (!tex_info.texture->has_data()) {
-				num_loaded += 1;
-				std::tie(tex_info.abs_path, *tex_info.texture) =
-					load_texture(_image_loader, _gfx_dir, tex_info.name, tex_info.texture->params());
-			}
+		if (!tex_info.used) { continue; }
+		if (tex_info.texture->has_data()) { continue; }
+
+		std::string abs_path = get_abs_path(_gfx_dir, tex_info.name);
+
+		if (fs::file_ending(abs_path) == "png") {
+			futures.push_back(pool.add<TextureData>([=](){
+				TextureData td;
+				td.key = p.first;
+				td.path = abs_path;
+				td.data = load_image_rgba(_image_loader, abs_path.c_str(), &td.width, &td.height);
+				return td;
+			}));
+		} else {
+			std::tie(tex_info.abs_path, *tex_info.texture) =
+				load_texture(_image_loader, _gfx_dir, tex_info.name, tex_info.texture->params());
+		}
+	}
+
+	if (!futures.empty()) {
+		LOG_SCOPE_F(INFO, "Waiting for %lu .png:s to load", futures.size());
+		for (auto& future : futures) {
+			TextureData td = future.get();
+			auto& tex_info = _file_map[td.key];
+			*tex_info.texture = gl::Texture{tex_info.name, tex_info.texture->params(),
+				gl::ImageFormat::RGBA32, {(unsigned)td.width, (unsigned)td.height}, td.data.get()};
 		}
 	}
 
