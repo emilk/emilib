@@ -117,6 +117,7 @@ public:
 	bool empty() const { return _list.empty(); }
 	auto size()  const { return _list.size();  }
 
+	// Stop all running coroutines with no outside handles to them.
 	void clear();
 
 	// You can save the returned handle so you can stop() or erase() it later.

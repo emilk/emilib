@@ -558,6 +558,7 @@ size_t Texture::memory_usage() const
 
 // ----------------------------------------------------------------------------
 
+// Legacy PVR 2: http://cdn.imgtec.com/sdk-documentation/PVR+File+Format.Specification.Legacy.pdf
 struct PvrHeader
 {
 	uint32_t header_length;
@@ -575,26 +576,34 @@ struct PvrHeader
 	uint32_t surface_count;
 };
 
-static const uint32_t kA8       = 27;
-static const uint32_t kBGRA8888 = 26;
+static_assert(sizeof(PvrHeader) == 52, "");
 
-Texture load_uncompressed_pvr_from_memory(
+static const uint32_t kBGRA8888 = 0x1A;
+static const uint32_t kA8       = 0x1B;
+
+Texture load_uncompressed_pvr2_from_memory(
 	const void* data, size_t num_bytes,
 	TexParams params, std::string debug_name)
 {
 	PvrHeader* header = (PvrHeader*)data;
-	CHECK_F(strncmp(header->pvr_tag, "PVR!", 4) == 0, "Not a .pvr file");
+	if (header->header_length != 52 || strncmp(header->pvr_tag, "PVR!", 4) != 0) {
+		LOG_F(ERROR, "Not a PVR 2 file: '%s'", debug_name.c_str());
+		return {};
+	}
 
 	uint32_t flags = header->flags;
 	uint32_t format_flag = flags & 0xFF;
 
 	const uint8_t* data_start = (const uint8_t*)data + sizeof(PvrHeader);
 
-	ImageFormat format = ImageFormat::BGRA32;
+	ImageFormat format;
 	if (format_flag == kA8) {
 		format = ImageFormat::Alpha8;
+	} else if (format_flag == kBGRA8888) {
+		format = ImageFormat::BGRA32;
 	} else {
-		CHECK_F(format_flag == kBGRA8888, "PVR: kBGRA8888 (%x) expected, got %x", kBGRA8888, format_flag);
+		LOG_F(ERROR, "PVR: kBGRA8888 (%x) expected, got %x", kBGRA8888, format_flag);
+		return {};
 	}
 
 	Size size{header->width, header->height};
@@ -605,9 +614,6 @@ Texture load_uncompressed_pvr_from_memory(
 		params.filter = TexFilter::Linear;
 	}
 
-#if 0
-	return new Texture{std::move(debug_name), params, format, size, data_start};
-#else
 	if (params.filter == TexFilter::Nearest || params.filter == TexFilter::Linear) {
 		return Texture{std::move(debug_name), params, format, size, data_start};
 	} else if (header->mipmap_count == 1) {
@@ -628,7 +634,6 @@ Texture load_uncompressed_pvr_from_memory(
 		}
 		return tex;
 	}
-#endif
 }
 
 // ----------------------------------------------------------------------------

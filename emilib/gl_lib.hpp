@@ -125,7 +125,9 @@ private:
 
 // ----------------------------------------------------------------------------
 
-Texture load_uncompressed_pvr_from_memory(
+// Assumes legacy PVR (version 2).
+// Returns a default texture (has_data() == false) if the given memory does not contain an uncompressed PVR.
+Texture load_uncompressed_pvr2_from_memory(
 	const void* data, size_t num_bytes,
 	TexParams params, std::string debug_name);
 

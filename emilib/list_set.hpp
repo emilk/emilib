@@ -1,3 +1,9 @@
+// By Emil Ernerfeldt 2014-2016
+// LICENSE:
+//   This software is dual-licensed to the public domain and under the following
+//   license: you are granted a perpetual, irrevocable license to copy, modify,
+//   publish, and distribute this file as you see fit.
+
 #pragma once
 
 #include <vector>
@@ -10,7 +16,7 @@ struct ListSetEqualTo
 {
 	constexpr bool operator()(const T &lhs, const T &rhs) const
 	{
-	    return lhs == rhs;
+		return lhs == rhs;
 	}
 };
 
