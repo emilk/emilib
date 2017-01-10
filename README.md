@@ -116,6 +116,9 @@ Really basic utf8 operations.
 #### wav.hpp/.cpp
 Parse WAVE (.wav) sound files.
 
+#### word_wrap.hpp/.cpp
+Wrap lines of text to fit within a given width.
+
 
 # iOS / OSX specific libraries:
 

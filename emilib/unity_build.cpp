@@ -24,3 +24,4 @@
 #include "timer.cpp"
 #include "utf8.cpp"
 #include "wav.cpp"
+#include "word_wrap.cpp"
