@@ -175,8 +175,8 @@ Texture::Texture(
 	std::string debug_name)
 	: _size(size)
 	, _format(format)
-	, _params(params_arg)
 	, _debug_name(std::move(debug_name))
+	, _params(params_arg)
 {
 	NAME_PAINT_FUNCTION();
 	CHECK_FOR_GL_ERROR;
@@ -194,8 +194,8 @@ Texture::Texture(
 	const void* data)
 	: _size(size)
 	, _format(format)
-	, _params(params_arg)
 	, _debug_name(std::move(debug_name))
+	, _params(params_arg)
 {
 	NAME_PAINT_FUNCTION();
 	CHECK_FOR_GL_ERROR;

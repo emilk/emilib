@@ -277,7 +277,7 @@ void DirWatcher::close_file(File& file)
 // -------------------------------------------------------
 
 DelayedDirWatcher::DelayedDirWatcher(std::string dir, unsigned frame_delay)
-	: _dir_watcher(std::move(dir)), _frame_delay(frame_delay)
+	: _frame_delay(frame_delay), _dir_watcher(std::move(dir))
 {
 }
 
