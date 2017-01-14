@@ -16,17 +16,20 @@
 
 namespace emilib {
 
-static const char* get_clipboard_text_callback()
+static const char* get_clipboard_text_callback(void*)
 {
 	return SDL_GetClipboardText();
 }
 
-static void set_clipboard_text_callback(const char* text)
+static void set_clipboard_text_callback(void*, const char* text)
 {
 	SDL_SetClipboardText(text);
 }
 
-ImGui_SDL::ImGui_SDL(float width_points, float height_points, float pixels_per_point) : _pixels_per_point(pixels_per_point)
+ImGui_SDL::ImGui_SDL(float width_points, float height_points, float pixels_per_point)
+	: width_points_(width_points)
+	, height_points_(height_points)
+	, _pixels_per_point(pixels_per_point)
 {
 	ImGuiIO& io = ImGui::GetIO();
 	io.DisplaySize = {width_points, height_points};
@@ -139,11 +142,11 @@ void ImGui_SDL::on_event(const SDL_Event& event)
 
 		case SDL_WINDOWEVENT: {
 			if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-				auto w = event.window.data1;
-				auto h = event.window.data2;
-				LOG_F(INFO, "Resized: %dx%d points", w, h);
-				io.DisplaySize.x = w;
-				io.DisplaySize.y = h;
+				_width_points = event.window.data1;
+				_height_points = event.window.data2;
+				LOG_F(INFO, "Resized: %dx%d points", _width_points, _height_points);
+				io.DisplaySize.x = _width_points;
+				io.DisplaySize.y = _height_points;
 			}
 		} break;
 	}

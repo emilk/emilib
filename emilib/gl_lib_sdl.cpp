@@ -9,6 +9,7 @@
 #include <cmath>
 
 #include "gl_lib_opengl.hpp"
+#include "gl_lib.hpp"
 
 #if TARGET_OS_IPHONE
 	#include "os.hpp"
@@ -16,44 +17,6 @@
 
 namespace emilib {
 namespace sdl {
-
-#ifdef GLEW_OK
-// Error callback
-void onGLError(
-	GLenum        source,
-	GLenum        type,
-	GLuint        id,
-	GLenum        severity,
-	GLsizei       length,
-	const GLchar* message,
-	const void*   user_param)
-{
-	LOG_F(WARNING, "GL debug: %s", message);
-}
-
-void init_glew()
-{
-	CHECK_FOR_GL_ERROR;
-	glewExperimental = true;
-	GLenum glew_err = glewInit();
-	CHECK_F(glew_err == GLEW_OK, "Failed to initialize GLEW: %s", glewGetErrorString(glew_err));
-	glGetError();  // glew sometimes produces faux GL_INVALID_ENUM
-	CHECK_FOR_GL_ERROR;
-
-	CHECK_F(glewIsSupported("GL_VERSION_3_2"));
-
-	if (glDebugMessageCallbackARB)
-	{
-		LOG_F(INFO, "ARB_debug_output supported");
-		glDebugMessageCallbackARB( onGLError, nullptr );
-		glEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB );
-	}
-	else
-	{
-		LOG_F(INFO, "ARB_debug_output not supported");
-	}
-}
-#endif // GLEW_OK
 
 InitResult init(const Params& params)
 {
@@ -136,7 +99,7 @@ InitResult init(const Params& params)
 	CHECK_FOR_GL_ERROR;
 
 	#ifdef GLEW_OK
-		init_glew();
+		gl::init_glew();
 	#endif
 
 	gl::TempViewPort::set_back_buffer_size(results.width_pixels, results.height_pixels);

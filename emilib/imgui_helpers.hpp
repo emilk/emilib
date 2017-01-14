@@ -28,6 +28,8 @@ void gl_texture(GLuint tex_id, const ImVec2& size);
 // Helper C++ bindings for ImGui
 namespace ImGuiPP {
 
+bool SliderSize(const std::string& label, size_t* v, size_t v_min, size_t v_max, float power = 1.0f);
+
 bool InputText(const std::string& label, std::string& text, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = NULL, void* user_data = NULL);
 void Text(const std::string& text);
 void LabelText(const std::string& label, const std::string& text);

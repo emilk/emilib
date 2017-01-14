@@ -41,6 +41,20 @@ void gl_texture(GLuint tex_id, const ImVec2& size)
 
 namespace ImGuiPP {
 
+bool SliderSize(const std::string& label, size_t* v, size_t v_min, size_t v_max, float power)
+{
+    CHECK_NOTNULL_F(v);
+    float v_float = *v;
+    bool changed = ImGui::SliderFloat(label.c_str(), &v_float, static_cast<float>(v_min), static_cast<float>(v_max), "%.0f", power);
+    if (changed)
+    {
+        *v = static_cast<size_t>(std::round(v_float));
+        *v = std::max(*v, v_min);
+        *v = std::min(*v, v_max);
+    }
+    return changed;
+}
+
 bool InputText(const std::string& label, std::string& text, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void* user_data)
 {
     char buff[1024];

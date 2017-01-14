@@ -15,8 +15,8 @@ struct Params
 {
 	const char* window_name = "emilib";
 
-	size_t width_points  = 0;
-	size_t height_points = 0;
+	size_t width_points  = 1024;
+	size_t height_points = 768;
 
 	int depth_buffer   = 0; // e.g. 24
 	int stencil_buffer = 0; // e.g. 8
