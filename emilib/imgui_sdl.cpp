@@ -114,16 +114,14 @@ void ImGui_SDL::on_event(const SDL_Event& event)
 	switch (event.type)
 	{
 		case SDL_KEYDOWN: case SDL_KEYUP: {
-			auto sym = event.key.keysym.scancode;
-			if (sym < num_imgui_keys) {
-				io.KeysDown[sym] = (event.key.state == SDL_PRESSED);
+			int key = event.key.keysym.sym & ~SDLK_SCANCODE_MASK;
+			if (key < num_imgui_keys) {
+				io.KeysDown[key] = (event.type == SDL_KEYDOWN);
 			}
-			if (event.key.keysym.sym == SDLK_LGUI || event.key.keysym.sym == SDLK_RGUI) {
-				io.KeyCtrl = (event.key.state == SDL_PRESSED);
-			}
-			if (event.key.keysym.sym == SDLK_LSHIFT || event.key.keysym.sym == SDLK_RSHIFT) {
-				io.KeyShift = (event.key.state == SDL_PRESSED);
-			}
+			io.KeyShift = ((SDL_GetModState() & KMOD_SHIFT) != 0);
+			io.KeyCtrl  = ((SDL_GetModState() & KMOD_CTRL)  != 0);
+			io.KeyAlt   = ((SDL_GetModState() & KMOD_ALT)   != 0);
+			io.KeySuper = ((SDL_GetModState() & KMOD_GUI)   != 0);
 		} break;
 
 		case SDL_MOUSEWHEEL: {
@@ -131,13 +129,7 @@ void ImGui_SDL::on_event(const SDL_Event& event)
 		} break;
 
 		case SDL_TEXTINPUT: {
-			const char* utf8 = event.text.text;
-
-			std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> utf32conv;
-			std::u32string utf32 = utf32conv.from_bytes(utf8);
-			if (utf32.size() == 1 && utf32[0] < 0x10000) {
-				io.AddInputCharacter((unsigned short)utf32[0]);
-			}
+			io.AddInputCharactersUTF8(event.text.text);
 		} break;
 
 		case SDL_WINDOWEVENT: {
