@@ -82,6 +82,9 @@ It also provides a `Range` class which represent an integer range in a half-clos
 #### list_map.hpp / list_set.hpp
 Simple O(N) map/set with small overhead and great performance for small N.
 
+#### marching_squares.hpp/.cpp
+Short, simple marching squares implementation.
+
 #### mem_map.hpp/.cpp
 Simple wrapper around memory mapping with RAII.
 
