@@ -67,6 +67,7 @@ public:
 
 	float width_points() const { return _width_points; }
 	float height_points() const { return _height_points; }
+	float pixels_per_point() const { return _pixels_per_point; }
 
 private:
 	bool  _active = true;

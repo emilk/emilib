@@ -27,8 +27,8 @@ static void set_clipboard_text_callback(void*, const char* text)
 }
 
 ImGui_SDL::ImGui_SDL(float width_points, float height_points, float pixels_per_point)
-	: width_points_(width_points)
-	, height_points_(height_points)
+	: _width_points(width_points)
+	, _height_points(height_points)
 	, _pixels_per_point(pixels_per_point)
 {
 	ImGuiIO& io = ImGui::GetIO();
@@ -144,7 +144,7 @@ void ImGui_SDL::on_event(const SDL_Event& event)
 			if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
 				_width_points = event.window.data1;
 				_height_points = event.window.data2;
-				LOG_F(INFO, "Resized: %dx%d points", _width_points, _height_points);
+				LOG_F(INFO, "Resized: %fx%f points", _width_points, _height_points);
 				io.DisplaySize.x = _width_points;
 				io.DisplaySize.y = _height_points;
 			}
