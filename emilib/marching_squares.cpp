@@ -23,48 +23,82 @@ std::vector<float> marching_squares(size_t width, size_t height, const float* is
 			const int bl_i = bl_f >= 0.0f;
 			const int br_i = br_f >= 0.0f;
 
-			int config = tl_i | (tr_i << 1) | (bl_i << 2) | (br_i << 3);
-			if (config > 7) { config = 15 - config; }
+			int config = (br_i << 3) | (bl_i << 2) | (tr_i << 1) | tl_i;
 
-			if (config == 0) { continue; }
+			if (config == 0b0000 || config == 0b1111) { continue; }
 
 			const float y_left   = tl_f / (tl_f - bl_f);
 			const float y_right  = tr_f / (tr_f - br_f);
-			const float x_bottom = 1.0f - br_f / (br_f - bl_f);
-			const float x_top    = 1.0f - tr_f / (tr_f - tl_f);
+			const float x_bottom = bl_f / (bl_f - br_f);
+			const float x_top    = tl_f / (tl_f - tr_f);
 
 			switch (config) {
-				case 1:
+				case 0b0001:
 					lines.push_back(x + 0.0f);   // x
 					lines.push_back(y + y_left); // y
 					lines.push_back(x + x_top);  // x
 					lines.push_back(y + 0.0f);   // y
 					break;
-				case 2:
+				case 0b1110:
+					lines.push_back(x + x_top);  // x
+					lines.push_back(y + 0.0f);   // y
+					lines.push_back(x + 0.0f);   // x
+					lines.push_back(y + y_left); // y
+					break;
+
+				case 0b0010:
 					lines.push_back(x + x_top);   // x
 					lines.push_back(y + 0.0f);    // y
 					lines.push_back(x + 1.0f);    // x
 					lines.push_back(y + y_right); // y
 					break;
-				case 3:
+				case 0b1101:
+					lines.push_back(x + 1.0f);    // x
+					lines.push_back(y + y_right); // y
+					lines.push_back(x + x_top);   // x
+					lines.push_back(y + 0.0f);    // y
+					break;
+
+				case 0b0011:
 					lines.push_back(x + 0.0f);    // x
 					lines.push_back(y + y_left);  // y
 					lines.push_back(x + 1.0f);    // x
 					lines.push_back(y + y_right); // y
 					break;
-				case 4:
+				case 0b1100:
+					lines.push_back(x + 1.0f);    // x
+					lines.push_back(y + y_right); // y
+					lines.push_back(x + 0.0f);    // x
+					lines.push_back(y + y_left);  // y
+					break;
+
+				case 0b0100:
+					lines.push_back(x + x_bottom); // x
+					lines.push_back(y + 1.0f);     // y
+					lines.push_back(x + 0.0f);     // x
+					lines.push_back(y + y_left);   // y
+					break;
+				case 0b1011:
 					lines.push_back(x + 0.0f);     // x
 					lines.push_back(y + y_left);   // y
 					lines.push_back(x + x_bottom); // x
 					lines.push_back(y + 1.0f);     // y
 					break;
-				case 5:
+
+				case 0b0101:
+					lines.push_back(x + x_bottom); // x
+					lines.push_back(y + 1.0f);     // y
+					lines.push_back(x + x_top);    // x
+					lines.push_back(y + 0.0f);     // y
+					break;
+				case 0b1010:
 					lines.push_back(x + x_top);    // x
 					lines.push_back(y + 0.0f);     // y
 					lines.push_back(x + x_bottom); // x
 					lines.push_back(y + 1.0f);     // y
 					break;
-				case 6:
+
+				case 0b0110:
 					lines.push_back(x + x_top);    // x
 					lines.push_back(y + 0.0f);     // y
 					lines.push_back(x + 0.0f);     // x
@@ -74,17 +108,49 @@ std::vector<float> marching_squares(size_t width, size_t height, const float* is
 					lines.push_back(x + 1.0f);     // x
 					lines.push_back(y + y_right);  // y
 					break;
-				case 7:
+				case 0b1001:
+					lines.push_back(x + 0.0f);     // x
+					lines.push_back(y + y_left);   // y
+					lines.push_back(x + x_top);    // x
+					lines.push_back(y + 0.0f);     // y
+					lines.push_back(x + 1.0f);     // x
+					lines.push_back(y + y_right);  // y
+					lines.push_back(x + x_bottom); // x
+					lines.push_back(y + 1.0f);     // y
+					break;
+
+				case 0b0111:
 					lines.push_back(x + x_bottom); // x
 					lines.push_back(y + 1.0f);     // y
 					lines.push_back(x + 1.0f);     // x
 					lines.push_back(y + y_right);  // y
+					break;
+				case 0b1000:
+					lines.push_back(x + 1.0f);     // x
+					lines.push_back(y + y_right);  // y
+					lines.push_back(x + x_bottom); // x
+					lines.push_back(y + 1.0f);     // y
 					break;
 			}
 		}
 	}
 
 	return lines;
+}
+
+float calc_area(size_t num_line_segments, const float* xy)
+{
+	double area = 0;
+
+	for (size_t i = 0; i < num_line_segments; ++i) {
+		const double p0x = xy[4 * i + 0];
+		const double p0y = xy[4 * i + 1];
+		const double p1x = xy[4 * i + 2];
+		const double p1y = xy[4 * i + 3];
+		area += p0x * p1y - p1x * p0y;
+	}
+
+	return static_cast<float>(area / 2);
 }
 
 } // namespace emilib

@@ -11,9 +11,12 @@
 namespace emilib {
 
 /// Approximate the iso-surface at threshold = 0.
-/// `iso` is assumed row-major, `width` * `height`.
+/// `iso` is assumed row-major, `width` * `height`, with positive values meaning "outside".
 /// Returns a bunch of line segments as x0, y0, x1, y1.
-/// Not optimized. Line segments may not align seamlessly.
+/// In a system where (0,0) is top left, the returned line segments will be in clock-wise order.
 std::vector<float> marching_squares(size_t width, size_t height, const float* iso);
+
+/// Calculate the area of one or several shapes from their outline, as returned by marching_squares.
+float calc_area(size_t num_line_segments, const float* xy);
 
 } // namespace emilib
