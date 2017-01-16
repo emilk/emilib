@@ -55,6 +55,9 @@ This library allows you to watch for changes in a directory, e.g. new files, del
 
 POSIX systems only.
 
+#### dual.hpp
+Library for [dual numbers](https://en.wikipedia.org/wiki/Dual_number). Can be used for numerical stable differentiation. Works inside of Eigen.
+
 #### filesystem.hpp/.cpp
 Contains functions for easily reading/writing files, getting file size and modified time, listing all files in a directory, etc.
 
