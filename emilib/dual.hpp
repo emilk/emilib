@@ -20,6 +20,7 @@
 #include <cmath>
 #include <iosfwd>
 #include <limits>
+#include <utility>
 
 namespace emilib {
 
@@ -34,6 +35,8 @@ public:
 	T real;
 	T eps;
 };
+
+// ----------------------------------------------------------------------------
 
 template<typename T>
 inline constexpr Dual<T> operator+(const Dual<T>& left, const Dual<T>& right)
@@ -60,9 +63,29 @@ inline constexpr void operator+=(Dual<T>& left, const Dual<T>& right)
 }
 
 template<typename T>
+inline constexpr void operator+=(Dual<T>& left, const T& right)
+{
+	left.real += right;
+}
+
+// ----------------------------------------------------------------------------
+
+template<typename T>
 inline constexpr Dual<T> operator-(const Dual<T>& left, const Dual<T>& right)
 {
 	return {left.real - right.real, left.eps - right.eps};
+}
+
+template<typename T>
+inline constexpr Dual<T> operator-(const Dual<T>& left, const T& right)
+{
+	return {left.real - right, left.eps};
+}
+
+template<typename T>
+inline constexpr Dual<T> operator-(const T& left, const Dual<T>& right)
+{
+	return {left - right.real, right.eps};
 }
 
 template<typename T>
@@ -70,6 +93,14 @@ inline constexpr void operator-=(Dual<T>& left, const Dual<T>& right)
 {
 	left = left - right;
 }
+
+template<typename T>
+inline constexpr void operator-=(Dual<T>& left, const T& right)
+{
+	left.real -= right;
+}
+
+// ----------------------------------------------------------------------------
 
 template<typename T>
 inline constexpr Dual<T> operator*(const T& left, const Dual<T>& right)
@@ -100,6 +131,8 @@ inline constexpr void operator*=(Dual<T>& left, const Dual<T>& right)
 {
 	left = left * right;
 }
+
+// ----------------------------------------------------------------------------
 
 template<typename T>
 inline constexpr Dual<T> operator/(const Dual<T>& left, const T& right)
@@ -147,6 +180,8 @@ inline constexpr void operator/=(Dual<T>& left, const Dual<T>& right)
 	left = left / right;
 }
 
+// ----------------------------------------------------------------------------
+
 template<typename T>
 inline constexpr Dual<T> operator+(const Dual<T>& operand)
 {
@@ -158,6 +193,8 @@ inline constexpr Dual<T> operator-(const Dual<T>& operand)
 {
 	return {-operand.real, -operand.eps};
 }
+
+// ----------------------------------------------------------------------------
 
 template<typename T>
 inline constexpr bool operator==(const Dual<T>& left, const Dual<T>& right)
@@ -174,9 +211,28 @@ inline constexpr bool operator!=(const Dual<T>& left, const Dual<T>& right)
 template<typename T>
 inline constexpr bool operator<(const Dual<T>& left, const Dual<T>& right)
 {
-	if (left.real != right.real) { return left.real < right.real; }
-	return left.eps < right.eps;
+	return std::make_pair(left.real, left.eps) < std::make_pair(right.real, right.eps);
 }
+
+template<typename T>
+inline constexpr bool operator<=(const Dual<T>& left, const Dual<T>& right)
+{
+	return std::make_pair(left.real, left.eps) <= std::make_pair(right.real, right.eps);
+}
+
+template<typename T>
+inline constexpr bool operator>=(const Dual<T>& left, const Dual<T>& right)
+{
+	return std::make_pair(left.real, left.eps) >= std::make_pair(right.real, right.eps);
+}
+
+template<typename T>
+inline constexpr bool operator>(const Dual<T>& left, const Dual<T>& right)
+{
+	return std::make_pair(left.real, left.eps) > std::make_pair(right.real, right.eps);
+}
+
+// ----------------------------------------------------------------------------
 
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const Dual<T>& x)
@@ -286,35 +342,31 @@ T ceil(const emilib::Dual<T>& x)
 	template <typename T>
 	struct NumTraits<emilib::Dual<T>> : GenericNumTraits<emilib::Dual<T>>
 	{
-		typedef T Real;
-		typedef typename NumTraits<T>::Literal Literal;
-		enum
-		{
-			IsComplex = 1,
+		using Real = T;
+		using Literal = typename NumTraits<T>::Literal;
+		enum {
+			IsComplex             = 1,
 			RequireInitialization = NumTraits<T>::RequireInitialization,
-			ReadCost = 2 * NumTraits<T>::ReadCost,
-			AddCost = 2 * NumTraits<Real>::AddCost,
-			MulCost = 3 * NumTraits<Real>::MulCost + NumTraits<Real>::AddCost
+			ReadCost              = 2 * NumTraits<T>::ReadCost,
+			AddCost               = 2 * NumTraits<Real>::AddCost,
+			MulCost               = 3 * NumTraits<Real>::MulCost + NumTraits<Real>::AddCost
 		};
 
-		EIGEN_DEVICE_FUNC
-		static inline Real epsilon() { return NumTraits<Real>::epsilon(); }
-		EIGEN_DEVICE_FUNC
-		static inline Real dummy_precision() { return NumTraits<Real>::dummy_precision(); }
-		EIGEN_DEVICE_FUNC
-		static inline int digits10() { return NumTraits<Real>::digits10(); }
+		EIGEN_DEVICE_FUNC static inline Real epsilon()         { return NumTraits<Real>::epsilon();         }
+		EIGEN_DEVICE_FUNC static inline Real dummy_precision() { return NumTraits<Real>::dummy_precision(); }
+		EIGEN_DEVICE_FUNC static inline int  digits10()        { return NumTraits<Real>::digits10();        }
 	};
 
 	template<typename T, typename BinaryOp>
 	struct ScalarBinaryOpTraits<T, emilib::Dual<T>, BinaryOp>
 	{
-		typedef emilib::Dual<T> ReturnType;
+		using ReturnType = emilib::Dual<T>;
 	};
 
 	template<typename T, typename BinaryOp>
 	struct ScalarBinaryOpTraits<emilib::Dual<T>, T, BinaryOp>
 	{
-		typedef emilib::Dual<T> ReturnType;
+		using ReturnType = emilib::Dual<T>;
 	};
 
 	} // namespace Eigen
