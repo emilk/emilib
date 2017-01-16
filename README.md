@@ -85,6 +85,9 @@ Simple O(N) map/set with small overhead and great performance for small N.
 #### marching_squares.hpp/.cpp
 Short, simple marching squares implementation.
 
+#### math.hpp
+A few mathy things that I use a lot.
+
 #### mem_map.hpp/.cpp
 Simple wrapper around memory mapping with RAII.
 
