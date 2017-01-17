@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 
 #define LOGURU_WITH_STREAMS 1
 #include <loguru.hpp>

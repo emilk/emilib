@@ -16,14 +16,6 @@
 
 // ----------------------------------------------------------------------------
 
-#ifndef TARGET_OS_IPHONE
-#	error TARGET_OS_IPHONE not defined
-#endif
-
-#ifndef TARGET_OS_MAC
-#	error TARGET_OS_MAC not defined
-#endif
-
 #if TARGET_OS_IPHONE
 
 	#define GLLIB_GLES                 1

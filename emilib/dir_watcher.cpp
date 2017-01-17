@@ -6,10 +6,19 @@
 
 #include "dir_watcher.hpp"
 
+#include <cstring>
+
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/event.h>
+
+#ifdef __linux__
+	// On linux you need to install libkqueue-dev
+	#include <kqueue/sys/event.h>
+#else
+	#include <sys/event.h>
+#endif
+
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>

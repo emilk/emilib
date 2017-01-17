@@ -6,6 +6,7 @@
 
 #include "coroutine.hpp"
 
+#include <algorithm>
 #include <thread>
 
 #define LOGURU_WITH_STREAMS 1

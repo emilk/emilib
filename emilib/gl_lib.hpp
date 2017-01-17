@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -360,6 +361,7 @@ public:
 
 	const VertexFormat& vertex_format() const { return _vf; }
 	VBO& vert_vbo() { return _vertices; }
+	const VBO& vert_vbo() const { return _vertices; }
 
 	// Will re-use memory if same size
 	template<typename Vertex>

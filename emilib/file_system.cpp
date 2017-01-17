@@ -6,6 +6,8 @@
 
 #include "file_system.hpp"
 
+#include <cstring>
+
 #include <dirent.h>
 #include <errno.h>
 #include <stdexcept>
