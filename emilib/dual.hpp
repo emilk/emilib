@@ -346,8 +346,8 @@ T ceil(const emilib::Dual<T>& x)
 		using Literal = typename NumTraits<T>::Literal;
 		enum {
 			IsComplex             = 1,
-			RequireInitialization = NumTraits<T>::RequireInitialization,
-			ReadCost              = 2 * NumTraits<T>::ReadCost,
+			RequireInitialization = NumTraits<Real>::RequireInitialization,
+			ReadCost              = 2 * NumTraits<Real>::ReadCost,
 			AddCost               = 2 * NumTraits<Real>::AddCost,
 			MulCost               = 3 * NumTraits<Real>::MulCost + NumTraits<Real>::AddCost
 		};
