@@ -76,11 +76,13 @@ Cache-friendly hash map/set with open addressing, linear probing and power-of-tw
 Simple integer range, allowing you to replace `for (size_t i = 0; i < limit; ++i)` with `for (auto i : irange(limit))`.
 It also provides a `Range` class which represent an integer range in a half-closed interval [begin, end) as well as the following functions:
 
+``` C++
 	for (const auto ix : irange(end))                        { CHECK_F(0     <= ix && ix < end);           }
 	for (const auto ix : irange(begin, end))                 { CHECK_F(begin <= ix && ix < end);           }
 	for (const auto ix : indices(some_vector))               { CHECK_F(0 <= ix && ix < some_vector.size(); }
 	for (const char ch : emilib::cstr_range("hello world!")) { ...                                         }
 	for (auto& value : it_range(begin, end))                 { std::cout << value;                         }
+```
 
 #### list_map.hpp / list_set.hpp
 Simple O(N) map/set with small overhead and great performance for small N.
@@ -100,6 +102,20 @@ For instance, you can use this to track a finger flicking something on a touch-s
 
 #### read_write_mutex.hpp
 Fast mutex for multiple-readers, single-writer scenarios written in pure C++11.
+
+#### scope_exit.hpp
+Adds the macro `SCOPE_EXIT` for running some code at the end of the scope (or when a function returns, etc). Example:
+
+``` C++
+void foo()
+{
+    File* file = fopen(...);
+    SCOPE_EXIT{ fclose(file); };
+    if (bar) { return; }
+    if (baz) { exit(); }
+    might_throw_an_exception(file);
+}
+```
 
 #### string_interning.hpp/.cpp
 Stupid simple thread-safe string interning.
