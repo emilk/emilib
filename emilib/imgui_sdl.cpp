@@ -136,7 +136,7 @@ void ImGui_SDL::on_event(const SDL_Event& event)
 			if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
 				_width_points = event.window.data1;
 				_height_points = event.window.data2;
-				LOG_F(INFO, "Resized: %fx%f points", _width_points, _height_points);
+				VLOG_F(1, "Resized: %fx%f points", _width_points, _height_points);
 				io.DisplaySize.x = _width_points;
 				io.DisplaySize.y = _height_points;
 			}

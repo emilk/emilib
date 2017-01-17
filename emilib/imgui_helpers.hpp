@@ -10,6 +10,15 @@
 #include <string>
 #include <vector>
 
+#define IM_VEC2_CLASS_EXTRA                                                                        \
+	friend ImVec2 operator+(const ImVec2& a, const ImVec2& b) { return {a.x + b.x, a.y + b.y}; }   \
+	friend ImVec2 operator-(const ImVec2& a, const ImVec2& b) { return {a.x - b.x, a.y - b.y}; }   \
+	friend bool operator==(const ImVec2& a, const ImVec2& b) { return a.x == b.x && a.y == b.y; }
+
+#define IM_VEC4_CLASS_EXTRA                                                        \
+    friend bool operator==(const ImVec4& a, const ImVec4& b) {                     \
+        return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w; }             \
+
 #include <imgui/imgui.h>
 
 using GLuint = uint32_t;

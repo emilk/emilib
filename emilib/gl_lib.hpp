@@ -101,7 +101,6 @@ public:
 	GLuint id() const { return _id; }
 	bool has_id() const { return _id != 0; }
 
-	//void set_params(const TexParams& params);
 	void generate_mipmaps();
 
 protected:
