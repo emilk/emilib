@@ -12,7 +12,7 @@
 
 namespace gl {
 
-// iOS only!
+/// iOS only!
 gl::Texture load_pvr(const char* path, gl::TexParams params);
 
 } // namespace gl

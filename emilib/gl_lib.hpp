@@ -26,6 +26,7 @@
 	#error GLLIB_OPENGL_VERSION not defined
 #endif
 
+/// OpenGL wrapper classes
 namespace gl {
 
 using GLenum = unsigned int;
@@ -39,10 +40,10 @@ void init_glew();
 
 bool supports_mipmaps_for(Size size);
 
-/* A texture can be in three states:
-No id,
-id, no data,
-id and data.
+/** A texture can be in three states:
+ *  No id, no data
+ *  id, no data,
+ *  id and data.
 */
 class Texture
 {
@@ -63,12 +64,12 @@ public:
 
 	void swap(Texture& other);
 
-	// Free allocated texture, if any. sets id = 0.ß
+	/// Free allocated texture, if any. sets id = 0.ß
 	void free();
 
 	void set_data(const void* data, Size size, ImageFormat format);
 
-	// Note: data MUST be in the correct format.
+	/// Note: data MUST be in the correct format.
 	void set_data(const void* data);
 
 	void set_mip_data(const void* data, Size size, unsigned level);
@@ -85,19 +86,19 @@ public:
 	const std::string& debug_name() const { return _debug_name; }
 	void set_debug_name(const std::string& debug_name);
 
-	// We must have an id
+	/// We must have an id
 	void bind(unsigned tu = 0) const;
 
 	unsigned width()  const { return _size.x;  }
 	unsigned height() const { return _size.y; }
 	const Size& size() const { return _size; }
 
-	// Use to override when you know the format is compressed
+	/// Use to override when you know the format is compressed
 	void set_bits_per_pixel(unsigned bpp);
 	unsigned bits_per_pixel() const;
-	size_t memory_usage() const; // in bytes
+	size_t memory_usage() const; ///< in bytes
 
-	// 0 if not generated
+	/// 0 if not generated
 	GLuint id() const { return _id; }
 	bool has_id() const { return _id != 0; }
 
@@ -125,8 +126,8 @@ private:
 
 // ----------------------------------------------------------------------------
 
-// Assumes legacy PVR (version 2).
-// Returns a default texture (has_data() == false) if the given memory does not contain an uncompressed PVR.
+/// Assumes legacy PVR (version 2).
+/// Returns a default texture (has_data() == false) if the given memory does not contain an uncompressed PVR.
 Texture load_uncompressed_pvr2_from_memory(
 	const void* data, size_t num_bytes,
 	TexParams params, std::string debug_name);
@@ -139,16 +140,16 @@ public:
 	struct Uniform
 	{
 		std::string name;
-		int         size; // Mostly 1, maybe non-1 for arrays?
-		unsigned    type; // e.g. GL_FLOAT_VEC2
+		int         size; ///< Mostly 1, maybe non-1 for arrays?
+		unsigned    type; ///< e.g. GL_FLOAT_VEC2
 		int         location;
 	};
 
 	struct Attribute
 	{
 		std::string name;
-		int         size; // Mostly 1, maybe non-1 for arrays?
-		unsigned    type; // e.g. GL_FLOAT_VEC2
+		int         size; ///< Mostly 1, maybe non-1 for arrays?
+		unsigned    type; ///< e.g. GL_FLOAT_VEC2
 		int         location;
 	};
 
@@ -159,7 +160,7 @@ public:
 
 	Program() {}
 
-	// Shader format must match the current OpenGl version
+	/// Shader format must match the current OpenGl version
 	Program(const std::string& vs, const std::string& fs, std::string debug_name);
 	Program(Program&&);
 	Program& operator=(Program&&);
@@ -170,7 +171,7 @@ public:
 	const std::string& debug_name() const { return _debug_name; }
 	unsigned           id()         const { return _program;    }
 
-	// For debugging: call after binding uniforms. Ignored if not debug build.
+	/// For debugging: call after binding uniforms. Ignored if not debug build.
 	void validate() const;
 
 	void bind() const;
@@ -187,7 +188,7 @@ public:
 		set_uniform(get_uniform_loc(name), value);
 	}
 
-	// gl_lib does NOT implement this function! You have to do that yourself, e.g. for Vec2, Mat4
+	/// gl_lib does NOT implement this function! You have to do that yourself, e.g. for Vec2, Mat4
 	template<typename T>
 	void set_uniform(int location, const T& value) const;
 
@@ -201,19 +202,19 @@ private:
 	Attributes  _attributes;
 };
 
-/* Uses a uniform syntax for all gl versions.
-VertexShader:  vs_in/vs_out instead of attribute/varying.
-PixelShader:   fs_in instead of varying, write to out_FragColor.
-*/
+/// Uses the same syntax for all OpenGL versions, including GL ES.
+/// VertexShader:  vs_in/vs_out instead of attribute/varying.
+/// PixelShader:   fs_in instead of varying, write to out_FragColor.
 Program compile_program(const std::string& vs, const std::string& fs, const std::string& debug_name);
 Program compile_program(const ProgramSource& program_source);
 
 // ----------------------------------------------------------------------------
-// Functionality for mimicking fixed function with shaders easily
 
+/// Functionality for mimicking fixed function with shaders easily
 namespace FF
 {
-	enum FF_Flags // Fixed function flags
+	/// Fixed function flags
+	enum FF_Flags
 	{
 		Texture = (1<<0),
 		a_color = (1<<1),
@@ -222,9 +223,10 @@ namespace FF
 	};
 }
 
+/// `flags` should be a combo if FF::FF_Flags
 ProgramSource create_ff(int flags);
 
-// `flags` should be a combo if FF::FF_Flags
+/// `flags` should be a combo if FF::FF_Flags
 Program compile_ff_program(int flags);
 
 // ----------------------------------------------------------------------------
@@ -234,10 +236,10 @@ enum Normalize { DONT_NORMALIZE, NORMALIZE };
 struct VertComp
 {
 	std::string name;
-	unsigned    num_comps; // 1 for scalars, 2 for Vec2 etc
-	unsigned    type;      // e.g. GL_FLOAT
-	Normalize   normalize; // If we normalize, values are rescaled to [0, 1]
-	size_t      offset;    // Byte offset, filled in by VertexFormat::VertexFormat.
+	unsigned    num_comps; ///< 1 for scalars, 2 for Vec2 etc
+	unsigned    type;      ///< e.g. GL_FLOAT
+	Normalize   normalize; ///< If we normalize, values are rescaled to [0, 1]
+	size_t      offset;    ///< Byte offset, filled in by VertexFormat::VertexFormat.
 
 	size_t sizeBytes() const;
 
@@ -287,7 +289,7 @@ public:
 	template<typename ElementType>
 	const ElementType* data() const { return reinterpret_cast<const ElementType*>(_buffer.data()); }
 
-	// Will re-use memory if same size
+	/// Will re-use memory if same size
 	template<typename ElementType>
 	ElementType* allocate(size_t count)
 	{
@@ -362,7 +364,7 @@ public:
 	VBO& vert_vbo() { return _vertices; }
 	const VBO& vert_vbo() const { return _vertices; }
 
-	// Will re-use memory if same size
+	/// Will re-use memory if same size
 	template<typename Vertex>
 	Vertex* allocate_vert(size_t count)
 	{
@@ -376,8 +378,8 @@ public:
 		std::copy_n(vertices.data(), vertices.size(), allocate_vert<Vertex>(vertices.size()));
 	}
 
-	// TODO: 16 bit indices
-	// Will re-use memory if same size
+	/// TODO: 16 bit indices
+	/// Will re-use memory if same size
 	uint32_t* allocate_indices(size_t count)
 	{
 		if (!_indices) {
@@ -393,7 +395,7 @@ public:
 
 	// --------------------------
 
-	// mode == GL_TRIANGLE_STRIP or GL_TRIANGLE_FAN
+	/// mode == GL_TRIANGLE_STRIP or GL_TRIANGLE_FAN
 	void paint(const Program& prog, GLenum mode);
 
 	void paint_strip(const Program& prog);
@@ -410,8 +412,8 @@ private:
 
 // ----------------------------------------------------------------------------
 
-// Like a typed, dynamic-expanding MeshPainter
-// TODO: inherit MeshPainter?
+/// Like a typed, dynamic-expanding MeshPainter
+/// TODO: inherit MeshPainter?
 template<typename Vertex>
 class TriangleStrip
 {
@@ -451,7 +453,7 @@ private:
 
 // ------------------------------------------------
 
-// Will set a viewport and restore the old viewport on death.
+/// Will set a viewport and restore the old viewport on death.
 class TempViewPort
 {
 public:
@@ -460,7 +462,7 @@ public:
 	explicit TempViewPort(unsigned width, unsigned height) : TempViewPort(Size{width, height}) {}
 	~TempViewPort();
 
-	// Call when we aquire context or resize window.
+	/// Call when we aquire context or resize window.
 	static void set_back_buffer(Rectangle bb);
 	static void set_back_buffer_size(Size size)
 	{
@@ -483,11 +485,11 @@ private:
 
 // ----------------------------------------------------------------------------
 
-// An off-screen buffer you can draw onto.
+/// An off-screen buffer you can draw onto.
 class FBO
 {
 public:
-	// Bind/unbind FBO:
+	/// Bind/unbind FBO:
 	class Lock
 	{
 	public:
@@ -507,7 +509,7 @@ public:
 #if !GLLIB_GLES
 		bool with_depth   = false;
 #endif // !GLLIB_GLES
-		bool        color_mipmap = false; // You must also call generate_color_mipmap() after painting.
+		bool        color_mipmap = false; ///< You must also call generate_color_mipmap() after painting.
 		ImageFormat color_format = ImageFormat::RGBA32;
 	};
 
@@ -527,7 +529,7 @@ public:
 	unsigned    width()  const { return _size.x; }
 	unsigned    height() const { return _size.y; }
 
-	// Call after painting if color_mipmap is set.
+	/// Call after painting if color_mipmap is set.
 	void generate_color_mipmap();
 
 	const gl::Texture& color_texture() const { return _color_tex; }

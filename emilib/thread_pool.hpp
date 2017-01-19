@@ -22,25 +22,25 @@ class ThreadPool
 public:
 	using Job = std::function<void()>;
 
-	// As many threads as cores, but at least 2.
+	/// As many threads as cores, but at least 2.
 	ThreadPool();
 
-	// Use this many worker threads.
+	/// Use this many worker threads.
 	explicit ThreadPool(size_t num_threads);
 
-	// Will block until all jobs have finished.
+	/// Will block until all jobs have finished.
 	~ThreadPool();
 
-	// Wait for all jobs to finish.
+	/// Wait for all jobs to finish.
 	void wait();
 
-	// Remove all jobs in the queue (but those that have already started will still finish).
+	/// Remove all jobs in the queue (but those that have already started will still finish).
 	void clear();
 
-	// Add to queue and return immediately.
+	/// Add to queue and return immediately.
 	void add_void(const Job& job);
 
-	// Add to queue and return immediately.
+	/// Add to queue and return immediately.
 	template<typename Result>
 	std::future<Result> add(std::function<Result()> job)
 	{

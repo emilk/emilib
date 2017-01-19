@@ -12,7 +12,7 @@
 
 namespace emilib {
 
-// Stream .mp3 files on iOS and OSX.
+/// Stream .mp3 files on iOS and OSX.
 class Music
 {
 public:
@@ -25,7 +25,7 @@ public:
 
 	const std::string& path() const;
 
-	void update(float dt); // For fades
+	void update(float dt); ///< For fades
 
 	void fade_in(float duration = 0.1f);
 	void fade_out_and_pause(float duration = 0.1f);

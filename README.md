@@ -14,6 +14,10 @@ recognized, you are granted a perpetual, irrevocable license to copy
 and modify this file as you see fit.
 
 
+# Documentation
+Documentation can be found at [https://emilk.github.io/emilib/html/index.html](https://emilk.github.io/emilib/html/index.html).
+
+
 # Usage
 Most libraries in emilib are stand-alone, so you can, for instance, use the coroutine library without having to compile anything but that.
 

@@ -56,7 +56,7 @@ public:
 		}
 	};
 
-    Integer operator[](size_t ix) const { return _begin + ix; }
+	Integer operator[](size_t ix) const { return _begin + ix; }
 
 	iterator begin() const { return iterator{ _begin }; }
 	iterator end()   const { return iterator{ _end   }; }
@@ -70,28 +70,28 @@ private:
 	Integer _begin, _end;
 };
 
-// for (const auto i : irange(end)) { CHECK_F(0 <= i && i < end); }
+/// for (const auto i : irange(end)) { CHECK_F(0 <= i && i < end); }
 template<typename Integer>
 Range<Integer> irange(Integer end)
 {
 	return {0, end};
 }
 
-// for (const auto i : irange(begin, end)) { CHECK_F(begin <= i && i < end); }
+/// for (const auto i : irange(begin, end)) { CHECK_F(begin <= i && i < end); }
 template<typename Integer>
 Range<Integer> irange(Integer begin, Integer end)
 {
 	return {begin, end};
 }
 
-// for (const auto i : irange_inclusive(first, last)) { CHECK_F(first <= i && i <= last); }
+/// for (const auto i : irange_inclusive(first, last)) { CHECK_F(first <= i && i <= last); }
 template<typename Integer>
 Range<Integer> irange_inclusive(Integer first, Integer last)
 {
 	return {first, last + 1};
 }
 
-// for (const auto i : indices(some_vector)) { CHECK_F(0 <= i && i < some_vector.size(); }
+/// for (const auto i : indices(some_vector)) { CHECK_F(0 <= i && i < some_vector.size(); }
 template<typename Integer = size_t, typename Container>
 Range<Integer> indices(const Container& container)
 {
@@ -145,7 +145,7 @@ public:
 	size_t size()  const { return std::distance(_begin, _end); }
 };
 
-// for (auto& value : it_range(begin, end)) { std::cout << value; }
+/// for (auto& value : it_range(begin, end)) { std::cout << value; }
 template<typename It>
 auto it_range(It begin, It end) { return IteratorRange<It>(begin, end); }
 
@@ -187,7 +187,7 @@ public:
 	}
 };
 
-// for (const char ch : emilib::cstr_range("hello world!"))
+/// for (const char ch : emilib::cstr_range("hello world!"))
 template<typename Chr>
 inline CStrRange<Chr> cstr_range(Chr* str) { return CStrRange<Chr>(str); }
 

@@ -14,7 +14,7 @@
 
 namespace emilib {
 
-// like std::equal_to but no need to #include <functional>
+/// like std::equal_to but no need to `#include <functional>`
 template<typename T>
 struct HashSetEqualTo
 {
@@ -24,7 +24,7 @@ struct HashSetEqualTo
 	}
 };
 
-// A cache-friendly hash set with open addressing, linear probing and power-of-two capacity
+/// A cache-friendly hash set with open addressing, linear probing and power-of-two capacity
 template <typename KeyT, typename HashT = std::hash<KeyT>, typename CompT = HashSetEqualTo<KeyT>>
 class HashSet
 {
@@ -294,10 +294,10 @@ public:
 
 	// -----------------------------------------------------
 
-	// Insert an element, unless it already exists.
-	// Returns a pair consisting of an iterator to the inserted element
-	// (or to the element that prevented the insertion)
-	// and a bool denoting whether the insertion took place.
+	/// Insert an element, unless it already exists.
+	/// Returns a pair consisting of an iterator to the inserted element
+	/// (or to the element that prevented the insertion)
+	/// and a bool denoting whether the insertion took place.
 	std::pair<iterator, bool> insert(const KeyT& key)
 	{
 		check_expand_need();
@@ -314,10 +314,10 @@ public:
 		}
 	}
 
-	// Insert an element, unless it already exists.
-	// Returns a pair consisting of an iterator to the inserted element
-	// (or to the element that prevented the insertion)
-	// and a bool denoting whether the insertion took place.
+	/// Insert an element, unless it already exists.
+	/// Returns a pair consisting of an iterator to the inserted element
+	/// (or to the element that prevented the insertion)
+	/// and a bool denoting whether the insertion took place.
 	std::pair<iterator, bool> insert(KeyT&& key)
 	{
 		check_expand_need();
@@ -347,7 +347,7 @@ public:
 		}
 	}
 
-	// Same as above, but contains(key) MUST be false
+	/// Same as above, but contains(key) MUST be false
 	void insert_unique(KeyT&& key)
 	{
 		DASSERT(!contains(key));
@@ -360,8 +360,8 @@ public:
 
 	// -------------------------------------------------------
 
-	/* Erase an element from the hash set.
-	   return false if element was not found */
+	/// Erase an element from the hash set.
+	/// return false if element was not found.
 	bool erase(const KeyT& key)
 	{
 		auto bucket = find_filled_bucket(key);
@@ -375,8 +375,8 @@ public:
 		}
 	}
 
-	/* Erase an element using an iterator.
-	   Returns an iterator to the next element (or end()). */
+	/// Erase an element using an iterator.
+	/// Returns an iterator to the next element (or end()).
 	iterator erase(iterator it)
 	{
 		DCHECK_EQ_F(it._set, this);
@@ -387,7 +387,7 @@ public:
 		return ++it;
 	}
 
-	// Remove all elements, keeping full capacity.
+	/// Remove all elements, keeping full capacity.
 	void clear()
 	{
 		for (size_t bucket=0; bucket<_num_buckets; ++bucket) {
@@ -400,7 +400,7 @@ public:
 		_max_probe_length = -1;
 	}
 
-	// Make room for this many elements
+	/// Make room for this many elements
 	void reserve(size_t num_elems)
 	{
 		size_t required_buckets = num_elems + num_elems/2 + 1;

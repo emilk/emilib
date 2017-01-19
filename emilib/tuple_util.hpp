@@ -61,23 +61,21 @@ namespace detail
 	}
 }
 
-/*
- 'Func' must have a method:
-
- template<int N, class T>
- bool operator()(Int_<N>, T)
-
- Return 'true' to continue, 'false' to break.
-
- for_each_tuple return 'false' iff any call to 'func()' returned false.
- */
+/// 'Func' must have a method:
+///
+/// template<int N, class T>
+/// bool operator()(Int_<N>, T)
+///
+/// Return 'true' to continue, 'false' to break.
+///
+/// for_each_tuple return 'false' iff any call to 'func()' returned false.
 template<typename Func, typename... Args>
 bool for_each_tuple(std::tuple<Args...>& tup, Func&& func)
 {
 	return detail::iterate<sizeof...(Args)>(tup, func);
 }
 
-// const version
+/// const version
 template<typename Func, typename... Args>
 bool for_each_tuple(const std::tuple<Args...>& tup, Func&& func)
 {
@@ -85,10 +83,6 @@ bool for_each_tuple(const std::tuple<Args...>& tup, Func&& func)
 }
 
 // ------------------------------------------------
-
-/*
-
- */
 
 template<std::size_t N>
 struct TupleArrayRef {
@@ -115,25 +109,20 @@ struct TupleArrayRef<0> {
 
 } // namespace emilib
 
-/* Hashing of tuples.
-From http://stackoverflow.com/questions/7110301/generic-hash-for-tuples-in-unordered-map-unordered-set
-*/
 namespace std {
 namespace {
 
-	// Code from boost
-	// Reciprocal of the golden ratio helps spread entropy
-	//     and handles duplicates.
-	// See Mike Seymour in magic-numbers-in-boosthash-combine:
-	//     http://stackoverflow.com/questions/4948780
-
+	/// Code from boost
+	/// Reciprocal of the golden ratio helps spread entropy and handles duplicates.
+	/// See Mike Seymour in magic-numbers-in-boosthash-combine:
+	///     http://stackoverflow.com/questions/4948780
 	template <class T>
 	inline void hash_combine(std::size_t& seed, T const& v)
 	{
 		seed ^= hash<T>()(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
 	}
 
-	// Recursive template code derived from Matthieu M.
+	/// Recursive template code derived from Matthieu M.
 	template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
 	struct HashValueImpl
 	{
@@ -154,6 +143,8 @@ namespace {
 	};
 } // anonymous namespace
 
+/// Hashing of tuples.
+/// From http://stackoverflow.com/questions/7110301/generic-hash-for-tuples-in-unordered-map-unordered-set
 template <typename ... TT>
 struct hash<std::tuple<TT...>>
 {

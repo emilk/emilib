@@ -71,7 +71,7 @@ class FBO;
 using FBO_UP = std::unique_ptr<FBO>;
 using FBO_SP = std::shared_ptr<FBO>;
 
-// FOr VBO:s and the like
+/// For VBO:s and the like
 enum class Usage
 {
 	WRITE_ONCE_READ_MANY,
@@ -96,14 +96,14 @@ struct Rectangle
 enum class ImageFormat
 {
 	INVALID,
-	Alpha8,  // One byte
-	Red8,    // One byte
-	RGB24,   // Three bytes
-	RGBA32,  // Four bytes
-	BGRA32,  // GL_BGRA - Four bytes
-	AlphaHF, // 16-bit half-float, alpha channel only.
-	RGBAHF,  // RGBA Half-float
-	RGBAf,   // 32bit float RGBA
+	Alpha8,  ///< One byte
+	Red8,    ///< One byte
+	RGB24,   ///< Three bytes
+	RGBA32,  ///< Four bytes
+	BGRA32,  ///< GL_BGRA - Four bytes
+	AlphaHF, ///< 16-bit half-float, alpha channel only.
+	RGBAHF,  ///< RGBA Half-float
+	RGBAf,   ///< 32bit float RGBA
 
 	// Available as render-target:
 	//RGBA16F_EXT                                  0x881A
@@ -112,7 +112,7 @@ enum class ImageFormat
 	//R16F_EXT
 };
 
-// byte size per pixel
+/// byte size per pixel
 constexpr int format_size(ImageFormat format)
 {
 	return (format == ImageFormat::Alpha8 ? 1 : 4);
@@ -130,7 +130,7 @@ enum class TexFilter
 	Nearest,
 	Linear,
 	Mipmapped,
-	DontCare,    // Best based on size
+	DontCare,    ///< Best based on size
 };
 
 enum class WrapMode

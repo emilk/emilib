@@ -10,7 +10,7 @@
 
 namespace emilib {
 
-// like std::equal_to but no need to #include <functional>
+/// like std::equal_to but no need to #include <functional>
 template<typename T>
 struct ListSetEqualTo
 {
@@ -20,9 +20,8 @@ struct ListSetEqualTo
 	}
 };
 
-/*
- Linear lookup set for quick lookups among few values.
- */
+
+/// Linear lookup set for quick lookups among few values.
 template<typename KeyT, typename CompT = ListSetEqualTo<KeyT> >
 class ListSet
 {
@@ -65,7 +64,7 @@ public:
 		return true;
 	}
 
-	// Frees unnecessary memory
+	/// Frees unnecessary memory
 	void shrink_to_fit()
 	{
 		_list.shrink_to_fit();

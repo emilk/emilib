@@ -23,20 +23,18 @@ using DelayedDirWatcher_UP = std::unique_ptr<DelayedDirWatcher>;
 
 using ImageData = std::unique_ptr<void, std::function<void(void*)>>;
 
-/*
-Simple implementation would be:
-
-	emilib::ImageData load_image(const char* path, int* width, int* height, int* comp, int req_comp)
-	{
-		void* data = stbi_load(path, width, height, comp, req_comp);
-		CHECK_F(data, "Failed loading image '%s': %s", path, stbi_failure_reason());
-		return {data, stbi_image_free};
-	}
-*/
+/// Simple implementation would be:
+///
+/// 	emilib::ImageData load_image(const char* path, int* width, int* height, int* comp, int req_comp)
+/// 	{
+/// 		void* data = stbi_load(path, width, height, comp, req_comp);
+/// 		CHECK_F(data, "Failed loading image '%s': %s", path, stbi_failure_reason());
+/// 		return {data, stbi_image_free};
+/// 	}
 using ImageLoader = std::function<ImageData(const char* path, int* width, int* height, int* comp, int req_comp)>;
 
-// Returns r, g, b, a uint8_t quadruplets, row by row, from top.
-// This fixes some issues with stbi_image vs alpha.
+/// Returns r, g, b, a uint8_t quadruplets, row by row, from top.
+/// This fixes some issues with stbi_image vs alpha.
 ImageData load_image_rgba(const ImageLoader& image_loader, const char* path, size_t* out_width, size_t* out_height);
 
 class TextureMngr
@@ -44,13 +42,13 @@ class TextureMngr
 public:
 	using Recorder = std::function<void(const std::string& name)>;
 
-	// Look for textures relative to gfx_dir
+	/// Look for textures relative to gfx_dir
 	TextureMngr(const std::string& gfx_dir, ImageLoader image_loader);
 	~TextureMngr();
 
 	void update();
 
-	// While holding on to this shared_ptr handle, the texture won't get evicted.
+	/// While holding on to this shared_ptr handle, the texture won't get evicted.
 	gl::Texture_SP prefetch_retain(const std::string& name, const gl::TexParams& params);
 	gl::Texture_SP get_retain(const std::string& name, const gl::TexParams& params);
 	gl::Texture_SP get_retain(const std::string& name) { return get_retain(name, default_params()); }
@@ -61,15 +59,13 @@ public:
 	gl::Texture* prefetch(const std::string& name, const gl::TexParams& params);
 	gl::Texture* prefetch(const std::string& name) { return prefetch(name, default_params()); }
 
-	/*
-	 When we need to load a bunch of new things it is prudent to throw out the old.
-	 We do this in three steps:
-	 1) call prepare_eviction
-	 2) call prefetch (or get) on all texture you are planning to use
-	 3) call finalize_eviction, which will, in order:
-	 	* throw out all texture not marked in step 2.
-	 	* load all textures prefetched in step 2
-	 */
+	/// When we need to load a bunch of new things it is prudent to throw out the old.
+	/// We do this in three steps:
+	/// 1) call prepare_eviction
+	/// 2) call prefetch (or get) on all texture you are planning to use
+	/// 3) call finalize_eviction, which will, in order:
+	///   * throw out all texture not marked in step 2.
+	///   * load all textures prefetched in step 2
 	void prepare_eviction();
 	void finalize_eviction();
 
@@ -88,13 +84,13 @@ public:
 #endif
 	}
 
-	// Bytes
+	/// Bytes
 	size_t memory_usage(unsigned* out_tex_count) const;
 
 	void print_memory_usage(const char* prefix="") const;
 
-	// Let's say you want to load a bunch of resources and later reload the same ones.
-	// You can use a Recorder to record all things being loaded.
+	/// Let's say you want to load a bunch of resources and later reload the same ones.
+	/// You can use a Recorder to record all things being loaded.
 	void start_recording(Recorder recorder);
 	void stop_recording();
 

@@ -25,7 +25,7 @@ using GLuint = uint32_t;
 
 namespace imgui_helpers {
 
-// Pick a size that maintains the aspect ration of the given image.
+/// Pick a size that maintains the aspect ration of the given image.
 ImVec2 aspect_correct_image_size(const ImVec2& desired_size, const ImVec2& canvas_size, const ImVec2& minimum_size);
 
 void gl_texture(GLuint tex_id, const ImVec2& size);
@@ -34,7 +34,7 @@ void gl_texture(GLuint tex_id, const ImVec2& size);
 
 // ----------------------------------------------------------------------------
 
-// Helper C++ bindings for ImGui
+/// Helper C++ bindings for ImGui
 namespace ImGuiPP {
 
 bool SliderSize(const std::string& label, size_t* v, size_t v_min, size_t v_max, float power = 1.0f);

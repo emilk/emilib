@@ -8,10 +8,10 @@
 
 namespace emilib {
 
-// Wraps a value and memoizes the hash of that value.
-// This can be used to speed up std::unoredred_set/unoredred_map or emilib::HashSet/HashMap
-// when calculating the hash of the key is expensive.
-// Example: emilib::HashMap<emilib::HashCache<Key>, Value>
+/// Wraps a value and memoizes the hash of that value.
+/// This can be used to speed up std::unoredred_set/unoredred_map or emilib::HashSet/HashMap
+/// when calculating the hash of the key is expensive.
+/// Example: emilib::HashMap<emilib::HashCache<Key>, Value>
 template<typename T>
 class HashCache
 {

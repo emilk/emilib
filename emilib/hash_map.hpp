@@ -14,7 +14,7 @@
 
 namespace emilib {
 
-// like std::equal_to but no need to #include <functional>
+/// like std::equal_to but no need to #include <functional>
 template<typename T>
 struct HashMapEqualTo
 {
@@ -24,7 +24,7 @@ struct HashMapEqualTo
 	}
 };
 
-// A cache-friendly hash table with open addressing, linear probing and power-of-two capacity
+/// A cache-friendly hash table with open addressing, linear probing and power-of-two capacity
 template <typename KeyT, typename ValueT, typename HashT = std::hash<KeyT>, typename CompT = HashMapEqualTo<KeyT>>
 class HashMap
 {
@@ -294,7 +294,7 @@ public:
 		return find_filled_bucket(k) != (size_t)-1 ? 1 : 0;
 	}
 
-	// Returns the matching ValueT or nullptr if k isn't found.
+	/// Returns the matching ValueT or nullptr if k isn't found.
 	ValueT* try_get(const KeyT& k)
 	{
 		auto bucket = find_filled_bucket(k);
@@ -305,7 +305,7 @@ public:
 		}
 	}
 
-	// Const version of the above
+	/// Const version of the above
 	const ValueT* try_get(const KeyT& k) const
 	{
 		auto bucket = find_filled_bucket(k);
@@ -316,7 +316,7 @@ public:
 		}
 	}
 
-	// Convenience function.
+	/// Convenience function.
 	const ValueT get_or_return_default(const KeyT& k) const
 	{
 		const ValueT* ret = try_get(k);
@@ -329,9 +329,9 @@ public:
 
 	// -----------------------------------------------------
 
-	// Returns a pair consisting of an iterator to the inserted element
-	// (or to the element that prevented the insertion)
-	// and a bool denoting whether the insertion took place.
+	/// Returns a pair consisting of an iterator to the inserted element
+	/// (or to the element that prevented the insertion)
+	/// and a bool denoting whether the insertion took place.
 	std::pair<iterator, bool> insert(const KeyT& key, const ValueT& value)
 	{
 		check_expand_need();
@@ -360,7 +360,7 @@ public:
 		}
 	}
 
-	// Same as above, but contains(key) MUST be false
+	/// Same as above, but contains(key) MUST be false
 	void insert_unique(KeyT&& key, ValueT&& value)
 	{
 		DASSERT(!contains(key));
@@ -376,7 +376,7 @@ public:
 		insert_unique(std::move(p.first), std::move(p.second));
 	}
 
-	// Return the old value or ValueT() if it didn't exist.
+	/// Return the old value or ValueT() if it didn't exist.
 	ValueT set_get(const KeyT& key, const ValueT& new_value)
 	{
 		check_expand_need();
@@ -396,7 +396,7 @@ public:
 		}
 	}
 
-	// Like std::map<KeyT,ValueT>::operator[].
+	/// Like std::map<KeyT,ValueT>::operator[].
 	ValueT& operator[](const KeyT& key)
 	{
 		check_expand_need();
@@ -415,8 +415,8 @@ public:
 
 	// -------------------------------------------------------
 
-	/* Erase an element from the hash table.
-	   return false if element was not found */
+	/// Erase an element from the hash table.
+	/// return false if element was not found
 	bool erase(const KeyT& key)
 	{
 		auto bucket = find_filled_bucket(key);
@@ -430,8 +430,8 @@ public:
 		}
 	}
 
-	/* Erase an element using an iterator.
-	   Returns an iterator to the next element (or end()). */
+	/// Erase an element using an iterator.
+	/// Returns an iterator to the next element (or end()).
 	iterator erase(iterator it)
 	{
 		DCHECK_EQ_F(it._map, this);
@@ -442,7 +442,7 @@ public:
 		return ++it;
 	}
 
-	// Remove all elements, keeping full capacity.
+	/// Remove all elements, keeping full capacity.
 	void clear()
 	{
 		for (size_t bucket=0; bucket<_num_buckets; ++bucket) {
@@ -455,7 +455,7 @@ public:
 		_max_probe_length = -1;
 	}
 
-	// Make room for this many elements
+	/// Make room for this many elements
 	void reserve(size_t num_elems)
 	{
 		size_t required_buckets = num_elems + num_elems/2 + 1;

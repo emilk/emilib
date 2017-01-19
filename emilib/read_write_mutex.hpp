@@ -71,19 +71,18 @@ What about std::shared_timed_mutex?
 
 // ----------------------------------------------------------------------------
 
-// Use this if reads are quick.
-// This is a drop-in replacement for C++17's std::shared_mutex.
-// This mutex is NOT recursive!
+/// Use this if reads are quick.
+/// This is a drop-in replacement for C++17's std::shared_mutex.
+/// This mutex is NOT recursive!
 class FastReadWriteMutex
 {
 public:
 	FastReadWriteMutex() { }
 
-	/* Locks the mutex for exclusive access (e.g. for a write operation).
-	If another thread has already locked the mutex, a call to lock will block execution until the lock is acquired.
-	This will be done using a spin-lock. If this is wasting too much CPU, consider using SlowReadWriteMutex instead.
-	If lock is called by a thread that already owns the mutex in any mode (shared or exclusive), the behavior is undefined.
-	*/
+	/// Locks the mutex for exclusive access (e.g. for a write operation).
+	/// If another thread has already locked the mutex, a call to lock will block execution until the lock is acquired.
+	/// This will be done using a spin-lock. If this is wasting too much CPU, consider using SlowReadWriteMutex instead.
+	/// If lock is called by a thread that already owns the mutex in any mode (shared or exclusive), the behavior is undefined.
 	void lock()
 	{
 		_write_mutex.lock(); // Ensure we are the only one writing
@@ -98,11 +97,9 @@ public:
 		// All readers have finished - we are not locked exclusively!
 	}
 
-	/*
-	Tries to lock the mutex. Returns immediately. On successful lock acquisition returns true, otherwise returns false.
-	This function is allowed to fail spuriously and return false even if the mutex is not currently locked by any other thread.
-	If try_lock is called by a thread that already owns the mutex, the behavior is undefined.
-	*/
+	/// Tries to lock the mutex. Returns immediately. On successful lock acquisition returns true, otherwise returns false.
+	/// This function is allowed to fail spuriously and return false even if the mutex is not currently locked by any other thread.
+	/// If try_lock is called by a thread that already owns the mutex, the behavior is undefined.
 	bool try_lock()
 	{
 		if (!_write_mutex.try_lock()) {
@@ -120,21 +117,17 @@ public:
 		}
 	}
 
-	/*
-	Unlocks the mutex.
-	The mutex must be locked by the current thread of execution, otherwise, the behavior is undefined.
-	*/
+	/// Unlocks the mutex.
+	/// The mutex must be locked by the current thread of execution, otherwise, the behavior is undefined.
 	void unlock()
 	{
 		_has_writer = false;
 		_write_mutex.unlock();
 	}
 
-	/*
-	Acquires shared ownership of the mutex (e.g. for a read operation).
-	If another thread is holding the mutex in exclusive ownership,
-	a call to lock_shared will block execution until shared ownership can be acquired.
-	*/
+	/// Acquires shared ownership of the mutex (e.g. for a read operation).
+	/// If another thread is holding the mutex in exclusive ownership,
+	/// a call to lock_shared will block execution until shared ownership can be acquired.
 	void lock_shared()
 	{
 		while (_has_writer) {
@@ -158,10 +151,8 @@ public:
 		}
 	}
 
-	/*
-	Tries to lock the mutex in shared mode. Returns immediately. On successful lock acquisition returns true, otherwise returns false.
-	This function is allowed to fail spuriously and return false even if the mutex is not currenly exclusively locked by any other thread.
-	*/
+	/// Tries to lock the mutex in shared mode. Returns immediately. On successful lock acquisition returns true, otherwise returns false.
+	/// This function is allowed to fail spuriously and return false even if the mutex is not currenly exclusively locked by any other thread.
 	bool try_lock_shared()
 	{
 		if (_has_writer) {
@@ -179,10 +170,8 @@ public:
 		return true;
 	}
 
-	/*
-	Releases the mutex from shared ownership by the calling thread.
-	The mutex must be locked by the current thread of execution in shared mode, otherwise, the behavior is undefined.
-	*/
+	/// Releases the mutex from shared ownership by the calling thread.
+	/// The mutex must be locked by the current thread of execution in shared mode, otherwise, the behavior is undefined.
 	void unlock_shared()
 	{
 		--_num_readers;
@@ -201,18 +190,17 @@ private:
 
 // ----------------------------------------------------------------------------
 
-// This is a good mutex if reading is slow to save on CPU usage when there is a thread waiting to write.
-// This is a drop-in replacement for C++17's std::shared_mutex.
-// This mutex is NOT recursive!
+/// This is a good mutex if reading is slow to save on CPU usage when there is a thread waiting to write.
+/// This is a drop-in replacement for C++17's std::shared_mutex.
+/// This mutex is NOT recursive!
 class SlowReadWriteMutex
 {
 public:
 	SlowReadWriteMutex() { }
 
-	/* Locks the mutex for exclusive access (e.g. for a write operation).
-	If another thread has already locked the mutex, a call to lock will block execution until the lock is acquired.
-	If lock is called by a thread that already owns the mutex in any mode (shared or exclusive), the behavior is undefined.
-	*/
+	/// Locks the mutex for exclusive access (e.g. for a write operation).
+	/// If another thread has already locked the mutex, a call to lock will block execution until the lock is acquired.
+	/// If lock is called by a thread that already owns the mutex in any mode (shared or exclusive), the behavior is undefined.
 	void lock()
 	{
 		_write_mutex.lock(); // Ensure we are the only one writing
@@ -227,11 +215,9 @@ public:
 		// All readers have finished - we are not locked exclusively!
 	}
 
-	/*
-	Tries to lock the mutex. Returns immediately. On successful lock acquisition returns true, otherwise returns false.
-	This function is allowed to fail spuriously and return false even if the mutex is not currently locked by any other thread.
-	If try_lock is called by a thread that already owns the mutex, the behavior is undefined.
-	*/
+	/// Tries to lock the mutex. Returns immediately. On successful lock acquisition returns true, otherwise returns false.
+	/// This function is allowed to fail spuriously and return false even if the mutex is not currently locked by any other thread.
+	/// If try_lock is called by a thread that already owns the mutex, the behavior is undefined.
 	bool try_lock()
 	{
 		if (!_write_mutex.try_lock()) {
@@ -259,11 +245,9 @@ public:
 		_write_mutex.unlock();
 	}
 
-	/*
-	Acquires shared ownership of the mutex (e.g. for a read operation).
-	If another thread is holding the mutex in exclusive ownership,
-	a call to lock_shared will block execution until shared ownership can be acquired.
-	*/
+	/// Acquires shared ownership of the mutex (e.g. for a read operation).
+	/// If another thread is holding the mutex in exclusive ownership,
+	/// a call to lock_shared will block execution until shared ownership can be acquired.
 	void lock_shared()
 	{
 		while (_has_writer) {
@@ -293,10 +277,8 @@ public:
 		}
 	}
 
-	/*
-	Tries to lock the mutex in shared mode. Returns immediately. On successful lock acquisition returns true, otherwise returns false.
-	This function is allowed to fail spuriously and return false even if the mutex is not currenly exclusively locked by any other thread.
-	*/
+	/// Tries to lock the mutex in shared mode. Returns immediately. On successful lock acquisition returns true, otherwise returns false.
+	/// This function is allowed to fail spuriously and return false even if the mutex is not currenly exclusively locked by any other thread.
 	bool try_lock_shared()
 	{
 		if (_has_writer) {
@@ -314,10 +296,8 @@ public:
 		return true;
 	}
 
-	/*
-	Releases the mutex from shared ownership by the calling thread.
-	The mutex must be locked by the current thread of execution in shared mode, otherwise, the behavior is undefined.
-	*/
+	/// Releases the mutex from shared ownership by the calling thread.
+	/// The mutex must be locked by the current thread of execution in shared mode, otherwise, the behavior is undefined.
 	void unlock_shared()
 	{
 		--_num_readers;
@@ -343,7 +323,7 @@ private:
 
 // ----------------------------------------------------------------------------
 
-// This is a drop-in replacement for C++14's std::shared_lock
+/// This is a drop-in replacement for C++14's std::shared_lock
 template<typename MutexType>
 class ReadLock
 {
@@ -353,14 +333,14 @@ public:
 		lock();
 	}
 
-	// Won't lock right away
+	/// Won't lock right away
 	ReadLock(MutexType& mut, std::defer_lock_t) : _rw_mutex(mut)
 	{
 	}
 
 	~ReadLock() { unlock(); }
 
-	// Lock, unless already locked.
+	/// Lock, unless already locked.
 	void lock()
 	{
 		if (!_locked) {
@@ -369,7 +349,7 @@ public:
 		}
 	}
 
-	// Does not block. Returns true iff the mutex is locked by this thread after the call.
+	/// Does not block. Returns true iff the mutex is locked by this thread after the call.
 	bool try_lock()
 	{
 		if (!_locked) {
@@ -378,7 +358,7 @@ public:
 		return _locked;
 	}
 
-	// unlock, unless already unlocked.
+	/// unlock, unless already unlocked.
 	void unlock()
 	{
 		if (_locked) {
@@ -399,7 +379,7 @@ private:
 
 // ----------------------------------------------------------------------------
 
-// This is a drop-in replacement for C++11's std::unique_lock
+/// This is a drop-in replacement for C++11's std::unique_lock
 template<typename MutexType>
 class WriteLock
 {
@@ -409,14 +389,14 @@ public:
 		lock();
 	}
 
-	// Won't lock right away
+	/// Won't lock right away
 	WriteLock(MutexType& mut, std::defer_lock_t) : _rw_mutex(mut)
 	{
 	}
 
 	~WriteLock() { unlock(); }
 
-	// Lock, unless already locked.
+	/// Lock, unless already locked.
 	void lock()
 	{
 		if (!_locked) {
@@ -425,7 +405,7 @@ public:
 		}
 	}
 
-	// Does not block. Returns true iff the mutex is locked by this thread after the call.
+	/// Does not block. Returns true iff the mutex is locked by this thread after the call.
 	bool try_lock()
 	{
 		if (!_locked) {
@@ -434,7 +414,7 @@ public:
 		return _locked;
 	}
 
-	// unlock, unless already unlocked.
+	/// unlock, unless already unlocked.
 	void unlock()
 	{
 		if (_locked) {

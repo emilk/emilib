@@ -18,9 +18,9 @@ struct Params
 	size_t width_points  = 1024;
 	size_t height_points = 768;
 
-	int depth_buffer   = 0; // e.g. 24
-	int stencil_buffer = 0; // e.g. 8
-	int msa            = 0; // e.g. 8 for 8-point anti-aliasing.
+	int depth_buffer   = 0; ///< e.g. 24
+	int stencil_buffer = 0; ///< e.g. 8
+	int msa            = 0; ///< e.g. 8 for 8-point anti-aliasing.
 };
 
 struct InitResult
@@ -34,7 +34,7 @@ struct InitResult
 	float         pixels_per_point;
 };
 
-// Init SDL and glew.
+/// Init SDL and glew.
 InitResult init(const Params& params);
 
 } // namespace sdl

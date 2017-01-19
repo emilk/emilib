@@ -16,10 +16,8 @@
 
 namespace emilib {
 
-/*
- Tracks movement and gives info about velocity.
- 'T' is the type of movement we track (float for scoll, Vec2 for position, ...)
- */
+/// Tracks movement and gives info about velocity.
+/// 'T' is the type of movement we track (float for scoll, Vec2 for position, ...)
 template<typename T>
 class MovementTracker
 {
@@ -93,7 +91,7 @@ public:
 		return _list.back().where;
 	}
 
-	// Last movement delta
+	/// Last movement delta
 	T rel() const
 	{
 		CHECK_GE_F(size(), 2);
@@ -106,8 +104,8 @@ public:
 		return latest_time() - start_time();
 	}
 
-	// Return T() on fail
-	// Calculates the average velocity over the last VelocityTime() seconds.
+	/// Return T() on fail
+	/// Calculates the average velocity over the last VelocityTime() seconds.
 	virtual T velocity(double now) const
 	{
 		size_t begin;
@@ -131,7 +129,7 @@ public:
 		return velocity(latest_time());
 	}
 
-	// Has all movement been within "max_dist" radius, during the last "duration" seconds?
+	/// Has all movement been within "max_dist" radius, during the last "duration" seconds?
 	template<typename F>
 	bool is_still(F max_dist, double duration) const
 	{
@@ -151,7 +149,7 @@ public:
 
 	// ------------------------------------------------
 
-	// Flush out oldes entries.
+	/// Flush out oldes entries.
 	void flush(double now)
 	{
 		while (!_list.empty() && _list.front().when < now - _max_history_time) {
@@ -160,7 +158,7 @@ public:
 	}
 
 protected:
-	// From where shall we calculate velocity? Return false on "not at all"
+	/// From where shall we calculate velocity? Return false on "not at all"
 	bool velocity_calc_begin(size_t& out_index, double now) const
 	{
 		if (_list.size() < 2) {
@@ -189,19 +187,19 @@ protected:
 		return false;
 	}
 
-	// The minimum number of samples for there to be any velocity calculated.
+	/// The minimum number of samples for there to be any velocity calculated.
 	static constexpr size_t min_velocity_samples()
 	{
 		return 3;
 	}
 
-	// Minimum time before we have a good velocity
+	/// Minimum time before we have a good velocity
 	static constexpr double min_velocity_time()
 	{
 		return 0.01f;
 	}
 
-	// The time over which we calculate velocity.
+	/// The time over which we calculate velocity.
 	static constexpr double velocity_time()
 	{
 		return 0.1f;
@@ -217,7 +215,7 @@ protected:
 
 // ------------------------------------------------
 
-// Made to take into account the cyclic nature of angles (in radians, btw)
+/// Made to take into account the cyclic nature of angles (in radians, btw)
 class RotationTracker : public MovementTracker<float>
 {
 	using base = MovementTracker<float>;

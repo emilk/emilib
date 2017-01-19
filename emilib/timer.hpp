@@ -12,24 +12,24 @@
 
 namespace emilib {
 
-// Simple wall-time monotonic clock.
+/// Simple wall-time monotonic clock.
 class Timer
 {
 public:
-	// Will start the Timer.
+	/// Will start the Timer.
 	Timer();
 
-	// Returns seconds since last reset().
+	/// Returns seconds since last reset().
 	double reset();
 
 	double secs() const;
 	unsigned long long nanoseconds() const;
 
-	// Functions for going back or forward in time:
+	/// Functions for going back or forward in time:
 	void set_secs(double s);
 	void set_nanoseconds(double s);
 
-	// Seconds since start of program. The value of this is dubious.
+	/// Seconds since start of program.
 	static double seconds_since_startup();
 
 private:

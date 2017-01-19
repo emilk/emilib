@@ -5,7 +5,7 @@
 //   publish, and distribute this file as you see fit.
 // HISTORY
 //   2014 - Created for Ghostel
-//   2016 - revived PipeDreams
+//   2016 - revived for PipeDreams
 //   2016 - added to emilib
 
 #pragma once
@@ -19,15 +19,15 @@ struct kevent;
 
 namespace emilib {
 
-// Watches for any changes in a directory (file changed, added, removed).
+/// Watches for any changes in a directory (file changed, added, removed).
 class DirWatcher
 {
 public:
-	// Feel free to end with a slash or not.
+	/// Feel free to end with a slash or not.
 	explicit DirWatcher(std::string dir);
 	~DirWatcher();
 
-	// Returns a list of absolute paths to files that where added, removed or changed.
+	/// Returns a list of absolute paths to files that where added, removed or changed.
 	std::vector<std::string> poll_files();
 
 private:
@@ -69,11 +69,11 @@ private:
 
 // -------------------------------------------------------
 
-// Acts like DirWatcher but with a delay of a few frames to let things 'settle'
+/// Acts like DirWatcher but with a delay of a few frames to let things 'settle'
 class DelayedDirWatcher
 {
 public:
-	// frame_delay: wait this many calls to poll_files before reporting a change.
+	/// frame_delay: wait this many calls to poll_files before reporting a change.
 	DelayedDirWatcher(std::string dir, unsigned frame_delay = 6);
 
 	std::vector<std::string> poll_files();

@@ -11,7 +11,7 @@
 
 namespace emilib {
 
-// like std::equal_to but no need to #include <functional>
+/// like std::equal_to but no need to #include <functional>
 template<typename T>
 struct ListMapEqualTo
 {
@@ -21,9 +21,7 @@ struct ListMapEqualTo
 	}
 };
 
-/*
- Linear lookup map for quick lookups among few values.
- */
+/// Linear lookup map for quick lookups among few values.
 template<typename KeyT, typename ValueT, typename CompT = ListMapEqualTo<KeyT> >
 class ListMap
 {
@@ -134,7 +132,7 @@ public:
 		}
 	}
 
-	// Frees unnecessary memory
+	/// Frees unnecessary memory
 	void shrink_to_fit()
 	{
 		_list.shrink_to_fit();

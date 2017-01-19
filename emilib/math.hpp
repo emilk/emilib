@@ -12,7 +12,7 @@ namespace emilib {
 namespace math {
 
 constexpr float PIf  = (float)3.1415926535897932384626433;
-constexpr float TAUf = 2 * PIf; // Oh yes. http://tauday.com/tau-manifesto.pdf
+constexpr float TAUf = 2 * PIf; ///< Oh yes. http://tauday.com/tau-manifesto.pdf
 constexpr float NaNf = std::numeric_limits<float>::quiet_NaN();
 constexpr float INFf = std::numeric_limits<float>::infinity();
 
@@ -30,7 +30,7 @@ constexpr int ceil_to_int(F f)
 	return (int)ceil(f);
 }
 
-// nearest integer, rounding away from zero in halfway cases
+/// nearest integer, rounding away from zero in halfway cases
 template<typename F>
 constexpr int round_to_int(F f)
 {
@@ -45,7 +45,7 @@ static_assert(round_to_int(-0.4) == 0,  "round_to_int test");
 static_assert(round_to_int(-0.5) == -1, "round_to_int test");
 static_assert(round_to_int(-0.6) == -1, "round_to_int test");
 
-// nearest integer, rounding away from zero in halfway cases
+/// nearest integer, rounding away from zero in halfway cases
 template<typename F>
 constexpr unsigned round_to_uint(F f)
 {
@@ -103,7 +103,7 @@ inline float remap_clamp(float x, float in_min, float in_max,
 	return lerp(out_min, out_max, t);
 }
 
-// Optional last argument with an easing, e.g. ease_in_ease_out
+/// Optional last argument with an easing, e.g. ease_in_ease_out
 inline float remap_clamp(float x, float in_min, float in_max,
                          float out_min, float out_max, float(*ease)(float))
 {

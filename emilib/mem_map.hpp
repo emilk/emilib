@@ -12,7 +12,7 @@
 
 namespace emilib {
 
-// Memory-mapped file. Really fast way of reading stuff from disk.
+/// Memory-mapped file. Really fast way of reading stuff from disk.
 class MemMap
 {
 public:

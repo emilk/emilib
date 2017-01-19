@@ -8,9 +8,8 @@
 
 namespace emilib {
 
-// Based on Andrei Alexandrescu's talk "Systematic Error Handling in C++" at C++ and Beyond 2012.
-// Slides: https://onedrive.live.com/view.aspx?resid=F1B8FF18A2AEC5C5!1158&app=WordPdf&authkey=!APo6bfP5sJ8EmH4
-
+/// Based on Andrei Alexandrescu's talk "Systematic Error Handling in C++" at C++ and Beyond 2012.
+/// Slides: https://onedrive.live.com/view.aspx?resid=F1B8FF18A2AEC5C5!1158&app=WordPdf&authkey=!APo6bfP5sJ8EmH4
 template<class Fun>
 class ScopeGuard
 {

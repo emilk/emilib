@@ -25,7 +25,7 @@ inline bool is_desktop()  { return device() == Device::Desktop; }
 // ----------------------------------------------------------------------------
 // Display:
 
-// e.g. 2 on most iOS devices.
+/// e.g. 2 on most iOS devices.
 float pixels_per_point();
 
 #if TARGET_OS_IPHONE

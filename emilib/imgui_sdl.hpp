@@ -10,58 +10,58 @@ union SDL_Event;
 
 namespace emilib {
 
-/*
-Provides bindings between Dear ImGui and SDL. Handles input, copy-past etc.
-Does NOT handle painting! Please use imgui_gl_lib.hpp for that.
-You should have your own even loop and feed the events to ImGui_SDL.
-
-	emilib::sdl::Params sdl_params;
-	sdl_params.window_name = "My window";
-	auto sdl = emilib::sdl::init(sdl_params);
-
-	emilib::ImGui_SDL imgui_sdl(sdl.width_points, sdl.height_points, sdl.pixels_per_point);
-
-	gl::bind_imgui_painting();
-
-	bool quit = false;
-	while (!quit) {
-		SDL_Event event;
-		while (SDL_PollEvent(&event)) {
-			if (event.type == SDL_QUIT) { quit = true; }
-			imgui_sdl.on_event(event);
-		}
-
-		imgui_sdl.new_frame();
-
-		if (ImGui::Button("Quit!")) {
-			quit = true;
-		}
-
-		glClearColor(0.1f, 0.1f, 0.1f, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-		imgui_sdl.paint();
-
-		SDL_GL_SwapWindow(sdl.window);
-	}
-*/
+/**
+ * Provides bindings between Dear ImGui and SDL. Handles input, copy-past etc.
+ * Does NOT handle painting! Please use imgui_gl_lib.hpp for that.
+ * You should have your own even loop and feed the events to ImGui_SDL.
+ *
+ * 	emilib::sdl::Params sdl_params;
+ * 	sdl_params.window_name = "My window";
+ * 	auto sdl = emilib::sdl::init(sdl_params);
+ *
+ * 	emilib::ImGui_SDL imgui_sdl(sdl.width_points, sdl.height_points, sdl.pixels_per_point);
+ *
+ * 	gl::bind_imgui_painting();
+ *
+ * 	bool quit = false;
+ * 	while (!quit) {
+ * 		SDL_Event event;
+ * 		while (SDL_PollEvent(&event)) {
+ * 			if (event.type == SDL_QUIT) { quit = true; }
+ * 			imgui_sdl.on_event(event);
+ * 		}
+ *
+ * 		imgui_sdl.new_frame();
+ *
+ * 		if (ImGui::Button("Quit!")) {
+ * 			quit = true;
+ * 		}
+ *
+ * 		glClearColor(0.1f, 0.1f, 0.1f, 0);
+ * 		glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+ *
+ * 		imgui_sdl.paint();
+ *
+ * 		SDL_GL_SwapWindow(sdl.window);
+ * 	}
+ */
 class ImGui_SDL
 {
 public:
 	ImGui_SDL(float width_points, float height_points, float pixels_per_point);
-	~ImGui_SDL(); // Will call ImGui::Shutdown
+	~ImGui_SDL(); ///< Will call ImGui::Shutdown
 
-	// When inactive, you cannot interact with Dear ImGui.
+	/// When inactive, you cannot interact with Dear ImGui.
 	bool active() const { return _active; }
 	void set_active(bool v) { _active = v; }
 
 	void new_frame();
 	void paint();
 
-	// You must call this yourself!
+	/// You must call this yourself!
 	void on_event(const SDL_Event& e);
 
-	// Key modifiers:
+	/// Key modifiers:
 	bool mod_command() const;
 	bool mod_shift() const;
 
