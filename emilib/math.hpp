@@ -7,11 +7,21 @@
 #pragma once
 
 #include <cmath>
+#include <cstdint> // uint8_t etc
+#include <limits>
 
-namespace emilib {
 namespace math {
 
-constexpr float PIf  = (float)3.1415926535897932384626433;
+template<class T>
+constexpr T PI = static_cast<T>(3.1415926535897932384626433);
+
+template<class T>
+constexpr T TAU = 2 * PI<T>;
+
+template<class T>
+constexpr T INF = std::numeric_limits<T>::infinity();
+
+constexpr float PIf  = PI<float>;
 constexpr float TAUf = 2 * PIf; ///< Oh yes. http://tauday.com/tau-manifesto.pdf
 constexpr float NaNf = std::numeric_limits<float>::quiet_NaN();
 constexpr float INFf = std::numeric_limits<float>::infinity();
@@ -156,4 +166,3 @@ inline float rad2deg(float a)
 // ----------------------------------------------------------------------------
 
 } // namespace math
-} // namespace emilib
