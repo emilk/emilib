@@ -49,4 +49,16 @@ bool Button(const std::string& text);
 bool ListBox(const std::string& label, std::string& current_item, const std::vector<std::string>& items, int height_in_items = -1);
 bool Combo(const std::string& label, std::string& current_item, const std::vector<std::string>& items, int height_in_items = -1);
 
+/// Convenience for enums
+template<typename Enum>
+bool RadioButtonEnum(const char* label, Enum* v, Enum v_button)
+{
+	if (ImGui::RadioButton(label, *v == v_button)) {
+		*v = v_button;
+		return true;
+	} else {
+		return false;
+	}
+}
+
 } // namespace ImGuiPP
