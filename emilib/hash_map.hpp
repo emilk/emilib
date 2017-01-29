@@ -363,7 +363,7 @@ public:
 	/// Same as above, but contains(key) MUST be false
 	void insert_unique(KeyT&& key, ValueT&& value)
 	{
-		DASSERT(!contains(key));
+		DCHECK_F(!contains(key));
 		check_expand_need();
 		auto bucket = find_empty_bucket(key);
 		_states[bucket] = State::FILLED;

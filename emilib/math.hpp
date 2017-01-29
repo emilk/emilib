@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint> // uint8_t etc
 #include <limits>
@@ -31,13 +32,13 @@ constexpr float INFf = std::numeric_limits<float>::infinity();
 template<typename F>
 constexpr int floor_to_int(F f)
 {
-	return (int)floor(f); // TODO: doesn't work as constexpr!
+	return (int)std::floor(f); // TODO: doesn't work as constexpr!
 }
 
 template<typename F>
 constexpr int ceil_to_int(F f)
 {
-	return (int)ceil(f);
+	return (int)std::ceil(f);
 }
 
 /// nearest integer, rounding away from zero in halfway cases
@@ -161,6 +162,15 @@ inline float deg2rad(float a)
 inline float rad2deg(float a)
 {
 	return a * 180 / PIf;
+}
+
+// ----------------------------------------------------------------------------
+
+// For t=[0,1], returns [0,1] with a derivate of zero at both ends
+template<typename T>
+constexpr T ease_in_ease_out(T t)
+{
+	return 3*t*t - 2*t*t*t;
 }
 
 // ----------------------------------------------------------------------------
