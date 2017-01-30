@@ -34,7 +34,7 @@ std::vector<uint8_t> encode_tga(size_t width, size_t height, const void* rgba_pt
 
 	// The image data is stored bottom-to-top, left-to-right
 	for (int y = (int)height - 1; y >= 0; y--) {
-		for (int x = 0; x < width; x++) {
+		for (size_t x = 0; x < width; x++) {
 			uint32_t rgba = *((const uint32_t*)rgba_ptr + y*width + x);
 			if (include_alpha) {
 				uint8_t r = (rgba & 0x000000FF);
