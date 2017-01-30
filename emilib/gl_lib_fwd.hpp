@@ -22,13 +22,20 @@
 	#define GLLIB_OPENGL_VERSION       200
 	#define GLLIB_TRILLINEAR_FILTERING 1
 
-#else // !TARGET_OS_IPHONE
+#elif TARGET_OS_MAC
 
 	#define GLLIB_GLES                 0
 	#define GLLIB_OPENGL_VERSION       320 // 210, 320, 330, 410, ...
 	#define GLLIB_TRILLINEAR_FILTERING 1
 
-#endif // !TARGET_OS_IPHONE
+#else
+
+	// Works on Ubuntu 16.04
+	#define GLLIB_GLES                 0
+	#define GLLIB_OPENGL_VERSION       210 // 210, 320, 330, 410, ...
+	#define GLLIB_TRILLINEAR_FILTERING 1
+
+#endif
 
 // ----------------------------------------------------------------------------
 

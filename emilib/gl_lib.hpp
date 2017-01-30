@@ -462,12 +462,16 @@ public:
 	explicit TempViewPort(unsigned width, unsigned height) : TempViewPort(Size{width, height}) {}
 	~TempViewPort();
 
-	/// Call when we aquire context or resize window.
+	/// Call when we acquire context or resize window.
 	static void set_back_buffer(Rectangle bb);
+
+	/// Call when we acquire context or resize window.
 	static void set_back_buffer_size(Size size)
 	{
 		set_back_buffer(Rectangle{0, 0, (int)size.x, (int)size.y});
 	}
+
+	/// Call when we acquire context or resize window.
 	static void set_back_buffer_size(int width, int height)
 	{
 		set_back_buffer(Rectangle{0, 0, width, height});

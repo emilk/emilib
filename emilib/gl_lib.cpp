@@ -1476,7 +1476,6 @@ TempViewPort::~TempViewPort()
 	s_current_vp = _old_vp;
 }
 
-// Call only once when we aquire context.
 void TempViewPort::set_back_buffer(Rectangle bb)
 {
 	s_current_vp = bb;

@@ -15,35 +15,40 @@ namespace emilib {
  * Does NOT handle painting! Please use imgui_gl_lib.hpp for that.
  * You should have your own even loop and feed the events to ImGui_SDL.
  *
- * 	emilib::sdl::Params sdl_params;
- * 	sdl_params.window_name = "My window";
- * 	auto sdl = emilib::sdl::init(sdl_params);
+ *	emilib::sdl::Params sdl_params;
+ *	sdl_params.window_name = "My window";
+ *	auto sdl = emilib::sdl::init(sdl_params);
  *
- * 	emilib::ImGui_SDL imgui_sdl(sdl.width_points, sdl.height_points, sdl.pixels_per_point);
+ *	emilib::ImGui_SDL imgui_sdl(sdl.width_points, sdl.height_points, sdl.pixels_per_point);
  *
- * 	gl::bind_imgui_painting();
+ *	gl::bind_imgui_painting();
  *
- * 	bool quit = false;
- * 	while (!quit) {
- * 		SDL_Event event;
- * 		while (SDL_PollEvent(&event)) {
- * 			if (event.type == SDL_QUIT) { quit = true; }
- * 			imgui_sdl.on_event(event);
- * 		}
+ *	bool quit = false;
+ *	while (!quit) {
+ *		SDL_Event event;
+ *		while (SDL_PollEvent(&event)) {
+ *			if (event.type == SDL_QUIT) { quit = true; }
+ *			imgui_sdl.on_event(event);
+ *		}
  *
- * 		imgui_sdl.new_frame();
+ *		// Handle window resize:
+ *		gl::TempViewPort::set_back_buffer_size(
+ *			math::round_to_int(imgui_sdl.width_pixels()),
+ *			math::round_to_int(imgui_sdl.height_pixels()));
  *
- * 		if (ImGui::Button("Quit!")) {
- * 			quit = true;
- * 		}
+ *		imgui_sdl.new_frame();
  *
- * 		glClearColor(0.1f, 0.1f, 0.1f, 0);
- * 		glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+ *		if (ImGui::Button("Quit!")) {
+ *			quit = true;
+ *		}
  *
- * 		imgui_sdl.paint();
+ *		glClearColor(0.1f, 0.1f, 0.1f, 0);
+ *		glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
  *
- * 		SDL_GL_SwapWindow(sdl.window);
- * 	}
+ *		imgui_sdl.paint();
+ *
+ *		SDL_GL_SwapWindow(sdl.window);
+ *	}
  */
 class ImGui_SDL
 {
@@ -65,8 +70,10 @@ public:
 	bool mod_command() const;
 	bool mod_shift() const;
 
-	float width_points() const { return _width_points; }
-	float height_points() const { return _height_points; }
+	float width_points()     const { return _width_points;     }
+	float height_points()    const { return _height_points;    }
+	float width_pixels()     const { return _pixels_per_point * _width_points;  }
+	float height_pixels()    const { return _pixels_per_point * _height_points; }
 	float pixels_per_point() const { return _pixels_per_point; }
 
 private:
