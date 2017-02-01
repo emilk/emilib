@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -17,7 +18,8 @@
     friend ImVec2 operator*(float s, const ImVec2& v) { return {v.x * s, v.y * s}; }               \
     friend bool operator==(const ImVec2& a, const ImVec2& b) { return a.x == b.x && a.y == b.y; }  \
     void operator*=(float s) { x *= s; y *= s; }                                                   \
-    void operator/=(float s) { x /= s; y /= s; }
+    void operator/=(float s) { x /= s; y /= s; }                                                   \
+    float norm() { return std::hypot(x, y); }
 
 #define IM_VEC4_CLASS_EXTRA                                                        \
     friend bool operator==(const ImVec4& a, const ImVec4& b) {                     \
