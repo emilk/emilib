@@ -91,6 +91,9 @@ It also provides a `Range` class which represent an integer range in a half-clos
 #### list_map.hpp / list_set.hpp
 Simple O(N) map/set with small overhead and great performance for small N.
 
+#### magica_voxel.hpp/.cpp
+Loader for [MagicaVoxel](https://voxel.codeplex.com/) models.
+
 #### marching_squares.hpp/.cpp
 Short, simple marching squares implementation.
 

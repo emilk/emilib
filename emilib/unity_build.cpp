@@ -13,6 +13,7 @@
 #include "imgui_gl_lib.cpp"
 #include "imgui_helpers.cpp"
 #include "imgui_sdl.cpp"
+#include "magica_voxel.cpp"
 #include "marching_squares.cpp"
 #include "mem_map.cpp"
 #include "movement_tracker.cpp"
