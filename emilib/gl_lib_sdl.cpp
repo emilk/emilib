@@ -48,7 +48,11 @@ InitResult init(const Params& params)
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, params.msa);
 	}
 
-	int window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_ALLOW_HIGHDPI;
+	int window_flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
+
+	if (params.high_dpi) {
+		window_flags |= SDL_WINDOW_ALLOW_HIGHDPI;
+	}
 
 #if TARGET_OS_IPHONE
 	window_flags |= SDL_WINDOW_BORDERLESS; // Hides the status bar

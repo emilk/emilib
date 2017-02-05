@@ -21,6 +21,9 @@ struct Params
 	int depth_buffer   = 0; ///< e.g. 24
 	int stencil_buffer = 0; ///< e.g. 8
 	int msa            = 0; ///< e.g. 8 for 8-point anti-aliasing.
+
+	// Enable high-dpi screens.
+	bool high_dpi = true;
 };
 
 struct InitResult
