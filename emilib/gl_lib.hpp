@@ -319,6 +319,7 @@ public:
 
 	bool empty() const { return _count == 0; }
 	size_t count() const { return _count; }
+	size_t size_bytes() const { return _buffer.size(); }
 
 	void upload();
 	void bind();
@@ -424,7 +425,12 @@ public:
 	}
 
 	bool empty() { return _mesh_painter.vert_vbo().empty(); }
-	int size() const { return _mesh_painter.vert_vbo().count(); }
+
+	/// Number of vertices
+	int count() const { return _mesh_painter.vert_vbo().count(); }
+
+	int size_bytes() const { return _mesh_painter.vert_vbo().size_bytes(); }
+
 	void clear() { _mesh_painter.vert_vbo().clear(); }
 
 	void add_strip(const Vertex* ptr, size_t n)
