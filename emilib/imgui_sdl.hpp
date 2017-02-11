@@ -56,9 +56,13 @@ public:
 	ImGui_SDL(float width_points, float height_points, float pixels_per_point);
 	~ImGui_SDL(); ///< Will call ImGui::Shutdown
 
-	/// When inactive, you cannot interact with Dear ImGui.
-	bool active() const { return _active; }
-	void set_active(bool v) { _active = v; }
+	/// When invisible, you can still call ImGui functions, but you cannot see or interact any widgets.
+	bool visible() const { return _visible; }
+	void set_visible(bool v) { _visible = v; }
+
+	/// When not interactive, any ImGui widgets are passive (you can't click them).
+	bool interactive() const { return _interactive; }
+	void set_interactive(bool v) { _interactive = v; }
 
 	void new_frame();
 	void paint();
@@ -77,7 +81,8 @@ public:
 	float pixels_per_point() const { return _pixels_per_point; }
 
 private:
-	bool  _active = true;
+	bool  _visible = true;
+	bool  _interactive = true;
 	float _width_points;
 	float _height_points;
 	float _pixels_per_point;

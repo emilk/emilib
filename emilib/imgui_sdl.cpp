@@ -65,8 +65,6 @@ ImGui_SDL::~ImGui_SDL()
 
 void ImGui_SDL::new_frame()
 {
-	if (!active()) { return; }
-
 	ImGuiIO& io = ImGui::GetIO();
 
 	// Setup timestep
@@ -76,22 +74,35 @@ void ImGui_SDL::new_frame()
 	io.DeltaTime = std::max(io.DeltaTime, 0.0001f);
 	s_last_time = current_time;
 
-	// Setup inputs
-	int mouse_x, mouse_y;
-	auto mouse_state = SDL_GetMouseState(&mouse_x, &mouse_y);
+	if (interactive()) {
+		// Setup inputs
+		int mouse_x, mouse_y;
+		auto mouse_state = SDL_GetMouseState(&mouse_x, &mouse_y);
 
-	io.MousePos = {(float)mouse_x, (float)mouse_y}; // Works for retina Mac, but not iOS !?
+		io.MousePos = {(float)mouse_x, (float)mouse_y}; // Works for retina Mac, but not iOS !?
 
-#if TARGET_OS_IPHONE
-	int width_pixels, height_pixels;
-	SDL_GL_GetDrawableSize(SDL_GL_GetCurrentWindow(), &width_pixels, &height_pixels);
-	float pixels_per_point = static_cast<float>(width_pixels) / io.DisplaySize.x;
-	io.MousePos.x /= pixels_per_point;
-	io.MousePos.y /= pixels_per_point;
-#endif
+	#if TARGET_OS_IPHONE
+		int width_pixels, height_pixels;
+		SDL_GL_GetDrawableSize(SDL_GL_GetCurrentWindow(), &width_pixels, &height_pixels);
+		float pixels_per_point = static_cast<float>(width_pixels) / io.DisplaySize.x;
+		io.MousePos.x /= pixels_per_point;
+		io.MousePos.y /= pixels_per_point;
+	#endif
 
-	io.MouseDown[0] = (mouse_state & SDL_BUTTON_LMASK);
-	io.MouseDown[1] = (mouse_state & SDL_BUTTON_RMASK);
+		io.MouseDown[0] = (mouse_state & SDL_BUTTON_LMASK);
+		io.MouseDown[1] = (mouse_state & SDL_BUTTON_RMASK);
+	} else {
+		io.MouseDown[0] = false;
+		io.MouseDown[1] = false;
+		io.MousePos.x = -1;
+		io.MousePos.y = -1;
+
+		memset(io.KeysDown, 0, sizeof(io.KeysDown));
+		io.KeyShift = false;
+		io.KeyCtrl  = false;
+		io.KeyAlt   = false;
+		io.KeySuper = false;
+	}
 
 	// Start the frame
 	ImGui::NewFrame();
@@ -99,14 +110,14 @@ void ImGui_SDL::new_frame()
 
 void ImGui_SDL::paint()
 {
-	if (!active()) { return; }
-
-	ImGui::Render();
+	if (visible()) {
+		ImGui::Render();
+	}
 }
 
 void ImGui_SDL::on_event(const SDL_Event& event)
 {
-	// Ignore active() - we still want to update keys
+	if (!interactive()) { return; }
 
 	ImGuiIO& io = ImGui::GetIO();
 	auto num_imgui_keys = sizeof(io.KeysDown) / sizeof(io.KeysDown[0]);
