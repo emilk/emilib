@@ -150,7 +150,7 @@ void test_wrap(const std::string& break_where, const std::string& text,
 	ERROR_CONTEXT("Wrap text", text.c_str());
 
 	const float max_width = break_where.size();
-	const CalcWidth calc_width = [](const std::string& text) { return text.size(); };
+	const CalcWidth calc_width = [](const std::string& t) { return t.size(); };
 
 	const auto actual_lines = word_wrap(text, max_width, calc_width);
 

@@ -19,7 +19,7 @@ struct Model
 {
 	int                version      = -1;
 	int                size[3]      = {0}; ///< width, height, depth
-	RGBA               palette[256] = {0};
+	RGBA               palette[256];
 	std::vector<Voxel> voxels;
 };
 
