@@ -20,9 +20,8 @@ struct ListSetEqualTo
 	}
 };
 
-
 /// Linear lookup set for quick lookups among few values.
-template<typename KeyT, typename CompT = ListSetEqualTo<KeyT> >
+template<typename KeyT, typename EqT = ListSetEqualTo<KeyT>>
 class ListSet
 {
 public:
@@ -46,7 +45,7 @@ public:
 	int count(const KeyT& key) const
 	{
 		for (auto&& k : *this) {
-			if (_comp(k, key)) {
+			if (_eq(k, key)) {
 				return 1;
 			}
 		}
@@ -56,7 +55,7 @@ public:
 	bool insert(const KeyT& key)
 	{
 		for (auto&& k : *this) {
-			if (_comp(k, key)) {
+			if (_eq(k, key)) {
 				return false; // like std::set we do not insert if we already have it
 			}
 		}
@@ -73,8 +72,8 @@ public:
 	void clear() { _list.clear(); }
 
 private:
-	List  _list;
-	CompT _comp;
+	List _list;
+	EqT  _eq;
 };
 
 } // namespace emilib

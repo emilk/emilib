@@ -114,8 +114,8 @@ private:
 class CoroutineSet
 {
 public:
-	bool empty() const { return _list.empty(); }
-	auto size()  const { return _list.size();  }
+	bool   empty() const { return _list.empty(); }
+	size_t size()  const { return _list.size();  }
 
 	/// Stop all running coroutines with no outside handles to them.
 	void clear();

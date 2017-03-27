@@ -11,7 +11,8 @@ namespace emilib {
 /// Wraps a value and memoizes the hash of that value.
 /// This can be used to speed up std::unoredred_set/unoredred_map or emilib::HashSet/HashMap
 /// when calculating the hash of the key is expensive.
-/// Example: emilib::HashMap<emilib::HashCache<Key>, Value>
+/// Example: HashMap<Key, Value> -> HashMap<HashCache<Key>, Value>
+/// Example: HashSet<Key, KeyHasher> -> HashSet<HashCache<Key>, HashCacheHasher<KeyHasher>>
 template<typename T>
 class HashCache
 {
@@ -60,6 +61,18 @@ public:
 private:
 	T           _value;
 	std::size_t _hash;
+};
+
+template<typename Hasher>
+struct HashCacheHasher
+{
+	Hasher hasher;
+
+	template<typename T>
+	size_t operator()(const HashCache<T>& x) const
+	{
+		return hasher(x.value());
+	}
 };
 
 } // namespace emilib

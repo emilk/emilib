@@ -6,6 +6,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <vector>
 
 #include <loguru.hpp>
 

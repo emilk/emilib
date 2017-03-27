@@ -17,12 +17,12 @@ struct ListMapEqualTo
 {
 	constexpr bool operator()(const T &lhs, const T &rhs) const
 	{
-	    return lhs == rhs;
+		return lhs == rhs;
 	}
 };
 
 /// Linear lookup map for quick lookups among few values.
-template<typename KeyT, typename ValueT, typename CompT = ListMapEqualTo<KeyT> >
+template<typename KeyT, typename ValueT, typename EqT = ListMapEqualTo<KeyT>>
 class ListMap
 {
 public:
@@ -48,7 +48,7 @@ public:
 	{
 		iterator e=end();
 		for (iterator it=begin(); it!=e; ++it) {
-			if (_comp(it->first, key)) {
+			if (_eq(it->first, key)) {
 				return it;
 			}
 		}
@@ -59,7 +59,7 @@ public:
 	{
 		const_iterator e=end();
 		for (const_iterator it=begin(); it!=e; ++it) {
-			if (_comp(it->first, key)) {
+			if (_eq(it->first, key)) {
 				return it;
 			}
 		}
@@ -75,7 +75,7 @@ public:
 	{
 		iterator e=end();
 		for (iterator it=begin(); it!=e; ++it) {
-			if (_comp(it->first, key)) {
+			if (_eq(it->first, key)) {
 				return it->second;
 			}
 		}
@@ -94,7 +94,7 @@ public:
 	{
 		const_iterator e=end();
 		for (const_iterator it=begin(); it!=e; ++it) {
-			if (_comp(it->first, p.first)) {
+			if (_eq(it->first, p.first)) {
 				return false; // like std::map we do not insert if we already have it
 			}
 		}
@@ -106,7 +106,7 @@ public:
 	{
 		const_iterator e=end();
 		for (const_iterator it=begin(); it!=e; ++it) {
-			if (_comp(it->first, key)) {
+			if (_eq(it->first, key)) {
 				it->second = std::move(value);
 				return;
 			}
@@ -125,7 +125,7 @@ public:
 	{
 		iterator e=end();
 		for (iterator it=begin(); it!=e; ++it) {
-			if (_comp(it->first, key)) {
+			if (_eq(it->first, key)) {
 				erase(it);
 				return;
 			}
@@ -141,8 +141,8 @@ public:
 	void clear() { _list.clear(); }
 
 private:
-	List  _list;
-	CompT _comp;
+	List _list;
+	EqT  _eq;
 };
 
 } // namespace emilib

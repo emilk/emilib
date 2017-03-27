@@ -20,16 +20,16 @@ struct HashSetEqualTo
 {
 	constexpr bool operator()(const T &lhs, const T &rhs) const
 	{
-	    return lhs == rhs;
+		return lhs == rhs;
 	}
 };
 
 /// A cache-friendly hash set with open addressing, linear probing and power-of-two capacity
-template <typename KeyT, typename HashT = std::hash<KeyT>, typename CompT = HashSetEqualTo<KeyT>>
+template <typename KeyT, typename HashT = std::hash<KeyT>, typename EqT = HashSetEqualTo<KeyT>>
 class HashSet
 {
 private:
-	using MyType = HashSet<KeyT, HashT, CompT>;
+	using MyType = HashSet<KeyT, HashT, EqT>;
 
 public:
 	using size_type       = size_t;
@@ -217,7 +217,7 @@ public:
 	void swap(HashSet& other)
 	{
 		std::swap(_hasher,           other._hasher);
-		std::swap(_comp,             other._comp);
+		std::swap(_eq,               other._eq);
 		std::swap(_states,           other._states);
 		std::swap(_keys,             other._keys);
 		std::swap(_num_buckets,      other._num_buckets);
@@ -260,6 +260,11 @@ public:
 	bool empty() const
 	{
 		return _num_filled==0;
+	}
+
+	size_t bucket_count() const
+	{
+		return _num_buckets;
 	}
 
 	// ------------------------------------------------------------
@@ -348,7 +353,7 @@ public:
 	}
 
 	/// Same as above, but contains(key) MUST be false
-	void insert_unique(KeyT&& key)
+	void insert_unique(KeyT key)
 	{
 		DCHECK_F(!contains(key));
 		check_expand_need();
@@ -462,7 +467,7 @@ private:
 		reserve(_num_filled + 1);
 	}
 
-	// Find the bucket with this key, or return nullptr
+	// Find the bucket with this key, or return (size_t)-1
 	size_t find_filled_bucket(const KeyT& key) const
 	{
 		if (empty()) { return (size_t)-1; } // Optimization
@@ -470,10 +475,11 @@ private:
 		auto hash_value = _hasher(key);
 		for (int offset=0; offset<=_max_probe_length; ++offset) {
 			auto bucket = (hash_value + offset) & _mask;
-			if (_states[bucket] == State::FILLED && _comp(_keys[bucket], key)) {
-				return bucket;
-			}
-			if (_states[bucket] == State::INACTIVE) {
+			if (_states[bucket] == State::FILLED) {
+				if (_eq(_keys[bucket], key)) {
+					return bucket;
+				}
+			} else if (_states[bucket] == State::INACTIVE) {
 				return (size_t)-1; // End of the chain!
 			}
 		}
@@ -491,7 +497,7 @@ private:
 			auto bucket = (hash_value + offset) & _mask;
 
 			if (_states[bucket] == State::FILLED) {
-				if (_comp(_keys[bucket], key)) {
+				if (_eq(_keys[bucket], key)) {
 					return bucket;
 				}
 			} else if (_states[bucket] == State::INACTIVE) {
@@ -505,7 +511,6 @@ private:
 		}
 
 		// No key found - but maybe a hole for it
-
 		DCHECK_EQ_F(offset, _max_probe_length+1);
 
 		if (hole != (size_t)-1) {
@@ -547,7 +552,7 @@ private:
 	};
 
 	HashT   _hasher;
-	CompT   _comp;
+	EqT     _eq;
 	State*  _states           = nullptr;
 	KeyT*   _keys             = nullptr;
 	size_t  _num_buckets      =  0;

@@ -151,7 +151,7 @@ struct hash<std::tuple<TT...>>
 	size_t operator()(std::tuple<TT...> const& tt) const
 	{
 		size_t seed = 0;
-		HashValueImpl<std::tuple<TT...> >::apply(seed, tt);
+		HashValueImpl<std::tuple<TT...>>::apply(seed, tt);
 		return seed;
 	}
 
