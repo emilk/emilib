@@ -188,7 +188,7 @@ std::vector<Model> load(const char* path)
 	}
 
 	// print model info
-	LOG_F(INFO, "Model: %dx%dx%d = %d voxels", model.size[0], model.size[1], model.size[2], model.voxels.size());
+	LOG_F(INFO, "Model: %dx%dx%d = %lu voxels", model.size[0], model.size[1], model.size[2], model.voxels.size());
 
 	fclose(fp);
 	return {model};

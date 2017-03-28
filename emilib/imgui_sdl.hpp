@@ -33,8 +33,8 @@ namespace emilib {
  *
  *		// Handle window resize:
  *		gl::TempViewPort::set_back_buffer_size(
- *			math::round_to_int(imgui_sdl.width_pixels()),
- *			math::round_to_int(imgui_sdl.height_pixels()));
+ *			(int)std::round(imgui_sdl.width_pixels()),
+ *			(int)std::round(imgui_sdl.height_pixels()));
  *
  *		imgui_sdl.new_frame();
  *
