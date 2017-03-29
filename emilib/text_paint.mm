@@ -62,8 +62,8 @@ CGContextRef current_context()
 #if TARGET_OS_IPHONE
 	CGContextRef context = UIGraphicsGetCurrentContext();
 #else
-    NSGraphicsContext* nsGraphicsContext = [NSGraphicsContext currentContext];
-    CGContextRef       context           = (CGContextRef)[nsGraphicsContext graphicsPort];
+	NSGraphicsContext* nsGraphicsContext = [NSGraphicsContext currentContext];
+	CGContextRef       context           = (CGContextRef)[nsGraphicsContext graphicsPort];
 #endif
 	CHECK_NOTNULL_F(context);
 	return context;
@@ -71,17 +71,17 @@ CGContextRef current_context()
 
 CTTextAlignment get_alignment(const TextInfo& ti) {
 	return (ti.alignment == TextAlign::LEFT  ? kCTTextAlignmentLeft  :
-	        ti.alignment == TextAlign::RIGHT ? kCTTextAlignmentRight
-	                                         : kCTTextAlignmentCenter);
+			ti.alignment == TextAlign::RIGHT ? kCTTextAlignmentRight
+											 : kCTTextAlignmentCenter);
 }
 
 id get_color(const RGBAf& color)
 {
 #if TARGET_OS_IPHONE
 	return (__bridge id)[UIColor colorWithRed: color.r
-	                       green: color.g
-	                        blue: color.b
-	                       alpha: color.a ].CGColor;
+	                                    green: color.g
+	                                     blue: color.b
+	                                    alpha: color.a ].CGColor;
 #else
 	return (__bridge id)CGColorCreateGenericRGB(color.r, color.g, color.b, color.a);
 #endif
@@ -165,10 +165,11 @@ Vec2 text_paint::text_size(const TextInfo& ti, const AttributeString& attrib_str
 	return {(float)rect.size.width, (float)rect.size.height};
 }
 
-void draw_text(const CGContextRef&    context,
-               const Vec2&            pos,
-               const TextInfo&        ti,
-               const AttributeString& str)
+void draw_text(
+	const CGContextRef&    context,
+	const Vec2&            pos,
+	const TextInfo&        ti,
+	const AttributeString& str)
 {
 	bool ignore_text_align = false;
 	auto ns_attrib_str = get_attr_string(ti, str, ignore_text_align);
@@ -191,21 +192,20 @@ void draw_text(const CGContextRef&    context,
 
 	// Create the framesetter with the attributed string.
 	CTFramesetterRef framesetter =
-         CTFramesetterCreateWithAttributedString((CFAttributedStringRef)ns_attrib_str);
+		CTFramesetterCreateWithAttributedString((CFAttributedStringRef)ns_attrib_str);
 
 	// Create a frame.
-	CTFrameRef frame = CTFramesetterCreateFrame(framesetter,
-          CFRangeMake(0, 0), path, nullptr);
+	CTFrameRef frame = CTFramesetterCreateFrame(framesetter, CFRangeMake(0, 0), path, nullptr);
 
 	// Draw the specified frame in the given context.
 	CTFrameDraw(frame, context);
 }
 
 void text_paint::draw_text(uint8_t* bytes, size_t width, size_t height, bool rgba,
-                           const Vec2& pos, const TextInfo& ti, const AttributeString& str)
+						   const Vec2& pos, const TextInfo& ti, const AttributeString& str)
 {
 	CHECK_F(std::ceil(pos.x + ti.max_size.x) <= width && std::ceil(pos.y + ti.max_size.y) <= height,
-	    "The target must be large enough to fit draw area (pos + max_size)");
+		"The target must be large enough to fit draw area (pos + max_size)");
 
 	CGColorSpaceRef colorSpace;
 	CGContextRef context;

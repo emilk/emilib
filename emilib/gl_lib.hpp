@@ -216,7 +216,7 @@ namespace FF
 	/// Fixed function flags
 	enum FF_Flags
 	{
-		Texture = (1<<0),
+		Texture = (1<<0), ///< TODO: rename as u_sampler?
 		a_color = (1<<1),
 		u_color = (1<<2),
 		dim3    = (1<<3),
