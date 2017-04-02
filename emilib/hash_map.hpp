@@ -77,13 +77,13 @@ public:
 			return _map->_pairs + _bucket;
 		}
 
-		bool operator==(const iterator& rhs)
+		bool operator==(const iterator& rhs) const
 		{
 			DCHECK_EQ_F(_map, rhs._map);
 			return this->_bucket == rhs._bucket;
 		}
 
-		bool operator!=(const iterator& rhs)
+		bool operator!=(const iterator& rhs) const
 		{
 			DCHECK_EQ_F(_map, rhs._map);
 			return this->_bucket != rhs._bucket;
@@ -148,13 +148,13 @@ public:
 			return _map->_pairs + _bucket;
 		}
 
-		bool operator==(const const_iterator& rhs)
+		bool operator==(const const_iterator& rhs) const
 		{
 			DCHECK_EQ_F(_map, rhs._map);
 			return this->_bucket == rhs._bucket;
 		}
 
-		bool operator!=(const const_iterator& rhs)
+		bool operator!=(const const_iterator& rhs) const
 		{
 			DCHECK_EQ_F(_map, rhs._map);
 			return this->_bucket != rhs._bucket;
