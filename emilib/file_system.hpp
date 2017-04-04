@@ -77,6 +77,9 @@ std::vector<std::string> files_in_directory(const std::string& path);
 
 void print_tree(const std::string& path, const std::string& indent = "");
 
+/// Call the given on all files in
+void walk_dir(const std::string& path, const std::function<void(const std::string&)>& visitor);
+
 // ------------------------------------------------
 // Path handling:
 

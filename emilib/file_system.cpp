@@ -7,6 +7,7 @@
 #include "file_system.hpp"
 
 #include <cstring>
+#include <string>
 
 #include <dirent.h>
 #include <errno.h>
@@ -19,11 +20,9 @@
 
 namespace fs {
 
-using namespace std;
-
-void throw_exception(const string& msg)
+void throw_exception(const std::string& msg)
 {
-	throw runtime_error(msg);
+	throw std::runtime_error(msg);
 }
 
 inline bool starts_with(const std::string& str, const std::string& start)
@@ -39,7 +38,7 @@ std::string errno_str()
 
 // ------------------------------------------------
 
-FILEWrapper::FILEWrapper(const string& path, const char* mode) : _fp(nullptr)
+FILEWrapper::FILEWrapper(const std::string& path, const char* mode) : _fp(nullptr)
 {
 	if (!try_open(path, mode)) {
 		const auto errno_text = loguru::errno_as_text();
@@ -61,7 +60,7 @@ void FILEWrapper::close()
 	}
 }
 
-bool FILEWrapper::try_open(const string& path, const char* mode)
+bool FILEWrapper::try_open(const std::string& path, const char* mode)
 {
 	close();
 	_fp = fopen(path.c_str(), mode);
@@ -125,13 +124,13 @@ FILE* FILEWrapper::handle() { return _fp; }
 
 // ------------------------------------------------
 
-bool file_exists(const string& path)
+bool file_exists(const std::string& path)
 {
 	FILEWrapper fp;
 	return fp.try_open(path, "rb");
 }
 
-size_t file_size(const string& path)
+size_t file_size(const std::string& path)
 {
 	struct stat info;
 	if (stat(path.c_str(), &info) != 0) {
@@ -141,7 +140,7 @@ size_t file_size(const string& path)
 	return (size_t)info.st_size;
 }
 
-time_t modified_time(const string& path)
+time_t modified_time(const std::string& path)
 {
 	struct stat info;
 	if (stat(path.c_str(), &info) != 0) {
@@ -151,7 +150,7 @@ time_t modified_time(const string& path)
 	return info.st_mtime;
 }
 
-bool is_file(const string& path)
+bool is_file(const std::string& path)
 {
 	struct stat info;
 	if (stat(path.c_str(), &info) != 0) {
@@ -161,7 +160,7 @@ bool is_file(const string& path)
 	return S_ISREG(info.st_mode);
 }
 
-bool is_directory(const string& path)
+bool is_directory(const std::string& path)
 {
 	struct stat info;
 	if (stat(path.c_str(), &info) != 0) {
@@ -171,7 +170,7 @@ bool is_directory(const string& path)
 	return S_ISDIR(info.st_mode);
 }
 
-vector<uint8_t> read_binary_file(const string& path)
+std::vector<uint8_t> read_binary_file(const std::string& path)
 {
 	FILEWrapper fp(path, "rb");
 
@@ -181,7 +180,7 @@ vector<uint8_t> read_binary_file(const string& path)
 		size_t chunk_size = 1024*128; // Size of first chunk
 		size_t nRead = 0;
 
-		vector<uint8_t> bytes;
+		std::vector<uint8_t> bytes;
 
 		while (!fp.end_of_file()) {
 			bytes.resize(nRead + chunk_size);
@@ -195,7 +194,7 @@ vector<uint8_t> read_binary_file(const string& path)
 
 		return bytes;
 	} else {
-		vector<uint8_t> bytes(size);
+		std::vector<uint8_t> bytes(size);
 		size_t n = fp.try_read(bytes.data(), size);
 		if (n != size) {
 			LOG_F(ERROR, "read_binary_file failed");
@@ -205,17 +204,17 @@ vector<uint8_t> read_binary_file(const string& path)
 	}
 }
 
-string read_text_file(const string& path)
+std::string read_text_file(const std::string& path)
 {
 #if 1
 	const auto vec = read_binary_file(path);
-	return string(begin(vec), end(vec));
+	return std::string(begin(vec), end(vec));
 #else
 	ifstream file;
 	file.open(path.c_str());
 
-	string content = "";
-	string line;
+	std::string content = "";
+	std::string line;
 
 	if (!file.is_open()) {
 		ABORT_F("Failed to open '%s'", path.c_str());
@@ -231,21 +230,21 @@ string read_text_file(const string& path)
 #endif
 }
 
-void write_binary_file(const string& path, const void* data, size_t nbytes)
+void write_binary_file(const std::string& path, const void* data, size_t nbytes)
 {
 	FILEWrapper file(path, "wb");
 	file.write(data, nbytes);
 }
 
-void write_text_file(const string& path, const char* text)
+void write_text_file(const std::string& path, const char* text)
 {
 	FILEWrapper file(path.c_str(), "wb");
 	file.write(text, strlen(text));
 }
 
-vector<string> files_in_directory(const string& path)
+std::vector<std::string> files_in_directory(const std::string& path)
 {
-	vector<string> names;
+	std::vector<std::string> names;
 	auto directory = opendir(path.c_str());
 	if (!directory) {
 		LOG_F(ERROR, "FILEWrapper: Failed to open directory '%s'", path.c_str());
@@ -258,7 +257,7 @@ vector<string> files_in_directory(const string& path)
 	return names;
 }
 
-void print_tree(const string& path, const string& indent)
+void print_tree(const std::string& path, const std::string& indent)
 {
 	LOG_F(INFO, "%s%s", indent.c_str(), path.c_str());
 
@@ -268,8 +267,28 @@ void print_tree(const string& path, const string& indent)
 	}
 	while (auto dentry = readdir(directory)) {
 		if (dentry->d_name[0] == '.') { continue; }
-		string child_path = string(path) + "/" + dentry->d_name;
+		std::string child_path = path + "/" + dentry->d_name;
 		print_tree(child_path, "    ");
+	}
+	closedir(directory);
+}
+
+void walk_dir(const std::string& path, const std::function<void(const std::string&)>& visitor)
+{
+	CHECK_F(path.empty() || path[path.size() - 1] == '/');
+
+	auto directory = opendir(path.c_str());
+	if (!directory) {
+		LOG_F(ERROR, "Failed to open %s", path.c_str());
+		return;
+	}
+	while (auto dentry = readdir(directory)) {
+		if (dentry->d_name[0] == '.') { continue; }
+		if (dentry->d_type == DT_REG) {
+			visitor(path + dentry->d_name);
+		} else if (dentry->d_type == DT_DIR) {
+			walk_dir(path + dentry->d_name + "/", visitor);
+		}
 	}
 	closedir(directory);
 }
