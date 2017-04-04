@@ -196,6 +196,14 @@ gl::Texture* TextureMngr::get(const std::string& name, const gl::TexParams& para
 	return get_retain(name, params).get();
 }
 
+void TextureMngr::prefetch_all(const std::string& sub_folder)
+{
+	const auto root_path = _gfx_dir + sub_folder;
+	fs::walk_dir(root_path, [=](const std::string& file_path) {
+		prefetch(fs::strip_path(root_path, file_path));
+	});
+}
+
 #if 0
 gl::Texture* TextureMngr::store(Texture_UP&& tex_up)
 {

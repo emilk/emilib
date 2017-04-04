@@ -37,6 +37,8 @@ using ImageLoader = std::function<ImageData(const char* path, int* width, int* h
 /// This fixes some issues with stbi_image vs alpha.
 ImageData load_image_rgba(const ImageLoader& image_loader, const char* path, size_t* out_width, size_t* out_height);
 
+/// Handles loading, unloading, memoization of textures.
+/// If a file changes on disk, that file is hot-reloaded by a call to update().
 class TextureMngr
 {
 public:
@@ -46,6 +48,7 @@ public:
 	TextureMngr(const std::string& gfx_dir, ImageLoader image_loader);
 	~TextureMngr();
 
+	/// Call frequently (once a frame) for hot-reloading of textures.
 	void update();
 
 	/// While holding on to this shared_ptr handle, the texture won't get evicted.
@@ -60,6 +63,9 @@ public:
 	/// Get a handle to a texture which will be loaded by finalize_eviction.
 	gl::Texture* prefetch(const std::string& name, const gl::TexParams& params);
 	gl::Texture* prefetch(const std::string& name) { return prefetch(name, default_params()); }
+
+	/// Recursively prefetch all textures in gfx_dir/sub_folder
+	void prefetch_all(const std::string& sub_folder = "");
 
 	/// When we need to load a bunch of new things it is prudent to throw out the old.
 	/// We do this in three steps:
