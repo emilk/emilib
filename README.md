@@ -168,6 +168,13 @@ It draws the text to memory, so it is up to you to display it (e.g. upload it to
 
 # Libraries with third-party dependencies
 
+#### al_lib
+Code for loading, playing and positioning sounds using OpenAL.
+
+Depends on OpenAL and other parts of emilib.
+
+Include `al_lib.hpp` and link with `al_lib.cpp`. You can also make use of `al_lib_fwd.hpp` to bring in forward declarations for most things in al_lib.
+
 #### gl_lib
 Code for doing simple things in OpenGL and/or OpenGL ES (GLES). It has classes and methods for dealing with:
 

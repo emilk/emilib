@@ -6,6 +6,8 @@
 // HISTORY:
 //   Created in 2014 for Ghostel.
 
+#pragma once
+
 #include <cstddef> // size_t
 
 namespace emilib {

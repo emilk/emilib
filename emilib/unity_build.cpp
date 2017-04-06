@@ -5,6 +5,7 @@
 //   publish, and distribute this file as you see fit.
 
 // include this file to build all of emilib except for iOS/Mac-specific stuff (.mm files).
+#include "al_lib.cpp"
 #include "coroutine.cpp"
 #include "dir_watcher.cpp"
 #include "file_system.cpp"
