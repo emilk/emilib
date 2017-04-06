@@ -11,6 +11,7 @@
 #pragma once
 
 #include <cstdio>
+#include <functional>
 #include <string>
 #include <vector>
 
