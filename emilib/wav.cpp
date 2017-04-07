@@ -61,7 +61,8 @@ Wav parse_wav(const void* wav_void_data, size_t wav_size)
 	auto skip_four_bytes = [&](const char* expected)
 	{
 		if (!check_four_bytes(expected)) {
-			throw std::runtime_error("Not a WAV file: missing '" + std::string(expected) + "' block");
+			const auto actual = std::string(reinterpret_cast<const char*>(data + pos), 4);
+			throw std::runtime_error("Not a WAV file: expected '" + std::string(expected) + "' block, got '" + actual + "'");
 		}
 		skip(4); // skip expected
 	};
@@ -107,11 +108,21 @@ Wav parse_wav(const void* wav_void_data, size_t wav_size)
 
 	// ------------------------------------------------------------------------
 
+	// Non-standard filler block:
+	if (check_four_bytes("FLLR")) {
+		skip(4); // skip "FLLR"
+		uint32_t chunk_size = read_uint32();
+		chunk_size += (chunk_size % 2);
+		skip(chunk_size);
+	}
+
+	// ------------------------------------------------------------------------
+
 	skip_four_bytes("data");
 	uint32_t data_size = read_uint32(); // How many bytes of sound data we have
 
 	if (pos + data_size < wav_size) {
-		// This happens, and I'm not sure why.
+		// There might be trailing blocks. Ignore.
 		auto extra = wav_size - data_size - pos;
 		LOG_F(WARNING, "%lu bytes of extra data in WAV file", extra);
 	}
