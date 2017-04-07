@@ -434,7 +434,7 @@ Sound_SP SoundMngr::load_sound(const std::string& sound_name, bool is_hot)
 			if (is_hot) {
 				LOG_F(WARNING, "Hot-Loading sound '%s'...", sound_name.c_str());
 			}
-			auto path = _sfx_dir + sound_name + ".wav";
+			auto path = _sfx_dir + sound_name;
 			auto sound = Sound::load_wav(path.c_str());
 			sound_ptr = std::make_shared<Sound>(std::move(sound));
 			check_for_al_error();
