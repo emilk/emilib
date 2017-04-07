@@ -453,6 +453,16 @@ void SoundMngr::prefetch(const std::string& sound_name)
 	load_sound(sound_name, false);
 }
 
+void SoundMngr::prefetch_all(const std::string& sub_folder)
+{
+	const auto root_path = _sfx_dir + sub_folder;
+	fs::walk_dir(root_path, [=](const std::string& file_path) {
+		if (fs::file_ending(file_path) == "wav") {
+			prefetch(fs::strip_path(root_path, file_path));
+		}
+	});
+}
+
 Source_SP SoundMngr::play(const std::string& sound_name)
 {
 	if (auto sound = load_sound(sound_name, true)) {

@@ -181,10 +181,14 @@ public:
 
 	//------------------------------------------------------------------------------
 
+	/// sound_name == "subdir/foo.wav"
 	void prefetch(const std::string& sound_name);
 
-	// Fire and forget - or keep the returned source and modify it.
-	// Returns nullptr on fail
+	/// Recursively prefetch all textures in sfx_dir/sub_folder
+	void prefetch_all(const std::string& sub_folder = "");
+
+	/// Fire and forget - or keep the returned source and modify it.
+	/// Returns nullptr on fail
 	Source_SP play(const std::string& sound_name);
 
 	//------------------------------------------------------------------------------
@@ -201,19 +205,19 @@ public:
 		INVERSE_DISTANCE_CLAMPED,
 	};
 
-	// set speed of sound. 344 by default (speed of sound in air in meters/second)
+	/// set speed of sound. 344 by default (speed of sound in air in meters/second)
 	void set_doppler_vel(float vel);
-	// get speed of sound. 344 by default (speed of sound in air in meters/second)
+	/// get speed of sound. 344 by default (speed of sound in air in meters/second)
 	float doppler_vel();
 
-	// default is 1, used to (de)exaggerate the effect of the Doppler effect
+	/// default is 1, used to (de)exaggerate the effect of the Doppler effect
 	void set_doppler_factor(float factor);
-	// default is 1, used to (de)exaggerate the effect of the Doppler effect
+	/// default is 1, used to (de)exaggerate the effect of the Doppler effect
 	float doppler_factor();
 
-	// default is INVERSE_DISTANCE
+	/// default is INVERSE_DISTANCE
 	void set_distance_model(DistanceModel model);
-	// default is INVERSE_DISTANCE
+	/// default is INVERSE_DISTANCE
 	DistanceModel distance_model();
 
 	const char* vendor();
