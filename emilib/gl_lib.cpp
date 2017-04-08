@@ -99,8 +99,8 @@ void init_glew()
 
 	if (glDebugMessageCallbackARB) {
 		LOG_F(INFO, "ARB_debug_output supported");
-		glDebugMessageCallbackARB( on_gl_error, nullptr );
-		glEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB );
+		glDebugMessageCallbackARB(on_gl_error, nullptr);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
 	} else {
 		LOG_F(INFO, "ARB_debug_output not supported");
 	}

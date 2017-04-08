@@ -230,7 +230,6 @@ void testAll(const size_t num_threads, const size_t reads_per_write)
 	fflush(stdout);
 }
 
-
 // ----------------------------------------------------------------------------
 
 int main()
@@ -246,7 +245,6 @@ int main()
 		printf("\n");
 	}
 }
-
 
 /*
 MacBook pro retina 15" results:
@@ -309,8 +307,6 @@ Clang:
 	 8 threads:     4.313           0.055       0.060  μs/access
 	10 threads:     4.285           0.055       0.058  μs/access
 
-
-
 GCC5:
 	0 reads per write:
 	           std::mutex  std::shared_timed_mutex  FastReadWriteMutex  SlowReadWriteMutex
@@ -365,7 +361,6 @@ GCC5:
 	 6 threads:     4.631            9.159          0.058               0.062  μs/access (lower is better)
 	 8 threads:     4.628            9.301          0.057               0.060  μs/access (lower is better)
 	10 threads:     4.407            8.874          0.056               0.060  μs/access (lower is better)
-
 
 GCC6:
 	0 reads per write:

@@ -35,7 +35,7 @@ float RotationTracker::velocity(double now) const
 	// Sum intelligently:
 	double sum = 0;
 	for (size_t i = begin + 1; i < _list.size(); ++i) {
-		sum += wrap_angle( _list[i].where - _list[i-1].where );
+		sum += wrap_angle(_list[i].where - _list[i-1].where);
 	}
 
 	return (float)(sum / dt);

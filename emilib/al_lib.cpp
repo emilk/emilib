@@ -478,31 +478,19 @@ Source_SP SoundMngr::play(const std::string& sound_name)
 Source_SP SoundMngr::get_source()
 {
 	check_for_al_error();
-#if 0
-	auto it = std::find_if(begin(_sources), end(_sources),
-	                       [](auto&& s){ return s->state()_sources != Source::PLAYING; });
-	if (it != end(_sources)) {
-		// TODO: reset position etc
-		return *it;
-	} else {
-		_sources.push_back(std::make_shared<Source>());
-		return _sources.back(),
-	}
-#else
-	// Erase any not still playing
-	auto erase_it = std::remove_if(begin(_sources), end(_sources),
-		[](auto&& s) {
-			return s->state() != Source::PLAYING;
-		});
+
+	// Erase any not still playing:
+	auto erase_it = std::remove_if(begin(_sources), end(_sources), [](auto&& s) {
+		return s->state() != Source::PLAYING;
+	});
 	_sources.erase(erase_it, _sources.end());
 
 	check_for_al_error();
 
 	auto src = std::make_shared<Source>();
 	check_for_al_error();
-	_sources.push_back( src );
+	_sources.push_back(src);
 	return src;
-#endif
 }
 
 void SoundMngr::set_doppler_vel(float vel)
