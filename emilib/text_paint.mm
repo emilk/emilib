@@ -89,8 +89,23 @@ id get_color(const RGBAf& color)
 
 NSDictionary* get_attributes(const TextInfo& ti, bool ignore_text_align)
 {
-	NSString* font_name = utf8_to_NSString(ti.font.c_str());
-	CTFontRef font = CTFontCreateWithName((CFStringRef)font_name, ti.font_size, nullptr);
+	CTFontRef font;
+	if (ti.ttf_path.size() != 0) {
+		NSString* ns_ttf_path = utf8_to_NSString(ti.ttf_path.c_str());
+		CFURLRef font_url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)ns_ttf_path, kCFURLPOSIXPathStyle, false);
+		CGDataProviderRef data_provider = CGDataProviderCreateWithURL(font_url);
+		CGFontRef cg_font = CGFontCreateWithDataProvider(data_provider);
+		CHECK_NOTNULL_F(cg_font, "Failed to load font at '%s'", ti.ttf_path.c_str());
+		font = CTFontCreateWithGraphicsFont(cg_font, ti.font_size, nullptr, nullptr);
+		CHECK_NOTNULL_F(font, "Failed to load font at '%s' with font size %f", ti.ttf_path.c_str(), ti.font_size);
+		CFRelease(cg_font);
+		CFRelease(data_provider);
+		CFRelease(font_url);
+	} else {
+		NSString* font_name = utf8_to_NSString(ti.font.c_str());
+		font = CTFontCreateWithName((CFStringRef)font_name, ti.font_size, nullptr);
+		CHECK_NOTNULL_F(font, "Failed to load font '%s'", ti.font.c_str());
+	}
 	id font_id = (__bridge id)font;
 
 	NSNumber* underline = [NSNumber numberWithInt:kCTUnderlineStyleNone];
@@ -235,6 +250,7 @@ bool text_paint::test()
 	// Set up how we draw the text:
 	text_paint::TextInfo text_info;
 	text_info.font       = "Noteworthy-Light";
+	text_info.ttf_path = "data/fonts/Comfortaa/Comfortaa-Regular.ttf"; // TODO
 	text_info.font_size  =  44;
 	text_info.alignment  = TextAlign::CENTER;
 	text_info.max_size.x = 100; // Break to this width.

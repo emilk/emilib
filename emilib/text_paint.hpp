@@ -38,10 +38,11 @@ enum class TextAlign
 struct TextInfo
 {
 	std::string font      = "Noteworthy-Light";
+	std::string ttf_path; ///< Optional: path to .ttf file. Overrides `font` above.
 	float       font_size = 22;
 	TextAlign   alignment = TextAlign::LEFT;
 
-	// Use max_size.x to set a max width for wrapping the text to.
+	/// Use max_size.x to set a max width for wrapping the text to.
 	Vec2f        max_size  = {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
 };
 
@@ -99,6 +100,12 @@ inline bool operator==(const RGBAf& a, const RGBAf& b)
 	    == std::tie(b.r, b.g, b.b, b.a);
 }
 
+inline bool operator==(const TextInfo& a, const TextInfo& b)
+{
+	return std::tie(a.font, a.ttf_path, a.font_size, a.alignment, a.max_size)
+	    == std::tie(b.font, b.ttf_path, b.font_size, b.alignment, b.max_size);
+}
+
 inline bool operator==(const AttributeString::ColorRange& a, const AttributeString::ColorRange& b)
 {
 	return std::tie(a.color, a.length_bytes)
@@ -115,12 +122,6 @@ inline bool operator==(const AttributeString& a, const AttributeString& b)
 {
 	return std::tie(a.utf8, a.colors, a.fonts)
 	    == std::tie(b.utf8, b.colors, b.fonts);
-}
-
-inline bool operator==(const TextInfo& a, const TextInfo& b)
-{
-	return std::tie(a.font, a.font_size, a.alignment, a.max_size)
-	    == std::tie(b.font, b.font_size, b.alignment, b.max_size);
 }
 
 // ----------------------------------------------------------------------------
