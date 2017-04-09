@@ -26,6 +26,7 @@ void check_for_al_error();
 
 // ----------------------------------------------------------------------------
 
+/// A loaded sound. Can be played via Source. Many Source:s can play the same Sound at the same.
 class Sound
 {
 public:
@@ -151,6 +152,8 @@ private:
 
 // ----------------------------------------------------------------------------
 
+/// All Listeners are really the same.
+/// TODO: static interface.
 class Listener
 {
 public:
