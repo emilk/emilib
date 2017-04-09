@@ -19,21 +19,33 @@ Requires AppKit on OSX.
 
 #include <limits>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace text_paint {
 
-struct Vec2 { float x, y; };
+struct Vec2f { float x, y; };
 struct RGBAf { float r, g, b, a; };
 
 enum class TextAlign
 {
 	LEFT,
 	CENTER,
-	RIGHT
+	RIGHT,
 };
 
-/// Multiline text where ranges can be colored differently.
+/// Describes how to format the text.
+struct TextInfo
+{
+	std::string font      = "Noteworthy-Light";
+	float       font_size = 22;
+	TextAlign   alignment = TextAlign::LEFT;
+
+	// Use max_size.x to set a max width for wrapping the text to.
+	Vec2f        max_size  = {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
+};
+
+/// Multiline text where ranges can be colored differently or use a different font.
 struct AttributeString
 {
 	struct ColorRange
@@ -73,21 +85,51 @@ struct AttributeString
 	}
 };
 
-struct TextInfo
-{
-	std::string font      = "Noteworthy-Light";
-	float       font_size = 22;
-	TextAlign   alignment = TextAlign::LEFT;
+// ----------------------------------------------------------------------------
 
-	// Use max_size.x to set a max width for wrapping the text to.
-	Vec2        max_size  = {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
-};
+inline bool operator==(const Vec2f& a, const Vec2f& b)
+{
+	return std::tie(a.x, a.y)
+	    == std::tie(b.x, b.y);
+}
+
+inline bool operator==(const RGBAf& a, const RGBAf& b)
+{
+	return std::tie(a.r, a.g, a.b, a.a)
+	    == std::tie(b.r, b.g, b.b, b.a);
+}
+
+inline bool operator==(const AttributeString::ColorRange& a, const AttributeString::ColorRange& b)
+{
+	return std::tie(a.color, a.length_bytes)
+	    == std::tie(b.color, b.length_bytes);
+}
+
+inline bool operator==(const AttributeString::FontRange& a, const AttributeString::FontRange& b)
+{
+	return std::tie(a.begin, a.end, a.font)
+	    == std::tie(b.begin, b.end, b.font);
+}
+
+inline bool operator==(const AttributeString& a, const AttributeString& b)
+{
+	return std::tie(a.utf8, a.colors, a.fonts)
+	    == std::tie(b.utf8, b.colors, b.fonts);
+}
+
+inline bool operator==(const TextInfo& a, const TextInfo& b)
+{
+	return std::tie(a.font, a.font_size, a.alignment, a.max_size)
+	    == std::tie(b.font, b.font_size, b.alignment, b.max_size);
+}
+
+// ----------------------------------------------------------------------------
 
 /// Returns how much space the given text will take up.
 /// If max_size.x is set, it will use it as the width to break the text to.
 /// Use the results as max_size when calling draw_text.
 /// To figure out the minimum size of the draw target you should round up the returned size.
-Vec2 text_size(const TextInfo& ti, const AttributeString& str);
+Vec2f text_size(const TextInfo& ti, const AttributeString& str);
 
 /// This function does not care about retina, i.e. pixel==point.
 /// If `rgba`, the given buffer should be width * height * 4 bytes.
@@ -97,7 +139,7 @@ Vec2 text_size(const TextInfo& ti, const AttributeString& str);
 /// The output image will be be written top-left to bottom-right, row by row.
 void draw_text(
 	uint8_t* bytes, size_t width, size_t height, bool rgba,
-	const Vec2& pos, const TextInfo& ti, const AttributeString& str);
+	const Vec2f& pos, const TextInfo& ti, const AttributeString& str);
 
 /// Should return true, unless something is broken.
 bool test();

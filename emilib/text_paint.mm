@@ -154,7 +154,7 @@ NSAttributedString* get_attr_string(const TextInfo& ti, const AttributeString& a
 	return ns_attrib_str;
 }
 
-Vec2 text_paint::text_size(const TextInfo& ti, const AttributeString& attrib_str)
+Vec2f text_paint::text_size(const TextInfo& ti, const AttributeString& attrib_str)
 {
 	auto max_size = CGSizeMake(ti.max_size.x, ti.max_size.y);
 	bool ignore_text_align = true; // Can't specify TextAlign when figuring out the size.
@@ -167,7 +167,7 @@ Vec2 text_paint::text_size(const TextInfo& ti, const AttributeString& attrib_str
 
 void draw_text(
 	const CGContextRef&    context,
-	const Vec2&            pos,
+	const Vec2f&           pos,
 	const TextInfo&        ti,
 	const AttributeString& str)
 {
@@ -201,11 +201,13 @@ void draw_text(
 	CTFrameDraw(frame, context);
 }
 
-void text_paint::draw_text(uint8_t* bytes, size_t width, size_t height, bool rgba,
-						   const Vec2& pos, const TextInfo& ti, const AttributeString& str)
+void text_paint::draw_text(
+	uint8_t* bytes, size_t width, size_t height, bool rgba,
+	const Vec2f& pos, const TextInfo& ti, const AttributeString& str)
 {
-	CHECK_F(std::ceil(pos.x + ti.max_size.x) <= width && std::ceil(pos.y + ti.max_size.y) <= height,
-		"The target must be large enough to fit draw area (pos + max_size)");
+	CHECK_F(std::isfinite(ti.max_size.x) && std::isfinite(ti.max_size.y), "You must set max_size prior to calling text_paint::draw_text");
+	CHECK_LE_F(std::ceil(pos.x + ti.max_size.x), width,  "The target must be large enough to fit draw area (pos + max_size)");
+	CHECK_LE_F(std::ceil(pos.y + ti.max_size.y), height, "The target must be large enough to fit draw area (pos + max_size)");
 
 	CGColorSpaceRef colorSpace;
 	CGContextRef context;

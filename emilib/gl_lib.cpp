@@ -313,7 +313,10 @@ void Texture::set_data(const void* data_ptr)
 
 void Texture::set_mip_data(const void* data_ptr, Size size, unsigned mip_level)
 {
-	ERROR_CONTEXT("Texture::set_mip_data", _debug_name.c_str());
+	ERROR_CONTEXT("Texture name",   _debug_name.c_str());
+	ERROR_CONTEXT("Texture width",  size.x);
+	ERROR_CONTEXT("Texture height", size.y);
+	ERROR_CONTEXT("mip_level",      mip_level);
 	NAME_PAINT_FUNCTION();
 	bind();
 
