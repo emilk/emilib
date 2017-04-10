@@ -1539,8 +1539,6 @@ FBO::FBO(const std::string& debug_name, Size size, const Params& params)
 	: _debug_name(debug_name), _size(size), _params(params)
 	, _color_tex(debug_name + "_color", TexParams::clamped_linear(), params.color_format, size, nullptr)
 {
-	VLOG_SCOPE_F(1, "FBO %s", debug_name.c_str());
-
 	CHECK_FOR_GL_ERROR;
 
 	glGenFramebuffers(1, &_fbo_id);
