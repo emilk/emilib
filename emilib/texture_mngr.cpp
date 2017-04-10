@@ -97,7 +97,7 @@ std::pair<std::string, gl::Texture> load_texture(
 	}
 
 #if TARGET_OS_IPHONE
-	if (ends_with(abs_path,  ".pvr") {
+	if (ends_with(abs_path,  ".pvr")) {
 		return {abs_path, gl::load_pvr(abs_path.c_str(), params)};
 	}
 #endif

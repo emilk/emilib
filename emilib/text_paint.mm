@@ -57,20 +57,9 @@ NSString* utf8_to_NSString(const char* utf8)
 {
 	return [NSString stringWithUTF8String: utf8];
 }
-
-CGContextRef current_context()
+	
+CTTextAlignment get_alignment(const TextInfo& ti)
 {
-#if TARGET_OS_IPHONE
-	CGContextRef context = UIGraphicsGetCurrentContext();
-#else
-	NSGraphicsContext* nsGraphicsContext = [NSGraphicsContext currentContext];
-	CGContextRef       context           = (CGContextRef)[nsGraphicsContext graphicsPort];
-#endif
-	CHECK_NOTNULL_F(context);
-	return context;
-}
-
-CTTextAlignment get_alignment(const TextInfo& ti) {
 	return (ti.alignment == TextAlign::LEFT  ? kCTTextAlignmentLeft  :
 			ti.alignment == TextAlign::RIGHT ? kCTTextAlignmentRight
 											 : kCTTextAlignmentCenter);
@@ -158,7 +147,7 @@ NSAttributedString* get_attr_string(const TextInfo& ti, const AttributeString& a
 		#endif
 
 		auto length_chars = utf8_count_chars(attrib_str.utf8.c_str() + start_bytes, part.length_bytes);
-		[ns_attrib_str addAttribute:(id)kCTForegroundColorAttributeName value:color range:NSMakeRange(start_chars, length_chars)];
+		[ns_attrib_str addAttribute:(id)kCTForegroundColorAttributeName value:(__bridge id)color range:NSMakeRange(start_chars, length_chars)];
 		start_bytes += part.length_bytes;
 		start_chars += length_chars;
 
