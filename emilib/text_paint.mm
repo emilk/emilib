@@ -37,6 +37,9 @@
 
 // ----------------------------------------------------------------------------
 
+namespace text_paint {
+namespace {
+
 size_t utf8_count_chars(const char* utf8, size_t num_bytes)
 {
 	CHECK_LE_F(num_bytes, strlen(utf8));
@@ -54,8 +57,6 @@ NSString* utf8_to_NSString(const char* utf8)
 {
 	return [NSString stringWithUTF8String: utf8];
 }
-
-using namespace text_paint;
 
 CGContextRef current_context()
 {
@@ -75,31 +76,29 @@ CTTextAlignment get_alignment(const TextInfo& ti) {
 											 : kCTTextAlignmentCenter);
 }
 
-id get_color(const RGBAf& color)
-{
-#if TARGET_OS_IPHONE
-	return (__bridge id)[UIColor colorWithRed: color.r
-	                                    green: color.g
-	                                     blue: color.b
-	                                    alpha: color.a ].CGColor;
-#else
-	return (__bridge id)CGColorCreateGenericRGB(color.r, color.g, color.b, color.a);
-#endif
-}
-
 NSDictionary* get_attributes(const TextInfo& ti, bool ignore_text_align)
 {
 	CTFontRef font;
 	if (ti.ttf_path.size() != 0) {
 		NSString* ns_ttf_path = utf8_to_NSString(ti.ttf_path.c_str());
 		CFURLRef font_url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)ns_ttf_path, kCFURLPOSIXPathStyle, false);
-		CGDataProviderRef data_provider = CGDataProviderCreateWithURL(font_url);
-		CGFontRef cg_font = CGFontCreateWithDataProvider(data_provider);
-		CHECK_NOTNULL_F(cg_font, "Failed to load font at '%s'", ti.ttf_path.c_str());
-		font = CTFontCreateWithGraphicsFont(cg_font, ti.font_size, nullptr, nullptr);
-		CHECK_NOTNULL_F(font, "Failed to load font at '%s' with font size %f", ti.ttf_path.c_str(), ti.font_size);
-		CFRelease(cg_font);
-		CFRelease(data_provider);
+		#if 1
+			CFArrayRef all_descriptors = CTFontManagerCreateFontDescriptorsFromURL(font_url);
+			CHECK_NOTNULL_F(all_descriptors);
+			CHECK_EQ_F(CFArrayGetCount(all_descriptors), 1);
+			CTFontDescriptorRef first_descriptor = (CTFontDescriptorRef)CFArrayGetValueAtIndex(all_descriptors, 0);
+			font = CTFontCreateWithFontDescriptor(first_descriptor, ti.font_size, nullptr);
+			CFRelease(all_descriptors);
+		#else
+			// Leaks memory!!!!
+			CGDataProviderRef data_provider = CGDataProviderCreateWithURL(font_url);
+			CGFontRef cg_font = CGFontCreateWithDataProvider(data_provider);
+			CHECK_NOTNULL_F(cg_font, "Failed to load font at '%s'", ti.ttf_path.c_str());
+			font = CTFontCreateWithGraphicsFont(cg_font, ti.font_size, nullptr, nullptr);
+			CHECK_NOTNULL_F(font, "Failed to load font at '%s' with font size %f", ti.ttf_path.c_str(), ti.font_size);
+			CFRelease(cg_font);
+			CFRelease(data_provider);
+		#endif
 		CFRelease(font_url);
 	} else {
 		NSString* font_name = utf8_to_NSString(ti.font.c_str());
@@ -149,11 +148,23 @@ NSAttributedString* get_attr_string(const TextInfo& ti, const AttributeString& a
 	size_t start_bytes = 0;
 	size_t start_chars = 0;
 	for (const auto& part : attrib_str.colors) {
-		id color = get_color(part.color);
+		#if TARGET_OS_IPHONE
+			auto color = [UIColor colorWithRed: part.color.r
+			                             green: part.color.g
+			                              blue: part.color.b
+			                             alpha: part.color.a ].CGColor;
+		#else
+			auto color = CGColorCreateGenericRGB(part.color.r, part.color.g, part.color.b, part.color.a);
+		#endif
+
 		auto length_chars = utf8_count_chars(attrib_str.utf8.c_str() + start_bytes, part.length_bytes);
 		[ns_attrib_str addAttribute:(id)kCTForegroundColorAttributeName value:color range:NSMakeRange(start_chars, length_chars)];
 		start_bytes += part.length_bytes;
 		start_chars += length_chars;
+
+		#if TARGET_OS_MAC
+			CGColorRelease(color);
+		#endif
 	}
 
 	for (const auto& part : attrib_str.fonts) {
@@ -164,20 +175,10 @@ NSAttributedString* get_attr_string(const TextInfo& ti, const AttributeString& a
 		size_t begin_chars = utf8_count_chars(attrib_str.utf8.c_str(), part.begin);
 		size_t end_chars = utf8_count_chars(attrib_str.utf8.c_str(), part.end);
 		[ns_attrib_str addAttribute:(id)kCTFontAttributeName value:font_id range:NSMakeRange(begin_chars, end_chars - begin_chars)];
+		CFRelease(font);
 	}
 
 	return ns_attrib_str;
-}
-
-Vec2f text_paint::text_size(const TextInfo& ti, const AttributeString& attrib_str)
-{
-	auto max_size = CGSizeMake(ti.max_size.x, ti.max_size.y);
-	bool ignore_text_align = true; // Can't specify TextAlign when figuring out the size.
-	auto ns_attrib_str = get_attr_string(ti, attrib_str, ignore_text_align);
-	CGRect rect = [ns_attrib_str boundingRectWithSize: max_size
-	                                          options: NSStringDrawingOptions(NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading)
-	                                          context: nil];
-	return {(float)rect.size.width, (float)rect.size.height};
 }
 
 void draw_text(
@@ -214,9 +215,28 @@ void draw_text(
 
 	// Draw the specified frame in the given context.
 	CTFrameDraw(frame, context);
+
+	CFRelease(frame);
+	CFRelease(framesetter);
+	CFRelease(path);
 }
 
-void text_paint::draw_text(
+} //namespace
+
+// ----------------------------------------------------------------------------
+
+Vec2f text_size(const TextInfo& ti, const AttributeString& attrib_str)
+{
+	auto max_size = CGSizeMake(ti.max_size.x, ti.max_size.y);
+	bool ignore_text_align = true; // Can't specify TextAlign when figuring out the size.
+	auto ns_attrib_str = get_attr_string(ti, attrib_str, ignore_text_align);
+	CGRect rect = [ns_attrib_str boundingRectWithSize: max_size
+	                                          options: NSStringDrawingOptions(NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading)
+	                                          context: nil];
+	return {(float)rect.size.width, (float)rect.size.height};
+}
+
+void draw_text(
 	uint8_t* bytes, size_t width, size_t height, bool rgba,
 	const Vec2f& pos, const TextInfo& ti, const AttributeString& str)
 {
@@ -240,7 +260,7 @@ void text_paint::draw_text(
 	CGContextRelease(context);
 }
 
-bool text_paint::test()
+bool test()
 {
 	// Create the text to draw:
 	AttributeString str;
@@ -274,3 +294,5 @@ bool text_paint::test()
 	// Check that we did paint something:
 	return !std::all_of(bytes.begin(), bytes.end(), [&](auto value) { return value == bg_color; });
 }
+
+} // namespace text_paint
