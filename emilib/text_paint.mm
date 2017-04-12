@@ -57,7 +57,7 @@ NSString* utf8_to_NSString(const char* utf8)
 {
 	return [NSString stringWithUTF8String: utf8];
 }
-	
+
 CTTextAlignment get_alignment(const TextInfo& ti)
 {
 	return (ti.alignment == TextAlign::LEFT  ? kCTTextAlignmentLeft  :
@@ -252,16 +252,15 @@ void draw_text(
 bool test()
 {
 	// Create the text to draw:
-	AttributeString str;
+	text_paint::AttributeString str;
 	str.append("Hello ", text_paint::RGBAf{0,0,0,1}); // Black
 	str.append("World!", text_paint::RGBAf{1,1,1,1}); // White
 
 	// Set up how we draw the text:
 	text_paint::TextInfo text_info;
 	text_info.font       = "Noteworthy-Light";
-	text_info.ttf_path = "data/fonts/Comfortaa/Comfortaa-Regular.ttf"; // TODO
 	text_info.font_size  =  44;
-	text_info.alignment  = TextAlign::CENTER;
+	text_info.alignment  = text_paint::TextAlign::CENTER;
 	text_info.max_size.x = 100; // Break to this width.
 
 	// Calculate the size of the text:
