@@ -102,6 +102,34 @@ Sound::~Sound()
 	}
 }
 
+int Sound::get_freqency() const
+{
+	int temp;
+	alGetBufferi(_buffer_id, AL_FREQUENCY, &temp);
+	return temp;
+}
+
+int Sound::get_bits() const
+{
+	int temp;
+	alGetBufferi(_buffer_id, AL_BITS, &temp);
+	return temp;
+}
+
+int Sound::get_channels() const
+{
+	int temp;
+	alGetBufferi(_buffer_id, AL_CHANNELS, &temp);
+	return temp;
+}
+
+int Sound::get_size() const
+{
+	int temp;
+	alGetBufferi(_buffer_id, AL_SIZE, &temp);
+	return temp;
+}
+
 // ----------------------------------------------------------------------------
 
 int Source::max_sources()
@@ -214,37 +242,37 @@ void Source::rewind()
 
 void Source::set_pos(Vec3f arg)
 {
-	alSourcefv(_source, AL_POSITION, arg.data);
+	alSourcefv(_source, AL_POSITION, arg.data());
 }
 
 Vec3f Source::pos() const
 {
 	Vec3f temp;
-	alGetSourcefv(_source, AL_POSITION, temp.data);
+	alGetSourcefv(_source, AL_POSITION, temp.data());
 	return temp;
 }
 
 void Source::set_vel(Vec3f arg)
 {
-	alSourcefv(_source, AL_VELOCITY, arg.data);
+	alSourcefv(_source, AL_VELOCITY, arg.data());
 }
 
 Vec3f Source::vel() const
 {
 	Vec3f temp;
-	alGetSourcefv(_source, AL_VELOCITY, temp.data);
+	alGetSourcefv(_source, AL_VELOCITY, temp.data());
 	return temp;
 }
 
 void Source::set_direction(Vec3f arg)
 {
-	alSourcefv(_source, AL_DIRECTION, arg.data);
+	alSourcefv(_source, AL_DIRECTION, arg.data());
 }
 
 Vec3f Source::direction() const
 {
 	Vec3f temp;
-	alGetSourcefv(_source, AL_DIRECTION, temp.data);
+	alGetSourcefv(_source, AL_DIRECTION, temp.data());
 	return temp;
 }
 
@@ -320,30 +348,30 @@ bool Source::looping() const
 // ----------------------------------------------------------------------------
 
 void Listener::set_pos(Vec3f pos)
-{ alListenerfv(AL_POSITION, pos.data); }
+{ alListenerfv(AL_POSITION, pos.data()); }
 
 Vec3f Listener::pos() const
 {
 	Vec3f temp;
-	alGetListenerfv(AL_POSITION, temp.data);
+	alGetListenerfv(AL_POSITION, temp.data());
 	return temp;
 }
 
 void Listener::set_vel(Vec3f pos)
-{ alListenerfv(AL_VELOCITY, pos.data); }
+{ alListenerfv(AL_VELOCITY, pos.data()); }
 
 Vec3f Listener::vel() const
 {
 	Vec3f temp;
-	alGetListenerfv(AL_VELOCITY, temp.data);
+	alGetListenerfv(AL_VELOCITY, temp.data());
 	return temp;
 }
 
 void Listener::set_orientation(const Vec3f& forward, const Vec3f& up)
 {
 	float temp[6];
-	std::copy_n(forward.data, 3, temp);
-	std::copy_n(up.data,      3, temp+3);
+	std::copy_n(forward.data(), 3, temp);
+	std::copy_n(up.data(),      3, temp+3);
 	alListenerfv(AL_ORIENTATION, temp);
 }
 

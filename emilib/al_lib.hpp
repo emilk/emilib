@@ -20,7 +20,20 @@ namespace al {
 
 // ----------------------------------------------------------------------------
 
-struct Vec3f { float data[3]; };
+struct Vec3f
+{
+	float _data[3];
+
+	Vec3f() {}
+	Vec3f(float x, float y, float z) : _data{x, y, z} {}
+
+	float* data() { return _data; }
+	const float* data() const { return _data; }
+
+	#ifdef AL_LIB_VEC3f_EXTRAS
+		AL_LIB_VEC3f_EXTRAS // Use this to define implicit conversions to/from your own types.
+	#endif
+};
 
 void check_for_al_error();
 
@@ -37,6 +50,11 @@ public:
 
 	/// Memory usage.
 	unsigned size_bytes() const { return _size_bytes; }
+
+	int get_freqency() const;
+	int get_bits() const;
+	int get_channels() const;
+	int get_size() const;
 
 private:
 	friend class Source;
