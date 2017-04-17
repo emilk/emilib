@@ -22,7 +22,10 @@ www.github.com/emilk/configuru
 	0.2.4: 2016-08-18 - fix compilation error for when CONFIGURU_VALUE_SEMANTICS=0
 	0.3.0: 2016-09-15 - Add option to not align values (object_align_values)
 	0.3.1: 2016-09-19 - Fix crashes on some compilers/stdlibs
-	0.3.2: 2016-09-22 - Add support for Json::array(some_container)
+	0.3.2: 2016-09-22 - Add support for Config::array(some_container)
+	0.3.3: 2017-01-10 - Add some missing iterator members
+	0.3.4: 2017-01-17 - Add cast conversion to std::array
+	0.4.0: 2017-04-17 - Automatic (de)serialization with serialize/deserialize with https://github.com/cbeck88/visit_struct
 
 # Getting started
 	For using:
@@ -51,6 +54,8 @@ www.github.com/emilk/configuru
 #ifndef CONFIGURU_HEADER_HPP
 #define CONFIGURU_HEADER_HPP
 
+#include <algorithm>
+#include <array>
 #include <atomic>
 #include <cmath>
 #include <cstddef>
@@ -63,6 +68,7 @@ www.github.com/emilk/configuru
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -77,7 +83,7 @@ www.github.com/emilk/configuru
 #endif // CONFIGURU_ASSERT
 
 #ifndef CONFIGURU_ON_DANGLING
-	// CONFIGURU_ON_DANGLING(message_str) is called by check_dangling() if there is any unaccessed keys.
+	/// CONFIGURU_ON_DANGLING(message_str) is called by check_dangling() if there is any unaccessed keys.
 	#define CONFIGURU_ON_DANGLING(message_str) \
 		CONFIGURU_ONERROR(message_str)
 #endif // CONFIGURU_ON_DANGLING
@@ -85,11 +91,13 @@ www.github.com/emilk/configuru
 #define CONFIGURU_NORETURN __attribute__((noreturn))
 
 #ifndef CONFIGURU_IMPLICIT_CONVERSIONS
+	/// Set to 1 to allow  `int x = some_cfg,`
 	#define CONFIGURU_IMPLICIT_CONVERSIONS 0
 #endif
 
 #ifndef CONFIGURU_VALUE_SEMANTICS
-	// If set, all copies are deep clones.
+	/// If set, all copies are deep clones.
+	/// If 0, all copies of objects and array are shallow (ref-counted).
 	#define CONFIGURU_VALUE_SEMANTICS 0
 #endif
 
@@ -98,6 +106,7 @@ www.github.com/emilk/configuru
 #undef Bool // Needed on Ubuntu 14.04 with GCC 4.8.5
 #undef check // Needed on OSX
 
+/// The Configuru namespace.
 namespace configuru
 {
 	struct DocInfo;
@@ -115,6 +124,7 @@ namespace configuru
 		Include(DocInfo_SP d, Index l) : doc(d), line(l) {}
 	};
 
+	/// Helper for describing a document.
 	struct DocInfo
 	{
 		std::vector<Include> includers;
@@ -127,12 +137,14 @@ namespace configuru
 	};
 
 	struct BadLookupInfo;
+
+	/// Helper: value in an object.
 	template<typename Config_T>
 	struct Config_Entry
 	{
 		Config_T     _value;
-		Index        _nr       = BAD_INDEX; // Size of the object prior to adding this entry
-		mutable bool _accessed = false;     // Set to true if accessed.
+		Index        _nr       = BAD_INDEX; ///< Size of the object prior to adding this entry
+		mutable bool _accessed = false;     ///< Set to true if accessed.
 
 		Config_Entry() {}
 		Config_Entry(Config_T value, Index nr) : _value(std::move(value)), _nr(nr) {}
@@ -141,13 +153,14 @@ namespace configuru
 	using Comment = std::string;
 	using Comments = std::vector<Comment>;
 
+	/// Captures the comments related to a Config value.
 	struct ConfigComments
 	{
-		// Comments on preceeding lines.
-		// Like this.
+		/// Comments on preceeding lines.
+		/// Like this.
 		Comments prefix;
-		Comments postfix; // After the value, on the same line. Like this.
-		Comments pre_end_brace; // Before the closing } or ]
+		Comments postfix; ///< After the value, on the same line. Like this.
+		Comments pre_end_brace; /// Before the closing } or ]
 
 		ConfigComments() {}
 
@@ -155,10 +168,12 @@ namespace configuru
 		void append(ConfigComments&& other);
 	};
 
+	/// A dynamic config variable.
 	class Config;
 
-	/* Overload this (in cofiguru namespace) for you own types, e.g:
+	/** Overload this (in cofiguru namespace) for you own types, e.g:
 
+		```
 		namespace configuru {
 			template<>
 			inline Vector2f as(const Config& config)
@@ -168,23 +183,23 @@ namespace configuru
 				return {(float)array[0], (float)array[1]};
 			}
 		}
+		```
 	*/
 	template<typename T>
 	inline T as(const configuru::Config& config);
 
-	/*
-	 A dynamic config variable.
-	 Acts like something out of Python or Lua.
-	 Uses reference-counting for objects and arrays.
-	 This means all copies are shallow copies.
-	*/
+	/// A dynamic config variable.
+	/// Acts like something out of Python or Lua.
+	/// If CONFIGURU_VALUE_SEMANTICS all copies of this will be deep copies.
+	/// If not, it will use reference-counting for objects and arrays,
+	/// meaning all copies will be shallow copies.
 	class Config
 	{
 	public:
 		enum Type
 		{
-			Uninitialized, // Accessing a Config of this type is always an error.
-			BadLookupType, // We are the result of a key-lookup in a Object with no hit. We are in effect write-only.
+			Uninitialized, ///< Accessing a Config of this type is always an error.
+			BadLookupType, ///< We are the result of a key-lookup in a Object with no hit. We are in effect write-only.
 			Null, Bool, Int, Float, String, Array, Object
 		};
 
@@ -204,6 +219,7 @@ namespace configuru
 		// ----------------------------------------
 		// Constructors:
 
+		/// Creates an uninitialized Config.
 		Config()                     : _type(Uninitialized) { }
 		Config(std::nullptr_t)       : _type(Null)    { }
 		Config(float f)              : _type(Float)   { _u.f = f; }
@@ -224,25 +240,29 @@ namespace configuru
 		Config(const char* str);
 		Config(std::string str);
 
-		/*  This constructor is a short-form for Config::objet(...).
+		/** This constructor is a short-form for Config::object(...).
 		    We have no short-form for Config::array(...),
 		    as that is less common and can lead to ambiguities.
 		    Usage:
+
+		    ```
 				Config cfg {
-					{ "key",    "value" },
+					{ "key",          "value" },
 					{ "empty_array",  Config::array() },
 					{ "array",        Config::array({1, 2, 3}) },
 					{ "empty_object", Config::object() },
-					{ "object", Config::object({
+					{ "object",       Config::object({
 						{ "nested_key", "nested_value" },
 					})},
 					{ "another_object", {
 						{ "nested_key", "nested_value" },
 					}},
 				};
+		    ```
 		*/
 		Config(std::initializer_list<std::pair<std::string, Config>> values);
 
+		/// Array constructor
 		template<typename T>
 		Config(const std::vector<T>& values) : _type(Uninitialized)
 		{
@@ -253,6 +273,7 @@ namespace configuru
 			}
 		}
 
+		/// Array constructor
 		Config(const std::vector<bool>& values) : _type(Uninitialized)
 		{
 			make_array();
@@ -262,6 +283,7 @@ namespace configuru
 			}
 		}
 
+		/// Object constructor
 		template<typename T>
 		Config(const std::map<std::string, T>& values) : _type(Uninitialized)
 		{
@@ -271,19 +293,28 @@ namespace configuru
 			}
 		}
 
-		// Used by the parser - no need to use directly.
+		/// Used by the parser - no need to use directly.
 		void make_object();
+
+		/// Used by the parser - no need to use directly.
 		void make_array();
+
+		/// Used by the parser - no need to use directly.
 		void tag(const DocInfo_SP& doc, Index line, Index column);
 
-		// Preferred way to create objects!
+		/// Preferred way to create an empty object.
 		static Config object();
+
+		/// Preferred way to create an object.
 		static Config object(std::initializer_list<std::pair<std::string, Config>> values);
 
-		// Preferred way to create arrays!
+		/// Preferred way to create an empty array.
 		static Config array();
+
+		/// Preferred way to create an array.
 		static Config array(std::initializer_list<Config> values);
 
+		/// Preferred way to create an array from an STL container.
 		template<typename Container>
 		static Config array(const Container& container)
 		{
@@ -305,10 +336,10 @@ namespace configuru
 		Config(Config&& o) noexcept;
 		Config& operator=(const Config& o);
 
-		// Will still remember file/line when assigned an object which has no file/line
+		/// Will still remember file/line when assigned an object which has no file/line
 		Config& operator=(Config&& o) noexcept;
 
-		// Swaps file/line too.
+		/// Swaps file/line too.
 		void swap(Config& o) noexcept;
 
 		#ifdef CONFIG_EXTENSION
@@ -330,13 +361,13 @@ namespace configuru
 		bool is_array()         const { return _type == Array;            }
 		bool is_number()        const { return is_int() || is_float();    }
 
-		// Returns file:line iff available.
+		/// Returns file:line iff available.
 		std::string where() const;
 
-		// BAD_INDEX if not set.
+		/// BAD_INDEX if not set.
 		Index line() const { return _line; }
 
-		// Handle to document.
+		/// Handle to document.
 		const DocInfo_SP& doc() const { return _doc; }
 		void set_doc(const DocInfo_SP& doc) { _doc = doc; }
 
@@ -344,7 +375,7 @@ namespace configuru
 		// Convertors:
 
 #if CONFIGURU_IMPLICIT_CONVERSIONS
-		// Explicit casting, for overloads of as<T>
+		/// Explicit casting, for overloads of as<T>
 		template<typename T>
 		explicit operator T() const { return as<T>(*this); }
 
@@ -364,7 +395,7 @@ namespace configuru
 		inline operator std::string()             const { return as_string(); }
 		inline operator Config::ConfigArrayImpl() const { return as_array();  }
 
-		// Convenience:
+		/// Convenience conversion to std::vector
 		template<typename T>
 		operator std::vector<T>() const
 		{
@@ -377,7 +408,19 @@ namespace configuru
 			return ret;
 		}
 
-		// Convenience: TODO: generalize for tuples.
+		/// Convenience conversion to std::array
+		template<typename T, size_t N>
+		operator std::array<T, N>() const
+		{
+			const auto& array = as_array();
+			check(array.size() == N, "Array size mismatch.");
+			std::array<T, N> ret;
+			std::copy(array.begin(), array.end(), ret.begin());
+			return ret;
+		}
+
+		/// Convenience conversion of an array of length 2 to an std::pair.
+		/// TODO: generalize for tuples.
 		template<typename Left, typename Right>
 		operator std::pair<Left, Right>() const
 		{
@@ -386,11 +429,11 @@ namespace configuru
 			return {(Left)array[0], (Right)array[1]};
 		}
 #else
-		// Explicit casting, since C++ handles implicit casts real badly.
+		/// Explicit casting, since C++ handles implicit casts real badly.
 		template<typename T>
 		explicit operator T() const { return as<T>(*this); }
 
-		// Convenience:
+		/// Convenience conversion to std::vector
 		template<typename T>
 		explicit operator std::vector<T>() const
 		{
@@ -403,7 +446,21 @@ namespace configuru
 			return ret;
 		}
 
-		// Convenience: TODO: generalize for tuples.
+		/// Convenience conversion to std::array
+		template<typename T, size_t N>
+		explicit operator std::array<T, N>() const
+		{
+			const auto& array = as_array();
+			check(array.size() == N, "Array size mismatch.");
+			std::array<T, N> ret;
+			for (size_t i =0; i < N; ++i) {
+				ret[i] = static_cast<T>(array[i]);
+			}
+			return ret;
+		}
+
+		/// Convenience conversion of an array of length 2 to an std::pair.
+		/// TODO: generalize for tuples.
 		template<typename Left, typename Right>
 		explicit operator std::pair<Left, Right>() const
 		{
@@ -416,6 +473,7 @@ namespace configuru
 		const std::string& as_string() const { assert_type(String); return *_u.str; }
 		const char* c_str() const { assert_type(String); return _u.str->c_str(); }
 
+		/// The Config must be a boolean.
 		bool as_bool() const
 		{
 			assert_type(Bool);
@@ -451,10 +509,11 @@ namespace configuru
 			}
 		}
 
+		/// Extract the value of this Config.
 		template<typename T>
 		T get() const;
 
-		// Returns the value or `default_value` if this is the result of a bad lookup.
+		/// Returns the value or `default_value` if this is the result of a bad lookup.
 		template<typename T>
 		T get_or(const T& default_value) const
 		{
@@ -468,25 +527,27 @@ namespace configuru
 		// ----------------------------------------
 		// Array:
 
+		/// Length of an array
 		size_t array_size() const
 		{
 			return as_array().size();
 		}
 
-		// for (Config& e : cfg.as_array()) { ... }
+		/// Only use this for iterating over an array: `for (Config& e : cfg.as_array()) { ... }`
 		ConfigArrayImpl& as_array()
 		{
 			assert_type(Array);
 			return _u.array->_impl;
 		}
 
-		// for (const Config& e : cfg.as_array()) { ... }
+		/// Only use this for iterating over an array: `for (Config& e : cfg.as_array()) { ... }`
 		const ConfigArrayImpl& as_array() const
 		{
 			assert_type(Array);
 			return _u.array->_impl;
 		}
 
+		/// Array indexing
 		Config& operator[](size_t ix)
 		{
 			auto&& array = as_array();
@@ -494,6 +555,7 @@ namespace configuru
 			return array[ix];
 		}
 
+		/// Array indexing
 		const Config& operator[](size_t ix) const
 		{
 			auto&& array = as_array();
@@ -501,6 +563,7 @@ namespace configuru
 			return array[ix];
 		}
 
+		/// Append a value to this array.
 		void push_back(Config value)
 		{
 			as_array().push_back(std::move(value));
@@ -509,61 +572,74 @@ namespace configuru
 		// ----------------------------------------
 		// Object:
 
+		/// Number of elementsi n this object
 		size_t object_size() const;
 
-		// for (auto& p : cfg.as_object()) { p.value() = p.key(); }
+		/// Only use this for iterating over an object:
+		/// `for (auto& p : cfg.as_object()) { p.value() = p.key(); }`
 		ConfigObject& as_object()
 		{
 			assert_type(Object);
 			return *_u.object;
 		}
 
-		// for (const auto& p : cfg.as_object()) { cout << p.key() << ": " << p.value(); }
+		/// Only use this for iterating over an object:
+		/// `for (const auto& p : cfg.as_object()) { cout << p.key() << ": " << p.value(); }`
 		const ConfigObject& as_object() const
 		{
 			assert_type(Object);
 			return *_u.object;
 		}
 
+		/// Look up a value in an Object. Returns a BadLookupType Config if the key does not exist.
 		const Config& operator[](const std::string& key) const;
 
-		// Prefer `obj.insert_or_assign(key, value);` to `obj[key] = value;` when inserting and performance is important!
+		/// Prefer `obj.insert_or_assign(key, value);` to `obj[key] = value;` when inserting and performance is important!
 		Config& operator[](const std::string& key);
 
-		// For indexing with string literals:
+		/// For indexing with string literals:
 		template<std::size_t N>
 		Config& operator[](const char (&key)[N]) { return operator[](std::string(key)); }
 		template<std::size_t N>
 		const Config& operator[](const char (&key)[N]) const { return operator[](std::string(key)); }
 
+		/// Check if an object has a specific key.
 		bool has_key(const std::string& key) const;
+
+		/// Like has_key, but STL compatible.
 		size_t count(const std::string& key) const { return has_key(key) ? 1 : 0; }
 
-		// Returns true iff the value was inserted, false if they key was already there.
+		/// Returns true iff the value was inserted, false if they key was already there.
 		bool emplace(std::string key, Config value);
 
+		/// Like `foo[key] = value`, but faster.
 		void insert_or_assign(const std::string& key, Config&& value);
 
+		/// Erase a key from an object.
 		bool erase(const std::string& key);
 
+		/// Get the given value in this object.
 		template<typename T>
 		T get(const std::string& key) const
 		{
 			return as<T>((*this)[key]);
 		}
 
+		/// Look for the given key in this object, and return default_value on failure.
 		template<typename T>
 		T get_or(const std::string& key, const T& default_value) const;
 
+		/// Look for the given key in this object, and return default_value on failure.
 		std::string get_or(const std::string& key, const char* default_value) const
 		{
 			return get_or<std::string>(key, default_value);
 		}
 
-		// obj.get_or({"a", "b". "c"}, 42) - like obj["a"]["b"]["c"], but returns 42 if any of the keys are *missing*.
+		/// obj.get_or({"a", "b". "c"}, 42) - like obj["a"]["b"]["c"], but returns 42 if any of the keys are *missing*.
 		template<typename T>
 		T get_or(std::initializer_list<std::string> keys, const T& default_value) const;
 
+		/// obj.get_or({"a", "b". "c"}, 42) - like obj["a"]["b"]["c"], but returns 42 if any of the keys are *missing*.
 		std::string get_or(std::initializer_list<std::string> keys, const char* default_value) const
 		{
 			return get_or<std::string>(keys, default_value);
@@ -571,33 +647,34 @@ namespace configuru
 
 		// --------------------------------------------------------------------------------
 
-		// Compare Config values recursively.
+		/// Compare Config values recursively.
 		static bool deep_eq(const Config& a, const Config& b);
 
 #if !CONFIGURU_VALUE_SEMANTICS // No need for a deep_clone method when all copies are deep clones.
-		// Copy this Config value recursively.
+		/// Copy this Config value recursively.
 		Config deep_clone() const;
 #endif
 
 		// ----------------------------------------
 
-		// Visit dangling (unaccessed) object keys recursively.
+		/// Visit dangling (unaccessed) object keys recursively.
 		void visit_dangling(const std::function<void(const std::string& key, const Config& value)>& visitor) const;
 
-		// Will check for dangling (unaccessed) object keys recursively and call CONFIGURU_ON_DANGLING on all found.
+		/// Will check for dangling (unaccessed) object keys recursively and call CONFIGURU_ON_DANGLING on all found.
 		void check_dangling() const;
 
-		// Set the 'access' flag recursively,
+		/// Set the 'access' flag recursively,
 		void mark_accessed(bool v) const;
 
 		// ----------------------------------------
 
+		/// Was there any comments about this value in the input?
 		bool has_comments() const
 		{
 			return _comments && !_comments->empty();
 		}
 
-		// Read/write of comments.
+		/// Read/write of comments.
 		ConfigComments& comments()
 		{
 			if (!_comments) {
@@ -606,7 +683,7 @@ namespace configuru
 			return *_comments;
 		}
 
-		// Read comments.
+		/// Read comments.
 		const ConfigComments& comments() const
 		{
 			static const ConfigComments s_empty {};
@@ -617,10 +694,10 @@ namespace configuru
 			}
 		}
 
-		// Returns either "true", "false", the constained string, or the type name.
+		/// Returns either "true", "false", the constained string, or the type name.
 		const char* debug_descr() const;
 
-		// Human-readable version of the type ("integer", "bool", etc).
+		/// Human-readable version of the type ("integer", "bool", etc).
 		static const char* type_str(Type t);
 
 		// ----------------------------------------
@@ -670,6 +747,7 @@ namespace configuru
 		class iterator
 		{
 		public:
+			iterator() = default;
 			explicit iterator(ConfigObjectImpl::iterator it) : _it(std::move(it)) {}
 
 			const iterator& operator*() const {
@@ -680,6 +758,10 @@ namespace configuru
 			iterator& operator++() {
 				++_it;
 				return *this;
+			}
+
+			friend bool operator==(const iterator& a, const iterator& b) {
+				return a._it == b._it;
 			}
 
 			friend bool operator!=(const iterator& a, const iterator& b) {
@@ -696,6 +778,7 @@ namespace configuru
 		class const_iterator
 		{
 		public:
+			const_iterator() = default;
 			explicit const_iterator(ConfigObjectImpl::const_iterator it) : _it(std::move(it)) {}
 
 			const const_iterator& operator*() const {
@@ -706,6 +789,10 @@ namespace configuru
 			const_iterator& operator++() {
 				++_it;
 				return *this;
+			}
+
+			friend bool operator==(const const_iterator& a, const const_iterator& b) {
+				return a._it == b._it;
 			}
 
 			friend bool operator!=(const const_iterator& a, const const_iterator& b) {
@@ -733,6 +820,7 @@ namespace configuru
 	{
 		return Config::deep_eq(a, b);
 	}
+
 	inline bool operator!=(const Config& a, const Config& b)
 	{
 		return !Config::deep_eq(a, b);
@@ -797,11 +885,12 @@ namespace configuru
 
 	// ------------------------------------------------------------------------
 
-	// Prints in JSON but in a fail-safe mannor, allowing uninitalized keys and inf/nan.
+	/// Prints in JSON but in a fail-safe manner, allowing uninitialized keys and inf/nan.
 	std::ostream& operator<<(std::ostream& os, const Config& cfg);
 
 	// ------------------------------------------------------------------------
 
+	/// Recursively visit all values in a config.
 	template<class Config, class Visitor>
 	void visit_configs(Config&& config, Visitor&& visitor)
 	{
@@ -817,7 +906,7 @@ namespace configuru
 		}
 	}
 
-	inline void clear_doc(Config& root) // TODO: shouldn't be needed. Replace with some info of wether a Config is the root of the document it is in.
+	inline void clear_doc(Config& root) // TODO: shouldn't be needed. Replace with some info of whether a Config is the root of the document it is in.
 	{
 		visit_configs(root, [&](Config& cfg){ cfg.set_doc(nullptr); });
 	}
@@ -847,6 +936,7 @@ namespace configuru
 
 	// ----------------------------------------------------------
 
+	/// Thrown on a syntax error.
 	class ParseError : public std::exception
 	{
 	public:
@@ -858,6 +948,7 @@ namespace configuru
 			_what += ": " + msg;
 		}
 
+		/// Will name the file name, line number, column and description.
 		const char* what() const noexcept override
 		{
 			return _what.c_str();
@@ -873,73 +964,73 @@ namespace configuru
 
 	// ----------------------------------------------------------
 
+	/// This struct basically contain all the way we can tweak the file format.
 	struct FormatOptions
 	{
-		// This struct basically contain all differences with JSON.
-
-		/* Indentation should be a single tab,
-		   multiple spaces or an empty string.
-		   An empty string means the output will be compact. */
+		/// Indentation should be a single tab,
+		/// multiple spaces or an empty string.
+		/// An empty string means the output will be compact.
 		std::string indentation              = "\t";
-		bool        enforce_indentation      = true;  // Must have correct indentation?
-		bool        end_with_newline         = true;  // End each file with a newline (unless compact).
+		bool        enforce_indentation      = true;  ///< Must have correct indentation?
+		bool        end_with_newline         = true;  ///< End each file with a newline (unless compact).
 
 		// Top file:
-		bool        empty_file               = false; // If true, an empty file is an empty object.
-		bool        implicit_top_object      = true;  // Ok with key-value pairs top-level?
-		bool        implicit_top_array       = true;  // Ok with several values top-level?
+		bool        empty_file               = false; ///< If true, an empty file is an empty object.
+		bool        implicit_top_object      = true;  ///< Ok with key-value pairs top-level?
+		bool        implicit_top_array       = true;  ///< Ok with several values top-level?
 
 		// Comments:
-		bool        single_line_comments     = true;  // Allow this?
+		bool        single_line_comments     = true;  ///< Allow this?
 		bool        block_comments           = true;  /* Allow this? */
-		bool        nesting_block_comments   = true;  // /* Allow /*    this? */ */
+		bool        nesting_block_comments   = true;  ///< /* Allow /*    this? */ */
 
 		// Numbers:
-		bool        inf                      = true;  // Allow +inf, -inf
-		bool        nan                      = true;  // Allow +NaN
-		bool        hexadecimal_integers     = true;  // Allow 0xff
-		bool        binary_integers          = true;  // Allow 0b1010
-		bool        unary_plus               = true;  // Allow +42
-		bool        distinct_floats          = true;  // Print 9.0 as "9.0", not just "9". A must for round-tripping.
+		bool        inf                      = true;  ///< Allow +inf, -inf
+		bool        nan                      = true;  ///< Allow +NaN
+		bool        hexadecimal_integers     = true;  ///< Allow 0xff
+		bool        binary_integers          = true;  ///< Allow 0b1010
+		bool        unary_plus               = true;  ///< Allow +42
+		bool        distinct_floats          = true;  ///< Print 9.0 as "9.0", not just "9". A must for round-tripping.
 
 		// Arrays
-		bool        array_omit_comma         = true;  // Allow [1 2 3]
-		bool        array_trailing_comma     = true;  // Allow [1, 2, 3,]
+		bool        array_omit_comma         = true;  ///< Allow [1 2 3]
+		bool        array_trailing_comma     = true;  ///< Allow [1, 2, 3,]
 
 		// Objects:
-		bool        identifiers_keys         = true;  // { is_this_ok: true }
-		bool        object_separator_equal   = false; // { "is_this_ok" = true }
-		bool        allow_space_before_colon = false; // { "is_this_ok" : true }
-		bool        omit_colon_before_object = false; // { "nested_object" { } }
-		bool        object_omit_comma        = true;  // Allow {a:1 b:2}
-		bool        object_trailing_comma    = true;  // Allow {a:1, b:2,}
-		bool        object_duplicate_keys    = false; // Allow {"a":1, "a":2}
-		bool        object_align_values      = true;  // Add spaces after keys to align subsequent values.
+		bool        identifiers_keys         = true;  ///< { is_this_ok: true }
+		bool        object_separator_equal   = false; ///< { "is_this_ok" = true }
+		bool        allow_space_before_colon = false; ///< { "is_this_ok" : true }
+		bool        omit_colon_before_object = false; ///< { "nested_object" { } }
+		bool        object_omit_comma        = true;  ///< Allow {a:1 b:2}
+		bool        object_trailing_comma    = true;  ///< Allow {a:1, b:2,}
+		bool        object_duplicate_keys    = false; ///< Allow {"a":1, "a":2}
+		bool        object_align_values      = true;  ///< Add spaces after keys to align subsequent values.
 
 		// Strings
-		bool        str_csharp_verbatim      = true;  // Allow @"Verbatim\strings"
-		bool        str_python_multiline     = true;  // Allow """ Python\nverbatim strings """
-		bool        str_32bit_unicode        = true;  // Allow "\U0030dbfd"
-		bool        str_allow_tab            = true;  // Allow unescaped tab in string.
+		bool        str_csharp_verbatim      = true;  ///< Allow @"Verbatim\strings"
+		bool        str_python_multiline     = true;  ///< Allow """ Python\nverbatim strings """
+		bool        str_32bit_unicode        = true;  ///< Allow "\U0030dbfd"
+		bool        str_allow_tab            = true;  ///< Allow unescaped tab in string.
 
 		// Special
-		bool        allow_macro              = true;  // Allow #include "some_other_file.cfg"
+		bool        allow_macro              = true;  ///< Allow `#include "some_other_file.cfg"`
 
 		// When writing:
 		bool        write_comments           = true;
 
-		// Sort keys lexicographically. If false, sort by order they where added.
+		/// Sort keys lexicographically. If false, sort by order they where added.
 		bool        sort_keys                = false;
 
-		// When printing, write uninitialized values as UNINITIALIZED. Useful for debugging.
+		/// When printing, write uninitialized values as UNINITIALIZED. Useful for debugging.
 		bool        write_uninitialized      = false;
 
-		// Dumping should mark the json as accessed?
+		/// Dumping should mark the json as accessed?
 		bool        mark_accessed            = true;
 
 		bool compact() const { return indentation.empty(); }
 	};
 
+	/// Returns FormatOptions that are describe a JSON file format.
 	inline FormatOptions make_json_options()
 	{
 		FormatOptions options;
@@ -995,6 +1086,7 @@ namespace configuru
 		return options;
 	}
 
+	/// Returns format options that allow us parsing most files.
 	inline FormatOptions make_forgiving_options()
 	{
 		FormatOptions options;
@@ -1049,8 +1141,13 @@ namespace configuru
 		return options;
 	}
 
+	/// The CFG file format.
 	static const FormatOptions CFG       = FormatOptions();
+
+	/// The JSON file format.
 	static const FormatOptions JSON      = make_json_options();
+
+	/// A very forgiving file format, when parsing stuff that is not strict.
 	static const FormatOptions FORGIVING = make_forgiving_options();
 
 	struct ParseInfo
@@ -1058,26 +1155,192 @@ namespace configuru
 		std::map<std::string, Config> parsed_files; // Two #include gives same Config tree.
 	};
 
-	// The parser may throw ParseError.
-	// `str` should be a zero-ended Utf-8 encoded string of characters.
-	// The `name` should be something akin to a filename. It is only for error reporting.
+	/// The parser may throw ParseError.
+	/// `str` should be a zero-ended Utf-8 encoded string of characters.
+	/// The `name` should be something akin to a filename. It is only for error reporting.
 	Config parse_string(const char* str, const FormatOptions& options, const char* name);
 	Config parse_file(const std::string& path, const FormatOptions& options);
 
-	// Advanced usage:
+	/// Advanced usage:
 	Config parse_string(const char* str, const FormatOptions& options, DocInfo _doc, ParseInfo& info);
 	Config parse_file(const std::string& path, const FormatOptions& options, DocInfo_SP doc, ParseInfo& info);
 
 	// ----------------------------------------------------------
-	// Writes the config as a string in the given format.
-	// May call CONFIGURU_ONERROR if the given config is invalid. This can happen if
-	// a Config is unitialized (and options write_uninitialized is not set) or
-	// a Config contains inf/nan (and options.inf/options.nan aren't set).
+	/// Writes the config as a string in the given format.
+	/// May call CONFIGURU_ONERROR if the given config is invalid. This can happen if
+	/// a Config is unitialized (and options write_uninitialized is not set) or
+	/// a Config contains inf/nan (and options.inf/options.nan aren't set).
 	std::string dump_string(const Config& config, const FormatOptions& options);
 
-	// Writes the config to a file. Like dump_string, but can may also call CONFIGURU_ONERROR
-	// if it fails to write to the given path.
+	/// Writes the config to a file. Like dump_string, but can may also call CONFIGURU_ONERROR
+	/// if it fails to write to the given path.
 	void dump_file(const std::string& path, const Config& config, const FormatOptions& options);
+
+	// ----------------------------------------------------------
+	// Automatic (de)serialize of most things.
+	// Include <visit_struct/visit_struct.hpp> (from https://github.com/cbeck88/visit_struct)
+	// before including <configuru.hpp> to get this feature.
+
+	#ifdef VISITABLE_STRUCT
+		template <typename Container>
+		struct is_container : std::false_type { };
+
+		// template <typename... Ts> struct is_container<std::list<Ts...> > : std::true_type { };
+		template <typename... Ts> struct is_container<std::vector<Ts...> > : std::true_type { };
+
+		// ----------------------------------------------------------------------------
+
+		Config serialize(const std::string& some_string);
+
+		template<typename T>
+		typename std::enable_if<std::is_arithmetic<T>::value, Config>::type
+		serialize(const T& some_value);
+
+		template<typename T, size_t N>
+		Config serialize(T (&some_array)[N]);
+
+		template<typename T>
+		typename std::enable_if<is_container<T>::value, Config>::type
+		serialize(const T& some_container);
+
+		template<typename T>
+		typename std::enable_if<visit_struct::traits::is_visitable<T>::value, Config>::type
+		serialize(const T& some_struct);
+
+		// ----------------------------------------------------------------------------
+
+		inline Config serialize(const std::string& some_string)
+		{
+			return Config(some_string);
+		}
+
+		template<typename T>
+		typename std::enable_if<std::is_arithmetic<T>::value, Config>::type
+		serialize(const T& some_value)
+		{
+			return Config(some_value);
+		}
+
+		template<typename T, size_t N>
+		Config serialize(T (&some_array)[N])
+		{
+			auto config = Config::array();
+			for (size_t i = 0; i < N; ++i) {
+				config.push_back(serialize(some_array[i]));
+			}
+			return config;
+		}
+
+		template<typename T>
+		typename std::enable_if<is_container<T>::value, Config>::type
+		serialize(const T& some_container)
+		{
+			auto config = Config::array();
+			for (const auto& value : some_container) {
+				config.push_back(serialize(value));
+			}
+			return config;
+		}
+
+		template<typename T>
+		typename std::enable_if<visit_struct::traits::is_visitable<T>::value, Config>::type
+		serialize(const T& some_struct)
+		{
+			auto config = Config::object();
+			visit_struct::apply_visitor([&config](const std::string& name, const auto& value) {
+				config[name] = serialize(value);
+			}, some_struct);
+			return config;
+		}
+
+		// ----------------------------------------------------------------------------
+
+		/// Called when there is a problem in deserialize.
+		using ConversionError = std::function<void(std::string)>;
+
+		void deserialize(std::string* some_string, const Config& config, const ConversionError& on_error);
+
+		template<typename T>
+		typename std::enable_if<std::is_arithmetic<T>::value>::type
+		deserialize(T* some_value, const Config& config, const ConversionError& on_error);
+
+		template<typename T, size_t N>
+		typename std::enable_if<std::is_arithmetic<T>::value>::type
+		deserialize(T (*some_array)[N], const Config& config, const ConversionError& on_error);
+
+		template<typename T>
+		typename std::enable_if<is_container<T>::value>::type
+		deserialize(T* some_container, const Config& config, const ConversionError& on_error);
+
+		template<typename T>
+		typename std::enable_if<visit_struct::traits::is_visitable<T>::value>::type
+		deserialize(T* some_struct, const Config& config, const ConversionError& on_error);
+
+		// ----------------------------------------------------------------------------
+
+		inline void deserialize(std::string* some_string, const Config& config, const ConversionError& on_error)
+		{
+			*some_string = config.as_string();
+		}
+
+		template<typename T>
+		typename std::enable_if<std::is_arithmetic<T>::value>::type
+		deserialize(T* some_value, const Config& config, const ConversionError& on_error)
+		{
+			*some_value = as<T>(config);
+		}
+
+		template<typename T, size_t N>
+		typename std::enable_if<std::is_arithmetic<T>::value>::type
+		deserialize(T (*some_array)[N], const Config& config, const ConversionError& on_error)
+		{
+			if (config.array_size() != N) {
+				if (on_error) {
+					on_error(config.where() + "Expected array to be " + std::to_string(N) + " long.");
+				}
+			} else {
+				for (size_t i = 0; i < N; ++i) {
+					deserialize(&(*some_array)[i], config[i], on_error);
+				}
+			}
+		}
+
+		template<typename T>
+		typename std::enable_if<is_container<T>::value>::type
+		deserialize(T* some_container, const Config& config, const ConversionError& on_error)
+		{
+			if (!config.is_array()) {
+				if (on_error) {
+					on_error(config.where() + "Failed to deserialize container: config is not an array.");
+				}
+			} else {
+				some_container->clear();
+				some_container->reserve(config.array_size());
+				for (const auto& value : config.as_array()) {
+					some_container->push_back({});
+					deserialize(&some_container->back(), value, on_error);
+				}
+			}
+		}
+
+		template<typename T>
+		typename std::enable_if<visit_struct::traits::is_visitable<T>::value>::type
+		deserialize(T* some_struct, const Config& config, const ConversionError& on_error)
+		{
+			if (!config.is_object()) {
+				if (on_error) {
+					on_error(config.where() + "Failed to deserialize object: config is not an object.");
+				}
+			} else {
+				visit_struct::apply_visitor([&config, &on_error](const std::string& name, auto& value) {
+					if (config.has_key(name)) {
+						deserialize(&value, config[name], on_error);
+					}
+				}, *some_struct);
+			}
+		}
+	#endif // VISITABLE_STRUCT
+
 } // namespace configuru
 
 #endif // CONFIGURU_HEADER_HPP

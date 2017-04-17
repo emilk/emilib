@@ -44,14 +44,16 @@ Website: www.ilikebigbits.com
 	* Version 1.3.0 - 2016-07-20 - Fix issues with callback flush/close not being called.
 	* Version 1.3.1 - 2016-07-20 - Add LOGURU_UNSAFE_SIGNAL_HANDLER to toggle stacktrace on signals.
 	* Version 1.3.2 - 2016-07-20 - Add loguru::arguments()
-	* Version 1.4.0 - 2016-09-15 - Semantic versioning + expose add loguru::create_directories
+	* Version 1.4.0 - 2016-09-15 - Semantic versioning + add loguru::create_directories
+	* Version 1.4.1 - 2016-09-29 - Customize formating with LOGURU_FILENAME_WIDTH
+	* Version 1.5.0 - 2016-12-22 - LOGURU_USE_FMTLIB by kolis and LOGURU_WITH_FILEABS by scinart
 
 # Compiling
 	Just include <loguru.hpp> where you want to use Loguru.
 	Then, in one .cpp file:
 		#define LOGURU_IMPLEMENTATION 1
 		#include <loguru.hpp>
-	Make sure you compile with -std=c++11 -lpthread -ldl
+	Make sure you compile with -std=c++11 -lstdc++ -lpthread -ldl
 
 # Usage
 	#include <loguru.hpp>
@@ -61,16 +63,16 @@ Website: www.ilikebigbits.com
 	loguru::init(argc, argv);
 
 	// Put every log message in "everything.log":
-	loguru::add_file("everything.log", loguru::Append);
+	loguru::add_file("everything.log", loguru::Append, loguru::Verbosity_MAX);
 
 	// Only log INFO, WARNING, ERROR and FATAL to "latest_readable.log":
-	loguru::add_file("latest_readable.log", loguru::Truncate, Verbosity_INFO);
+	loguru::add_file("latest_readable.log", loguru::Truncate, loguru::Verbosity_INFO);
 
 	// Only show most relevant things on stderr:
 	loguru::g_stderr_verbosity = 1;
 
 	// Or just go with what Loguru suggests:
-	char log_path[1024];
+	char log_path[PATH_MAX];
 	loguru::suggest_log_path("~/loguru/", log_path, sizeof(log_path));
 	loguru::add_file(log_path, loguru::FileMode::Truncate, loguru::Verbosity_MAX);
 
@@ -128,6 +130,18 @@ Website: www.ilikebigbits.com
 		like printing a stack trace, when catching signals.
 		This may lead to bad things like deadlocks in certain situations.
 
+	LOGURU_USE_FMTLIB (default 0):
+		Use fmtlib formatting. See https://github.com/fmtlib/fmt
+		This will make loguru.hpp depend on <fmt/format.h>
+		You will need to link against `fmtlib` or use the `FMT_HEADER_ONLY` preprocessor definition.
+		Feature by kolis (https://github.com/emilk/loguru/pull/22)
+
+	LOGURU_WITH_FILEABS (default 0):
+		When LOGURU_WITH_FILEABS is defined, a check of file change will be performed on every call to file_log.
+		If the file is moved, or inode changes, file is reopened using the same FileMode as is done by add_file.
+		Such a scheme is useful if you have a daemon program that moves the log file every 24 hours and expects new file to be created.
+		Feature by scinart (https://github.com/emilk/loguru/pull/23).
+
 	You can also configure:
 	loguru::g_flush_interval_ms:
 		If set to zero Loguru will flush on every line (unbuffered mode).
@@ -162,6 +176,16 @@ Website: www.ilikebigbits.com
 	#define LOGURU_SCOPE_TEXT_SIZE 196
 #endif
 
+#ifndef LOGURU_FILENAME_WIDTH
+	// Width of the column containing the file name
+	#define LOGURU_FILENAME_WIDTH 23
+#endif
+
+#ifndef LOGURU_THREADNAME_WIDTH
+	// Width of the column containing the thread name
+	#define LOGURU_THREADNAME_WIDTH 16
+#endif
+
 #ifndef LOGURU_CATCH_SIGABRT
 	// Should Loguru catch SIGABRT to print stack trace etc?
 	#define LOGURU_CATCH_SIGABRT 1
@@ -191,6 +215,14 @@ Website: www.ilikebigbits.com
 #if LOGURU_IMPLEMENTATION
 	#undef LOGURU_WITH_STREAMS
 	#define LOGURU_WITH_STREAMS 1
+#endif
+
+#ifndef LOGURU_USE_FMTLIB
+	#define LOGURU_USE_FMTLIB 0
+#endif
+
+#ifndef LOGURU_WITH_FILEABS
+	#define LOGURU_WITH_FILEABS 0
 #endif
 
 // --------------------------------------------------------------------
@@ -235,6 +267,10 @@ Website: www.ilikebigbits.com
 
 #if defined(_MSC_VER) && !defined(__PRETTY_FUNCTION__)
 #define __PRETTY_FUNCTION__ __FUNCTION__
+#endif
+
+#if LOGURU_USE_FMTLIB
+	#include <fmt/format.h>
 #endif
 
 // --------------------------------------------------------------------
@@ -444,11 +480,21 @@ namespace loguru
 	// Returns the maximum of g_stderr_verbosity and all file/custom outputs.
 	Verbosity current_verbosity_cutoff();
 
+#if LOGURU_USE_FMTLIB
+	// Actual logging function. Use the LOG macro instead of calling this directly.
+	void log(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, fmt::ArgList args);
+	FMT_VARIADIC(void, log, Verbosity, const char*, unsigned, LOGURU_FORMAT_STRING_TYPE)
+
+	// Log without any preamble or indentation.
+	void raw_log(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, fmt::ArgList args);
+	FMT_VARIADIC(void, raw_log, Verbosity, const char*, unsigned, LOGURU_FORMAT_STRING_TYPE)
+#else // LOGURU_USE_FMTLIB?
 	// Actual logging function. Use the LOG macro instead of calling this directly.
 	void log(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, ...) LOGURU_PRINTF_LIKE(4, 5);
 
 	// Log without any preamble or indentation.
 	void raw_log(Verbosity verbosity, const char* file, unsigned line, LOGURU_FORMAT_STRING_TYPE format, ...) LOGURU_PRINTF_LIKE(4, 5);
+#endif // !LOGURU_USE_FMTLIB
 
 	// Helper class for LOG_SCOPE_F
 	class LogScopeRAII
@@ -810,7 +856,7 @@ namespace loguru
 #define VLOG_SCOPE_F(verbosity, ...)                                                               \
 	loguru::LogScopeRAII LOGURU_ANONYMOUS_VARIABLE(error_context_RAII_) =                          \
 	((verbosity) > loguru::current_verbosity_cutoff()) ? loguru::LogScopeRAII() :                  \
-	loguru::LogScopeRAII{verbosity, __FILE__, __LINE__, __VA_ARGS__}
+	loguru::LogScopeRAII(verbosity, __FILE__, __LINE__, __VA_ARGS__)
 
 // Raw logging - no preamble, no indentation. Slightly faster than full logging.
 #define RAW_VLOG_F(verbosity, ...)                                                                 \
@@ -1270,6 +1316,21 @@ namespace loguru
 {
 	using namespace std::chrono;
 
+#if LOGURU_WITH_FILEABS
+	struct FileAbs
+	{
+		char path[PATH_MAX];
+		char mode_str[4];
+		Verbosity verbosity;
+		struct stat st;
+		FILE* fp;
+		bool is_reopening = false; // to prevent recursive call in file_reopen.
+		decltype(steady_clock::now()) last_check_time = steady_clock::now();
+	};
+#else
+	typedef FILE* FileAbs;
+#endif
+
 	struct Callback
 	{
 		std::string     id;
@@ -1316,9 +1377,12 @@ namespace loguru
 			if (const char* term = getenv("TERM")) {
 				return 0 == strcmp(term, "cygwin")
 					|| 0 == strcmp(term, "linux")
+					|| 0 == strcmp(term, "rxvt-unicode-256color")
 					|| 0 == strcmp(term, "screen")
+					|| 0 == strcmp(term, "tmux-256color")
 					|| 0 == strcmp(term, "xterm")
 					|| 0 == strcmp(term, "xterm-256color")
+					|| 0 == strcmp(term, "xterm-termite")
 					|| 0 == strcmp(term, "xterm-color");
 			} else {
 				return false;
@@ -1326,8 +1390,9 @@ namespace loguru
 		#endif
 	}();
 
-	const auto THREAD_NAME_WIDTH = 16;
-	const auto PREAMBLE_EXPLAIN  = "date       time         ( uptime  ) [ thread name/id ]                   file:line     v| ";
+	const auto PREAMBLE_EXPLAIN = textprintf("date       time         ( uptime  ) [%-*s]%*s:line     v| ",
+	                                         LOGURU_THREADNAME_WIDTH, " thread name/id",
+	                                         LOGURU_FILENAME_WIDTH, "file");
 
 	#if LOGURU_PTLS_NAMES
 		static pthread_once_t s_pthread_key_once = PTHREAD_ONCE_INIT;
@@ -1365,10 +1430,35 @@ namespace loguru
 	const char* terminal_reset()      { return s_terminal_has_color ? "\e[0m" : ""; }
 
 	// ------------------------------------------------------------------------------
+#if LOGURU_WITH_FILEABS
+	void file_reopen(void* user_data);
+	inline FILE* to_file(void* user_data) { return reinterpret_cast<FileAbs*>(user_data)->fp; }
+#else
+	inline FILE* to_file(void* user_data) { return reinterpret_cast<FILE*>(user_data); }
+#endif
 
 	void file_log(void* user_data, const Message& message)
 	{
-		FILE* file = reinterpret_cast<FILE*>(user_data);
+#if LOGURU_WITH_FILEABS
+		FileAbs* file_abs = reinterpret_cast<FileAbs*>(user_data);
+		if (file_abs->is_reopening) {
+			return;
+		}
+		// It is better checking file change every minute/hour/day,
+		// instead of doing this every time we log.
+		// Here check_interval is set to zero to enable checking every time;
+		const auto check_interval = seconds(0);
+		if (duration_cast<seconds>(steady_clock::now() - file_abs->last_check_time) > check_interval) {
+			file_abs->last_check_time = steady_clock::now();
+			file_reopen(user_data);
+		}
+		FILE* file = to_file(user_data);
+		if (!file) {
+			return;
+		}
+#else
+		FILE* file = to_file(user_data);
+#endif
 		fprintf(file, "%s%s%s%s\n",
 			message.preamble, message.indentation, message.prefix, message.message);
 		if (g_flush_interval_ms == 0) {
@@ -1378,16 +1468,55 @@ namespace loguru
 
 	void file_close(void* user_data)
 	{
-		FILE* file = reinterpret_cast<FILE*>(user_data);
-		fclose(file);
+		FILE* file = to_file(user_data);
+		if (file) {
+			fclose(file);
+		}
+#if LOGURU_WITH_FILEABS
+		delete reinterpret_cast<FileAbs*>(user_data);
+#endif
 	}
 
 	void file_flush(void* user_data)
 	{
-		FILE* file = reinterpret_cast<FILE*>(user_data);
+		FILE* file = to_file(user_data);
 		fflush(file);
 	}
 
+#if LOGURU_WITH_FILEABS
+	void file_reopen(void* user_data)
+	{
+		FileAbs * file_abs = reinterpret_cast<FileAbs*>(user_data);
+		struct stat st;
+		int ret;
+		if (!file_abs->fp || (ret = stat(file_abs->path, &st)) == -1 || (st.st_ino != file_abs->st.st_ino)) {
+			file_abs->is_reopening = true;
+			if (file_abs->fp) {
+				fclose(file_abs->fp);
+			}
+			if (!file_abs->fp) {
+				LOG_F(INFO, "Reopening file '%s' due to previous error", file_abs->path);
+			}
+			else if (ret < 0) {
+				const auto why = errno_as_text();
+				LOG_F(INFO, "Reopening file '%s' due to '%s'", file_abs->path, why.c_str());
+			} else {
+				LOG_F(INFO, "Reopening file '%s' due to file changed", file_abs->path);
+			}
+			// try reopen current file.
+			if (!create_directories(file_abs->path)) {
+				LOG_F(ERROR, "Failed to create directories to '%s'", file_abs->path);
+			}
+			file_abs->fp = fopen(file_abs->path, file_abs->mode_str);
+			if (!file_abs->fp) {
+				LOG_F(ERROR, "Failed to open '%s'", file_abs->path);
+			} else {
+				stat(file_abs->path, &file_abs->st);
+			}
+			file_abs->is_reopening = false;
+		}
+	}
+#endif
 	// ------------------------------------------------------------------------------
 
 	// Helpers:
@@ -1609,9 +1738,9 @@ namespace loguru
 
 		if (g_stderr_verbosity >= Verbosity_INFO) {
 			if (g_colorlogtostderr && s_terminal_has_color) {
-				fprintf(stderr, "%s%s%s\n", terminal_reset(), terminal_dim(), PREAMBLE_EXPLAIN);
+				fprintf(stderr, "%s%s%s\n", terminal_reset(), terminal_dim(), PREAMBLE_EXPLAIN.c_str());
 			} else {
-				fprintf(stderr, "%s\n", PREAMBLE_EXPLAIN);
+				fprintf(stderr, "%s\n", PREAMBLE_EXPLAIN.c_str());
 			}
 			fflush(stderr);
 		}
@@ -1729,10 +1858,9 @@ namespace loguru
 		free(file_path);
 		return true;
 	}
-
 	bool add_file(const char* path_in, FileMode mode, Verbosity verbosity)
 	{
-		char path[1024];
+		char path[PATH_MAX];
 		if (path_in[0] == '~') {
 			snprintf(path, sizeof(path) - 1, "%s%s", home_dir(), path_in + 1);
 		} else {
@@ -1749,22 +1877,29 @@ namespace loguru
 			LOG_F(ERROR, "Failed to open '%s'", path);
 			return false;
 		}
+#if LOGURU_WITH_FILEABS
+		FileAbs* file_abs = new FileAbs(); // this is deleted in file_close;
+		snprintf(file_abs->path, sizeof(file_abs->path) - 1, "%s", path);
+		snprintf(file_abs->mode_str, sizeof(file_abs->mode_str) - 1, "%s", mode_str);
+		stat(file_abs->path, &file_abs->st);
+		file_abs->fp = file;
+		file_abs->verbosity = verbosity;
+		add_callback(path_in, file_log, file_abs, verbosity, file_close, file_flush);
+#else
 		add_callback(path_in, file_log, file, verbosity, file_close, file_flush);
+#endif
 
 		if (mode == FileMode::Append) {
 			fprintf(file, "\n\n\n\n\n");
 		}
-
-		if (!s_arguments.empty())
-		{
+		if (!s_arguments.empty()) {
 			fprintf(file, "arguments: %s\n", s_arguments.c_str());
 		}
-		if (strlen(s_current_dir) != 0)
-		{
+		if (strlen(s_current_dir) != 0) {
 			fprintf(file, "Current dir: %s\n", s_current_dir);
 		}
 		fprintf(file, "File verbosity level: %d\n", verbosity);
-		fprintf(file, "%s\n", PREAMBLE_EXPLAIN);
+		fprintf(file, "%s\n", PREAMBLE_EXPLAIN.c_str());
 		fflush(file);
 
 		LOG_F(INFO, "Logging to '%s', mode: '%s', verbosity: %d", path, mode_str, verbosity);
@@ -1779,8 +1914,7 @@ namespace loguru
 
 	void add_stack_cleanup(const char* find_this, const char* replace_with_this)
 	{
-		if (strlen(find_this) <= strlen(replace_with_this))
-		{
+		if (strlen(find_this) <= strlen(replace_with_this)) {
 			LOG_F(WARNING, "add_stack_cleanup: the replacement should be shorter than the pattern!");
 			return;
 		}
@@ -1791,8 +1925,7 @@ namespace loguru
 	static void on_callback_change()
 	{
 		s_max_out_verbosity = Verbosity_OFF;
-		for (const auto& callback : s_callbacks)
-		{
+		for (const auto& callback : s_callbacks) {
 			s_max_out_verbosity = std::max(s_max_out_verbosity, callback.verbosity);
 		}
 	}
@@ -2043,8 +2176,8 @@ namespace loguru
 		auto uptime_ms = duration_cast<milliseconds>(steady_clock::now() - s_start_time).count();
 		auto uptime_sec = uptime_ms / 1000.0;
 
-		char thread_name[THREAD_NAME_WIDTH + 1] = {0};
-		get_thread_name(thread_name, THREAD_NAME_WIDTH + 1, true);
+		char thread_name[LOGURU_THREADNAME_WIDTH + 1] = {0};
+		get_thread_name(thread_name, LOGURU_THREADNAME_WIDTH + 1, true);
 
 		if (s_strip_file_path) {
 			file = filename(file);
@@ -2061,11 +2194,12 @@ namespace loguru
 			snprintf(level_buff, sizeof(level_buff) - 1, "% 4d", verbosity);
 		}
 
-		snprintf(out_buff, out_buff_size, "%04d-%02d-%02d %02d:%02d:%02d.%03lld (%8.3fs) [%-*s]%23s:%-5u %4s| ",
+		snprintf(out_buff, out_buff_size, "%04d-%02d-%02d %02d:%02d:%02d.%03lld (%8.3fs) [%-*s]%*s:%-5u %4s| ",
 			1900 + time_info.tm_year, 1 + time_info.tm_mon, time_info.tm_mday,
 			time_info.tm_hour, time_info.tm_min, time_info.tm_sec, ms_since_epoch % 1000,
 			uptime_sec,
-			THREAD_NAME_WIDTH, thread_name,
+			LOGURU_THREADNAME_WIDTH, thread_name,
+			LOGURU_FILENAME_WIDTH,
 			file, line, level_buff);
 	}
 
@@ -2181,6 +2315,21 @@ namespace loguru
 		log_message(stack_trace_skip + 1, message, true, true);
 	}
 
+#if LOGURU_USE_FMTLIB
+	void log(Verbosity verbosity, const char* file, unsigned line, const char* format, fmt::ArgList args)
+	{
+		auto formatted = fmt::format(format, args);
+		log_to_everywhere(1, verbosity, file, line, "", formatted.c_str());
+	}
+
+	void raw_log(Verbosity verbosity, const char* file, unsigned line, const char* format, fmt::ArgList args)
+	{
+		auto formatted = fmt::format(format, args);
+		auto message = Message{verbosity, file, line, "", "", "", formatted.c_str()};
+		log_message(1, message, false, true);
+	}
+
+#else
 	void log(Verbosity verbosity, const char* file, unsigned line, const char* format, ...)
 	{
 		va_list vlist;
@@ -2199,6 +2348,7 @@ namespace loguru
 		log_message(1, message, false, true);
 		va_end(vlist);
 	}
+#endif
 
 	void flush()
 	{
@@ -2397,8 +2547,8 @@ namespace loguru
 			result.str += "------------------------------------------------\n";
 			for (auto entry : stack) {
 				const auto description = std::string(entry->_descr) + ":";
-				auto prefix = textprintf("[ErrorContext] %23s:%-5u %-20s ",
-					filename(entry->_file), entry->_line, description.c_str());
+				auto prefix = textprintf("[ErrorContext] %*s:%-5u %-20s ",
+					LOGURU_FILENAME_WIDTH, filename(entry->_file), entry->_line, description.c_str());
 				result.str += prefix.c_str();
 				entry->print_value(result);
 				result.str += "\n";
