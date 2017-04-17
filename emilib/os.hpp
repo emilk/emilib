@@ -9,6 +9,8 @@
 namespace emilib {
 namespace os {
 
+// ----------------------------------------------------------------------------
+
 enum class Device
 {
 	Phone,
@@ -36,6 +38,12 @@ float pixels_per_point();
 
 	Size screen_size_points();
 #endif // TARGET_OS_IPHONE
+
+// ----------------------------------------------------------------------------
+
+/// On iOS/MacOS this is the only place where an app can write files.
+/// The returned path ends with a slash.
+std::string user_documents_dir();
 
 } // namespace os
 } // namespace emilib

@@ -16,6 +16,8 @@
 namespace emilib {
 namespace os {
 
+// ----------------------------------------------------------------------------
+
 Device device()
 {
 #if TARGET_OS_IPHONE
@@ -28,6 +30,8 @@ Device device()
 	return Device::Desktop;
 #endif
 }
+
+// ----------------------------------------------------------------------------
 
 float pixels_per_point()
 {
@@ -57,6 +61,26 @@ Size screen_size_points()
 	return Size{(float)size.width, (float)size.height};
 }
 #endif // TARGET_OS_IPHONE
+
+// ----------------------------------------------------------------------------
+
+// Path to app root
+NSString* app_path()
+{
+	//NSHomeDirectory() ?
+	NSArray* paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+	return [paths objectAtIndex:0];
+}
+
+std::string user_documents_dir()
+{
+	NSString* path_ns = app_path();
+	std::string dir = [path_ns fileSystemRepresentation];
+	if (dir.empty() || dir.back() != '/') {
+		dir += "/";
+	}
+	return dir;
+}
 
 } // namespace os
 } // namespace emilib
