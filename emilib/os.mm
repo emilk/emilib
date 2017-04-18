@@ -93,7 +93,7 @@ std::string user_documents_dir()
 
 // ----------------------------------------------------------------------------
 
-void create_folders(const char* dir)
+bool create_folders(const char* dir)
 {
 	NSString *ns_dir = [NSString stringWithUTF8String: dir];
 	NSError *error;
@@ -101,20 +101,26 @@ void create_folders(const char* dir)
 	if (![[NSFileManager defaultManager] createDirectoryAtPath:ns_dir
 								   withIntermediateDirectories:NO
 													attributes:nil
-														 error:&error])
-	{
-		NSLog(@"Failed to create directory %@: %@", ns_dir, error);
+														 error:&error]) {
+		const int kAlreadyExisted = 516;
+		if (error.code != kAlreadyExisted) {
+			NSLog(@"Failed to create directory %@: %@", ns_dir, error);
+			return false;
+		}
 	}
+	return true;
 }
 
-void delete_folder(const char* dir)
+bool delete_folder(const char* dir)
 {
 	NSString *ns_dir = [NSString stringWithUTF8String: dir];
 	NSError *error;
 	BOOL success = [[NSFileManager defaultManager] removeItemAtPath:ns_dir error:&error];
 	if (!success) {
 		NSLog(@"Failed to delete folder %@: %@", ns_dir, error);
+		return false;
 	}
+	return true;
 }
 
 } // namespace os

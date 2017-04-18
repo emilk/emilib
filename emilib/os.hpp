@@ -48,9 +48,9 @@ std::string user_documents_dir();
 // -----------------------------------------------------------------
 
 /// mkdir -p dir
-void create_folders(const char* dir);
+bool create_folders(const char* dir);
 
-void delete_folder(const char* dir);
+bool delete_folder(const char* dir);
 
 } // namespace os
 } // namespace emilib
