@@ -229,6 +229,7 @@ void draw_text(
 	uint8_t* bytes, size_t width, size_t height, bool rgba,
 	const Vec2f& pos, const TextInfo& ti, const AttributeString& str)
 {
+	if (width == 0 || height == 0) { return; }
 	CHECK_F(std::isfinite(ti.max_size.x) && std::isfinite(ti.max_size.y), "You must set max_size prior to calling text_paint::draw_text");
 	CHECK_LE_F(std::ceil(pos.x + ti.max_size.x), width,  "The target must be large enough to fit draw area (pos + max_size)");
 	CHECK_LE_F(std::ceil(pos.y + ti.max_size.y), height, "The target must be large enough to fit draw area (pos + max_size)");
@@ -239,9 +240,11 @@ void draw_text(
 	if (rgba) {
 		colorSpace = CGColorSpaceCreateDeviceRGB();
 		context = CGBitmapContextCreate(bytes, width, height, 8, 4 * width, colorSpace, kCGImageAlphaPremultipliedLast);
+		CHECK_NOTNULL_F(context, "Failed to create RGBA context of size %lux%lu", width, height);
 	} else {
 		colorSpace = CGColorSpaceCreateDeviceGray();
 		context = CGBitmapContextCreate(bytes, width, height, 8, width, colorSpace, kCGImageAlphaOnly);
+		CHECK_NOTNULL_F(context, "Failed to create gray context of size %lux%lu", width, height);
 	}
 	CGColorSpaceRelease(colorSpace);
 	CGContextSetGrayFillColor(context, 1.0f, 1.0);
