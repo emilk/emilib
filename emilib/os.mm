@@ -15,6 +15,23 @@
 
 namespace emilib {
 namespace os {
+namespace {
+
+// Path to app root
+NSString* app_path()
+{
+	//NSHomeDirectory() ?
+	NSArray* paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+	return [paths objectAtIndex:0];
+}
+
+std::string from_ns_string(NSString* string)
+{
+	std::string utf8 = [string cStringUsingEncoding:NSUTF8StringEncoding];
+	return utf8;
+}
+
+} // namespace
 
 // ----------------------------------------------------------------------------
 
@@ -64,14 +81,6 @@ Size screen_size_points()
 
 // ----------------------------------------------------------------------------
 
-// Path to app root
-NSString* app_path()
-{
-	//NSHomeDirectory() ?
-	NSArray* paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-	return [paths objectAtIndex:0];
-}
-
 std::string user_documents_dir()
 {
 	NSString* path_ns = app_path();
@@ -80,6 +89,32 @@ std::string user_documents_dir()
 		dir += "/";
 	}
 	return dir;
+}
+
+// ----------------------------------------------------------------------------
+
+void create_folders(const char* dir)
+{
+	NSString *ns_dir = [NSString stringWithUTF8String: dir];
+	NSError *error;
+
+	if (![[NSFileManager defaultManager] createDirectoryAtPath:ns_dir
+								   withIntermediateDirectories:NO
+													attributes:nil
+														 error:&error])
+	{
+		NSLog(@"Failed to create directory %@: %@", ns_dir, error);
+	}
+}
+
+void delete_folder(const char* dir)
+{
+	NSString *ns_dir = [NSString stringWithUTF8String: dir];
+	NSError *error;
+	BOOL success = [[NSFileManager defaultManager] removeItemAtPath:ns_dir error:&error];
+	if (!success) {
+		NSLog(@"Failed to delete folder %@: %@", ns_dir, error);
+	}
 }
 
 } // namespace os

@@ -45,5 +45,12 @@ float pixels_per_point();
 /// The returned path ends with a slash.
 std::string user_documents_dir();
 
+// -----------------------------------------------------------------
+
+/// mkdir -p dir
+void create_folders(const char* dir);
+
+void delete_folder(const char* dir);
+
 } // namespace os
 } // namespace emilib
