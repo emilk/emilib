@@ -28,9 +28,11 @@ using ImageData = std::unique_ptr<void, std::function<void(void*)>>;
 /// 	emilib::ImageData load_image(const char* path, int* width, int* height, int* comp, int req_comp)
 /// 	{
 /// 		void* data = stbi_load(path, width, height, comp, req_comp);
-/// 		CHECK_NOTNULL_F(data, "Failed loading image '%s': %s", path, stbi_failure_reason());
+/// 		LOG_IF_F(ERROR, !data, "Failed loading image '%s': %s", path, stbi_failure_reason());
 /// 		return {data, stbi_image_free};
 /// 	}
+///
+/// If you return nullptr, a placeholder error image will be generated and used.
 using ImageLoader = std::function<ImageData(const char* path, int* width, int* height, int* comp, int req_comp)>;
 
 /// Returns r, g, b, a uint8_t quadruplets, row by row, from top.

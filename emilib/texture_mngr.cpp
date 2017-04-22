@@ -24,12 +24,39 @@ bool ends_with(const std::string& str, const std::string& ending)
 	return str.size()>=ending.size() && str.substr(str.size()-ending.size()) == ending;
 }
 
+ImageData generate_placeholder_image(int* out_width, int* out_height, int* out_comp, int req_comp)
+{
+	void* data;
+	if (req_comp == 1) {
+		data = malloc(4);
+		uint8_t* pixels = reinterpret_cast<uint8_t*>(data);
+		pixels[0] = pixels[3] = 255;
+		pixels[1] = pixels[2] = 0;
+		*out_width  = 2;
+		*out_height = 2;
+		*out_comp   = 1;
+	} else {
+		data = malloc(4 * 4);
+		uint32_t* pixels = reinterpret_cast<uint32_t*>(data);
+		pixels[0] = pixels[3] = 0xffff00ff;
+		pixels[1] = pixels[2] = 0;
+		*out_width  = 2;
+		*out_height = 2;
+		*out_comp   = 4;
+	}
+	return {data, free};
+}
+
 ImageData load_image_rgba(const ImageLoader& image_loader, const char* path, size_t* out_width, size_t* out_height)
 {
 	struct Color { uint8_t r,g,b,a; };
 
 	int w, h, comp;
 	auto image_data = image_loader(path, &w, &h, &comp, 4);
+	if (!image_data) {
+		image_data = generate_placeholder_image(&w, &h, &comp, 4);
+	}
+	CHECK_NOTNULL_F(image_data, "Failed to load '%s', path");
 
 	auto pixels = (Color*)image_data.get();
 
