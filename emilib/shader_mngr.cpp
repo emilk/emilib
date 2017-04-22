@@ -21,7 +21,7 @@ namespace emilib {
 
 gl::ProgramSource load_shader_file(const std::string& shader_dir, const std::string& name)
 {
-	const auto path = shader_dir + name + ".shader";
+	const auto path = shader_dir + name;
 	const auto root = configuru::parse_file(path, configuru::CFG);
 
 	std::string prefix = "";
@@ -140,6 +140,14 @@ gl::Program* ShaderMngr::get_file(const std::string& name)
 	}
 
 	return it->second.get();
+}
+
+void ShaderMngr::prefetch_all(const std::string& sub_folder)
+{
+	const auto root_path = _shader_dir + sub_folder;
+	fs::walk_dir(root_path, [=](const std::string& file_path) {
+		get_file(fs::strip_path(root_path, file_path));
+	});
 }
 
 } // namespace emilib

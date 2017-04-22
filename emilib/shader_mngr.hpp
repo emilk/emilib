@@ -97,6 +97,9 @@ public:
 	/// update() will hot-reload any changed files on-the-fly.
 	void reload_all();
 
+	/// Recursively load all shaders in shader_dir/sub_folder
+	void prefetch_all(const std::string& sub_folder = "");
+
 private:
 	// using SourceMap = std::unordered_map<gl::ProgramSource, gl::Program_UP>;
 	using FFMap     = std::unordered_map<int,               gl::Program_UP>;
