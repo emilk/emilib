@@ -151,7 +151,7 @@ NSAttributedString* get_attr_string(const TextInfo& ti, const AttributeString& a
 		start_bytes += part.length_bytes;
 		start_chars += length_chars;
 
-		#if TARGET_OS_MAC
+		#if !TARGET_OS_IPHONE
 			CGColorRelease(color);
 		#endif
 	}
