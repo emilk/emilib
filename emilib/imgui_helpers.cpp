@@ -18,12 +18,9 @@ ImVec2 aspect_correct_image_size(const ImVec2& desired_size, const ImVec2& canva
     auto result_height = std::max(minimum_size.y, canvas_size.y);
     const float canvas_aspect = result_width / result_height;
 
-    if (canvas_aspect < desired_aspect_ratio)
-    {
+    if (canvas_aspect < desired_aspect_ratio) {
         result_height = result_width / desired_aspect_ratio;
-    }
-    else
-    {
+    } else {
         result_width = result_height * desired_aspect_ratio;
     }
 
@@ -46,8 +43,7 @@ bool SliderSize(const std::string& label, size_t* v, size_t v_min, size_t v_max,
     CHECK_NOTNULL_F(v);
     float v_float = *v;
     bool changed = ImGui::SliderFloat(label.c_str(), &v_float, static_cast<float>(v_min), static_cast<float>(v_max), "%.0f", power);
-    if (changed)
-    {
+    if (changed) {
         *v = static_cast<size_t>(std::round(v_float));
         *v = std::max(*v, v_min);
         *v = std::min(*v, v_max);
@@ -59,13 +55,10 @@ bool InputText(const std::string& label, std::string& text, ImGuiInputTextFlags 
 {
     char buff[1024];
     strncpy(buff, text.c_str(), sizeof(buff));
-    if (ImGui::InputText(label.c_str(), buff, sizeof(buff), flags, callback, user_data))
-    {
+    if (ImGui::InputText(label.c_str(), buff, sizeof(buff), flags, callback, user_data)) {
         text = buff;
         return true;
-    }
-    else
-    {
+    } else {
         return false;
     }
 }
