@@ -20,7 +20,14 @@ namespace sdl {
 
 InitResult init(const Params& params)
 {
-	if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
+	SDL_version compiled;
+	SDL_version linked;
+	SDL_VERSION(&compiled);
+	SDL_GetVersion(&linked);
+	LOG_F(INFO, "Compiled with SDL %d.%d.%d", compiled.major, compiled.minor, compiled.patch);
+	LOG_F(INFO, "Linked with SDL %d.%d.%d",     linked.major,   linked.minor,   linked.patch);
+
+	if (SDL_Init(SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_TIMER | SDL_INIT_VIDEO) != 0) {
 		ABORT_F("ERROR: SDL_Init: %s", SDL_GetError());
 	}
 
