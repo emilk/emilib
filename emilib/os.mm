@@ -10,6 +10,7 @@
 #import <GLKit/GLKit.h>
 
 #if TARGET_OS_IPHONE
+	#import <AVFoundation/AVAudioSession.h>
 	#import <UIKit/UIKit.h>
 #endif // TARGET_OS_IPHONE
 
@@ -121,6 +122,20 @@ bool delete_folder(const char* dir)
 		return false;
 	}
 	return true;
+}
+
+// -----------------------------------------------------------------
+
+void setAudioCategoryAmbient()
+{
+#if TARGET_OS_IPHONE
+	AVAudioSession* instance = [AVAudioSession sharedInstance];
+	NSError *error;
+	BOOL success = [instance setCategory: AVAudioSessionCategoryAmbient error:&error];
+	if (!success) {
+		NSLog(@"Error %ld, %@", (long)error.code, error.localizedDescription);
+	}
+#endif // TARGET_OS_IPHONE
 }
 
 } // namespace os
