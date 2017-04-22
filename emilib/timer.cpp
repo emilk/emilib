@@ -19,7 +19,9 @@ double Timer::reset()
 {
 	auto now = Clock::now();
 	auto dur = now - _start;
+	_saved_ns = 0;
 	_start = now;
+	_paused = false;
 	return 1e-9 * std::chrono::duration_cast<std::chrono::nanoseconds>(dur).count();
 }
 
@@ -31,7 +33,7 @@ double Timer::secs() const
 unsigned long long Timer::nanoseconds() const
 {
 	auto dur = Clock::now() - _start;
-	return std::chrono::duration_cast<std::chrono::nanoseconds>(dur).count();
+	return _saved_ns + std::chrono::duration_cast<std::chrono::nanoseconds>(dur).count();
 }
 
 void Timer::set_secs(double s)
@@ -42,7 +44,19 @@ void Timer::set_secs(double s)
 void Timer::set_nanoseconds(double ns_f)
 {
 	std::chrono::nanoseconds dur(static_cast<unsigned long long>(ns_f));
-	_start = Clock::now() - dur;
+	_saved_ns = dur.count();
+	_start = Clock::now();
+}
+
+void Timer::set_paused(bool paused)
+{
+	if (_paused == paused) { return; }
+	_paused = paused;
+	if (paused) {
+		_saved_ns  = nanoseconds();
+	} else {
+		_start = Clock::now();
+	}
 }
 
 double Timer::seconds_since_startup()

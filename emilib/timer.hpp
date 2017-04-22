@@ -20,6 +20,7 @@ public:
 	Timer();
 
 	/// Returns seconds since last reset().
+	/// Un-pauses.
 	double reset();
 
 	double secs() const;
@@ -29,12 +30,18 @@ public:
 	void set_secs(double s);
 	void set_nanoseconds(double s);
 
+	/// Time stops increasing while paused. false by default;
+	void set_paused(bool b);
+	bool is_paused() { return _paused; }
+
 	/// Seconds since start of program.
 	static double seconds_since_startup();
 
 private:
 	using Clock = std::chrono::steady_clock; // Always counting up.
-	Clock::time_point _start;
+	unsigned long long _saved_ns = 0;
+	bool               _paused   = false;
+	Clock::time_point  _start;
 };
 
 } // namespace emilib
