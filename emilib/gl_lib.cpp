@@ -164,6 +164,18 @@ bool supports_mipmaps_for(Size size)
 #endif
 }
 
+unsigned max_texture_size()
+{
+	static int s_max_size = [](){
+		int size;
+		CHECK_FOR_GL_ERROR;
+		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &size);
+		CHECK_FOR_GL_ERROR;
+		return size;
+	}();
+	return s_max_size;
+}
+
 Texture::Texture()
 {
 }
@@ -389,6 +401,9 @@ void Texture::set_mip_data(const void* data_ptr, Size size, unsigned mip_level)
 	}
 
 	CHECK_FOR_GL_ERROR;
+
+	CHECK_LE_F(size.x, max_texture_size(), "%s too large (%u x %u), max is %u", _debug_name.c_str(), size.x, size.y, max_texture_size());
+	CHECK_LE_F(size.y, max_texture_size(), "%s too large (%u x %u), max is %u", _debug_name.c_str(), size.x, size.y, max_texture_size());
 
 	glTexImage2D(GL_TEXTURE_2D, mip_level, dst_format,
 					 (GLsizei)size.x, (GLsizei)size.y, 0,
