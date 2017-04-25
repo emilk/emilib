@@ -265,7 +265,8 @@ public:
 
 	// ------------------------------------------------------------
 
-	iterator find(const KeyT& key)
+	template<typename KeyLike>
+	iterator find(const KeyLike& key)
 	{
 		auto bucket = this->find_filled_bucket(key);
 		if (bucket == (size_t)-1) {
@@ -274,7 +275,8 @@ public:
 		return iterator(this, bucket);
 	}
 
-	const_iterator find(const KeyT& key) const
+	template<typename KeyLike>
+	const_iterator find(const KeyLike& key) const
 	{
 		auto bucket = this->find_filled_bucket(key);
 		if (bucket == (size_t)-1)
@@ -284,18 +286,21 @@ public:
 		return const_iterator(this, bucket);
 	}
 
-	bool contains(const KeyT& k) const
+	template<typename KeyLike>
+	bool contains(const KeyLike& k) const
 	{
 		return find_filled_bucket(k) != (size_t)-1;
 	}
 
-	size_t count(const KeyT& k) const
+	template<typename KeyLike>
+	size_t count(const KeyLike& k) const
 	{
 		return find_filled_bucket(k) != (size_t)-1 ? 1 : 0;
 	}
 
 	/// Returns the matching ValueT or nullptr if k isn't found.
-	ValueT* try_get(const KeyT& k)
+	template<typename KeyLike>
+	ValueT* try_get(const KeyLike& k)
 	{
 		auto bucket = find_filled_bucket(k);
 		if (bucket != (size_t)-1) {
@@ -306,7 +311,8 @@ public:
 	}
 
 	/// Const version of the above
-	const ValueT* try_get(const KeyT& k) const
+	template<typename KeyLike>
+	const ValueT* try_get(const KeyLike& k) const
 	{
 		auto bucket = find_filled_bucket(k);
 		if (bucket != (size_t)-1) {
@@ -317,7 +323,8 @@ public:
 	}
 
 	/// Convenience function.
-	const ValueT get_or_return_default(const KeyT& k) const
+	template<typename KeyLike>
+	const ValueT get_or_return_default(const KeyLike& k) const
 	{
 		const ValueT* ret = try_get(k);
 		if (ret) {
@@ -518,7 +525,8 @@ private:
 	}
 
 	// Find the bucket with this key, or return (size_t)-1
-	size_t find_filled_bucket(const KeyT& key) const
+	template<typename KeyLike>
+	size_t find_filled_bucket(const KeyLike& key) const
 	{
 		if (empty()) { return (size_t)-1; } // Optimization
 
