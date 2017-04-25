@@ -18,7 +18,7 @@ namespace emilib {
 template<typename T>
 struct HashSetEqualTo
 {
-	constexpr bool operator()(const T &lhs, const T &rhs) const
+	constexpr bool operator()(const T& lhs, const T& rhs) const
 	{
 		return lhs == rhs;
 	}
