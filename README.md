@@ -199,7 +199,10 @@ Provides bindings between my `gl_lib` and the wonderful [Dear Imgui](https://git
 Helpers for working with the wonderful [Dear Imgui](https://github.com/ocornut/imgui) GUI library.
 
 #### imgui_sdl.hpp/.cpp
-Bindings between [SDL2](https://www.libsdl.org/) and the wonderful [Dear Imgui](https://github.com/ocornut/imgui) GUI library. Can be used alone or together with `emilib/imgui_gl_lib.hpp/.cpp`..
+Bindings between [SDL2](https://www.libsdl.org/) and the wonderful [Dear Imgui](https://github.com/ocornut/imgui) GUI library. Can be used alone or together with `emilib/imgui_gl_lib.hpp/.cpp`.
+
+#### sdl_input.hpp/.cpp
+sdl_input wraps the input events from [SDL2](https://www.libsdl.org/) with an easy-to-use interface that is unified for desktop and mobile.
 
 #### shader_mngr.hpp/.cpp
 This is NOT a stand-alone library, but depends on other parts of emilib as well as loguru and configuru.
