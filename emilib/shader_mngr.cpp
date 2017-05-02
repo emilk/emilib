@@ -19,15 +19,26 @@
 
 namespace emilib {
 
+configuru::Config parse_cfg_file(const char* path)
+{
+	try {
+		return configuru::parse_file(path, configuru::CFG);
+	} catch (std::exception& e) {
+		ABORT_F("Failed to load %s: %s", path, e.what());
+	}
+}
+
 gl::ProgramSource load_shader_file(const std::string& shader_dir, const std::string& name)
 {
 	const auto path = shader_dir + name;
-	const auto root = configuru::parse_file(path, configuru::CFG);
+	ERROR_CONTEXT("load_shader_file", path.c_str());
+	const auto root = parse_cfg_file(path.c_str());
 
 	std::string prefix = "";
 
 	if (root.has_key("includes")) {
 		for (auto&& include_name : root["includes"].as_array()) {
+			ERROR_CONTEXT("including", include_name.c_str());
 			auto include_path = shader_dir + (std::string)include_name;
 			auto contents = fs::read_text_file(include_path);
 			auto line = strprintf("\n#line 1 // %s\n", include_name.c_str());
@@ -146,7 +157,9 @@ void ShaderMngr::prefetch_all(const std::string& sub_folder)
 {
 	const auto root_path = _shader_dir + sub_folder;
 	fs::walk_dir(root_path, [=](const std::string& file_path) {
-		get_file(fs::strip_path(root_path, file_path));
+		if (fs::file_ending(file_path) == "shader") {
+			get_file(fs::strip_path(root_path, file_path));
+		}
 	});
 }
 
