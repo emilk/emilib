@@ -48,8 +48,8 @@ bool check_for_pinch_gesture(PinchState* pinch_state, const TrackpadMap& prev, c
 	if (prev_dist > 0 && next_dist > 0) {
 		pinch_state->pinch_zoom = next_dist / prev_dist;
 	}
-	pinch_state->pinch_center.x = next_center_x;
-	pinch_state->pinch_center.y = next_center_y;
+	// pinch_state->pinch_center.x = next_center_x;
+	// pinch_state->pinch_center.y = next_center_y;
 	return true;
 }
 
@@ -118,11 +118,7 @@ Vec2f game_from_touch(const Context& context, const SDL_TouchFingerEvent& t)
 
 Vec2f game_from_mouse(const Context& context, const SDL_MouseMotionEvent& t)
 {
-	// Respect that the game-area may be smaller and at bottom left:
-	return {
-		t.x * context.window_size_points.x / context.active_size_points.x,
-		(t.y + context.active_size_points.y - context.window_size_points.y) * context.window_size_points.y / context.active_size_points.y,
-	};
+	return { (float)t.x, (float)t.y };
 };
 
 void handle_event(State* state, const Context& context, const Callbacks& callbacks, const SDL_Event& event)
@@ -150,8 +146,6 @@ void handle_event(State* state, const Context& context, const Callbacks& callbac
 		on_touch_event(state, callbacks, TouchEvent::kUp, t.fingerId, MouseButton::kPrimary, game_from_touch(context, t), t.timestamp);
 	}
 #else // !TARGET_OS_IPHONE
-	const auto trackpad_before = state->trackpad;
-
 	// Mac trackpad:
 	if (event.type == SDL_FINGERDOWN) {
 		auto&& t = event.tfinger;
@@ -167,10 +161,6 @@ void handle_event(State* state, const Context& context, const Callbacks& callbac
 		auto&& t = event.tfinger;
 		state->trackpad.erase(t.fingerId);
 	}
-
-	#if PROPER_PINCH_INPUT
-		check_for_pinch_gesture(&state->pinch_state, trackpad_before, state->trackpad);
-	#endif
 #endif // !TARGET_OS_IPHONE
 
 #if 1
@@ -200,8 +190,8 @@ void handle_event(State* state, const Context& context, const Callbacks& callbac
 	if (event.type == SDL_MULTIGESTURE) {
 		// state->pinch_state.pinch_rotation = event.mgesture.dTheta;
 		state->pinch_state.pinch_zoom     = 1 + event.mgesture.dDist;
-		// state->pinch_state.pinch_center.x = event.mgesture.x * context.active_size_points.x;
-		// state->pinch_state.pinch_center.y = event.mgesture.y * context.active_size_points.y;
+		// state->pinch_state.pinch_center.x = event.mgesture.x * context.window_size_points.x;
+		// state->pinch_state.pinch_center.y = event.mgesture.y * context.window_size_points.y;
 		state->pinch_state.pinch_center.x = state->mouse_pos.x;
 		state->pinch_state.pinch_center.y = state->mouse_pos.y;
 	}
@@ -230,10 +220,18 @@ void handle_event(State* state, const Context& context, const Callbacks& callbac
 
 void poll_for_events(State* state, const Context& context, const Callbacks& callbacks)
 {
+#if !TARGET_OS_IPHONE && PROPER_PINCH_INPUT
+	const auto trackpad_before = state->trackpad;
+#endif
+
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		handle_event(state, context, callbacks, event);
 	}
+
+#if !TARGET_OS_IPHONE && PROPER_PINCH_INPUT
+	check_for_pinch_gesture(&state->pinch_state, trackpad_before, state->trackpad);
+#endif
 }
 
 } // namespace input

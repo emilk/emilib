@@ -22,12 +22,6 @@ namespace input {
 /// matches SDL_FingerID
 using FingerID = int64_t;
 
-struct KbModifiers
-{
-	bool command = false;
-	bool shift   = false;
-};
-
 enum class TouchEvent
 {
 	kDown,
@@ -65,7 +59,7 @@ struct PinchState
 {
 	Vec2f scroll       = {0,0}; ///< Delta in points.
 	float pinch_zoom   = 1;     ///< How many times further apart are the fingers now?
-	Vec2f pinch_center = {0,0}; ///< Center of pinch gesture in points.
+	// Vec2f pinch_center = {0,0}; ///< Center of pinch gesture in points.
 };
 
 using TouchCallback    = std::function<void(TouchEvent, Touch)>;
@@ -91,7 +85,6 @@ struct State
 	PinchState  pinch_state;
 	Vec2f       mouse_pos;
 	TouchMap    touches;
-	KbModifiers kb_modifiers;
 	TrackpadMap trackpad;
 };
 
@@ -100,11 +93,6 @@ struct Context
 {
 	/// Size of the full window in points.
 	Vec2f window_size_points;
-
-	/// Size of game area.
-	/// Should normally be equal to window_size_points.
-	/// You may want to have it smaller to add debug-things around the game.
-	Vec2f active_size_points;
 };
 
 void poll_for_events(State* state, const Context& context, const Callbacks& callbacks);
