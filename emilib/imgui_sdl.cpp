@@ -78,17 +78,7 @@ void ImGui_SDL::new_frame()
 		// Setup inputs
 		int mouse_x, mouse_y;
 		auto mouse_state = SDL_GetMouseState(&mouse_x, &mouse_y);
-
-		io.MousePos = {(float)mouse_x, (float)mouse_y}; // Works for retina Mac, but not iOS !?
-
-	#if TARGET_OS_IPHONE
-		int width_pixels, height_pixels;
-		SDL_GL_GetDrawableSize(SDL_GL_GetCurrentWindow(), &width_pixels, &height_pixels);
-		float pixels_per_point = static_cast<float>(width_pixels) / io.DisplaySize.x;
-		io.MousePos.x /= pixels_per_point;
-		io.MousePos.y /= pixels_per_point;
-	#endif
-
+		io.MousePos = {(float)mouse_x, (float)mouse_y};
 		io.MouseDown[0] = (mouse_state & SDL_BUTTON_LMASK);
 		io.MouseDown[1] = (mouse_state & SDL_BUTTON_RMASK);
 	} else {
