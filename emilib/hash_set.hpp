@@ -182,7 +182,7 @@ public:
 	HashSet(const HashSet& other)
 	{
 		reserve(other.size());
-		insert(cbegin(other), cend(other));
+		insert(other.cbegin(), other.cend());
 	}
 
 	HashSet(HashSet&& other)
@@ -194,7 +194,7 @@ public:
 	{
 		clear();
 		reserve(other.size());
-		insert(cbegin(other), cend(other));
+		insert(other.cbegin(), other.cend());
 		return *this;
 	}
 
@@ -237,7 +237,7 @@ public:
 		return iterator(this, bucket);
 	}
 
-	const_iterator begin() const
+	const_iterator cbegin() const
 	{
 		size_t bucket = 0;
 		while (bucket<_num_buckets && _states[bucket] != State::FILLED) {
@@ -246,11 +246,25 @@ public:
 		return const_iterator(this, bucket);
 	}
 
+	const_iterator begin() const
+	{
+		return cbegin();
+	}
+
 	iterator end()
-	{ return iterator(this, _num_buckets); }
+	{
+		return iterator(this, _num_buckets);
+	}
+
+	const_iterator cend() const
+	{
+		return const_iterator(this, _num_buckets);
+	}
 
 	const_iterator end() const
-	{ return const_iterator(this, _num_buckets); }
+	{
+		return cend();
+	}
 
 	size_t size() const
 	{
