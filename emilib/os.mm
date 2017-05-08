@@ -126,7 +126,7 @@ bool delete_folder(const char* dir)
 
 // -----------------------------------------------------------------
 
-void setAudioCategoryAmbient()
+void set_audio_category_ambient()
 {
 #if TARGET_OS_IPHONE
 	AVAudioSession* instance = [AVAudioSession sharedInstance];

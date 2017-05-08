@@ -55,7 +55,7 @@ bool delete_folder(const char* dir);
 // -----------------------------------------------------------------
 
 /// Call BEFORE initializing e.g. OpenAL to allow background music to play.
-void setAudioCategoryAmbient();
+void set_audio_category_ambient();
 
 } // namespace os
 } // namespace emilib
