@@ -221,7 +221,7 @@ void handle_event(State* state, const Context& context, const Callbacks& callbac
 
 void poll_for_events(State* state, const Context& context, const Callbacks& callbacks)
 {
-#if !TARGET_OS_IPHONE && PROPER_PINCH_INPUT
+#if PROPER_PINCH_INPUT
 	const auto trackpad_before = state->trackpad;
 #endif
 
@@ -230,7 +230,14 @@ void poll_for_events(State* state, const Context& context, const Callbacks& call
 		handle_event(state, context, callbacks, event);
 	}
 
-#if !TARGET_OS_IPHONE && PROPER_PINCH_INPUT
+#if TARGET_OS_IPHONE && PROPER_PINCH_INPUT
+	state->trackpad.clear();
+	for (const auto& touch : state->touches) {
+		state->trackpad[touch.first] = touch.second.pos;
+	}
+#endif
+
+#if PROPER_PINCH_INPUT
 	check_for_pinch_gesture(&state->pinch_state, trackpad_before, state->trackpad);
 #endif
 }
