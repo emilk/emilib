@@ -362,6 +362,7 @@ public:
 
 	void insert(const_iterator begin, const_iterator end)
 	{
+		// TODO: reserve space exactly once.
 		for (; begin != end; ++begin) {
 			insert(begin->first, begin->second);
 		}
