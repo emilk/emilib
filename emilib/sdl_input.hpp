@@ -57,8 +57,9 @@ struct Touch
 
 struct PinchState
 {
-	Vec2f scroll       = {0,0}; ///< Delta in points.
-	float pinch_zoom   = 1;     ///< How many times further apart are the fingers now?
+	bool  is_active = false; ///< True if two fingers are on the track-pad.
+	Vec2f scroll    = {0,0}; ///< Delta in points.
+	float zoom      = 1;     ///< How many times further apart are the fingers now?
 	// Vec2f pinch_center = {0,0}; ///< Center of pinch gesture in points.
 };
 

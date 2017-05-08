@@ -43,13 +43,14 @@ bool check_for_pinch_gesture(PinchState* pinch_state, const TrackpadMap& prev, c
 	float prev_dist = distance(prev_pos[0], prev_pos[1]);
 	float next_dist = distance(next_pos[0], next_pos[1]);
 
-	pinch_state->scroll.x = prev_center_x - next_center_x;
-	pinch_state->scroll.y = prev_center_y - next_center_y;
+	pinch_state->scroll.x = next_center_x - prev_center_x;
+	pinch_state->scroll.y = next_center_y - prev_center_y;
 	if (prev_dist > 0 && next_dist > 0) {
-		pinch_state->pinch_zoom = next_dist / prev_dist;
+		pinch_state->zoom = next_dist / prev_dist;
 	}
 	// pinch_state->pinch_center.x = next_center_x;
 	// pinch_state->pinch_center.y = next_center_y;
+	pinch_state->is_active = true;
 	return true;
 }
 
@@ -189,7 +190,7 @@ void handle_event(State* state, const Context& context, const Callbacks& callbac
 
 	if (event.type == SDL_MULTIGESTURE) {
 		// state->pinch_state.pinch_rotation = event.mgesture.dTheta;
-		state->pinch_state.pinch_zoom     = 1 + event.mgesture.dDist;
+		state->pinch_state.zoom = 1 + event.mgesture.dDist;
 		// state->pinch_state.pinch_center.x = event.mgesture.x * context.window_size_points.x;
 		// state->pinch_state.pinch_center.y = event.mgesture.y * context.window_size_points.y;
 		state->pinch_state.pinch_center.x = state->mouse_pos.x;
