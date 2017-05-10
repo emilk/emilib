@@ -22,4 +22,12 @@ void stable_sort_uniq(Vector* vec)
 	vec->erase(it, std::end(*vec));
 }
 
+/// Erase elements that matches the predicate without reordering existing elements
+template<typename Vector, typename Predicate>
+void erase_if(Vector* vec, const Predicate& predicate)
+{
+	const auto it = std::remove_if(std::begin(*vec), std::end(*vec), predicate);
+	vec->erase(it, std::end(*vec));
+}
+
 }
