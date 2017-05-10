@@ -49,6 +49,9 @@ There is a very limited set of tests in the `tests/` folder.
 
 # Stand-alone libraries
 
+#### algorithm.hpp
+Useful extensions to STL
+
 #### coroutine.hpp/.cpp
 This is a "fake coroutine" class which implements a cooperative thread and methods for passing execution between the outer and inner thread.
 
