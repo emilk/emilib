@@ -277,6 +277,18 @@ public:
 		return _num_filled==0;
 	}
 
+	// Returns the number of buckets.
+	size_t bucket_count() const
+	{
+		return _num_buckets;
+	}
+
+	/// Returns average number of elements per bucket.
+	float load_factor() const
+	{
+		return static_cast<float>(_num_filled) / static_cast<float>(_num_buckets);
+	}
+
 	// ------------------------------------------------------------
 
 	template<typename KeyLike>
