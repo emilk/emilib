@@ -37,6 +37,10 @@ float pixels_per_point();
 	};
 
 	Size screen_size_points();
+	Size screen_size_points_landscape();
+	Size screen_size_px_landscape();
+	Size screen_size_px_portrait();
+	Size screen_size_points_portrait();
 #endif // TARGET_OS_IPHONE
 
 // ----------------------------------------------------------------------------

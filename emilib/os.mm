@@ -78,6 +78,40 @@ Size screen_size_points()
 	CGSize size = screenRect.size;
 	return Size{(float)size.width, (float)size.height};
 }
+
+Size screen_size_points_landscape()
+{
+	UIScreen* screen = [UIScreen mainScreen];
+	CGRect screenRect = [screen bounds];
+	CGSize size = screenRect.size;
+	if (size.width < size.height) {
+		std::swap(size.width, size.height);
+	}
+	return {static_cast<float>(size.width), static_cast<float>(size.height)};
+}
+
+Size screen_size_px_landscape()
+{
+	Size size = screen_size_points_landscape();
+	size.width *= pixels_per_point();
+	size.height *= pixels_per_point();
+	return size;
+}
+
+Size screen_size_px_portrait()
+{
+	auto size = screen_size_px_landscape();
+	std::swap(size.width, size.height);
+	return size;
+}
+
+Size screen_size_points_portrait()
+{
+	auto size = screen_size_points_landscape();
+	std::swap(size.width, size.height);
+	return size;
+}
+
 #endif // TARGET_OS_IPHONE
 
 // ----------------------------------------------------------------------------
