@@ -56,7 +56,7 @@ ImageData load_image_rgba(const ImageLoader& image_loader, const char* path, siz
 	if (!image_data) {
 		image_data = generate_placeholder_image(&w, &h, &comp, 4);
 	}
-	CHECK_NOTNULL_F(image_data, "Failed to load '%s', path");
+	CHECK_NOTNULL_F(image_data, "Failed to load '%s'", path);
 
 	auto pixels = (Color*)image_data.get();
 
