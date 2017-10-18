@@ -113,7 +113,7 @@ InitResult init(const Params& params)
 		gl::init_glew();
 	#endif
 
-	gl::TempViewPort::set_back_buffer_size(results.width_pixels, results.height_pixels);
+	gl::TempViewPort::set_back_buffer_size(static_cast<int>(results.width_pixels), static_cast<int>(results.height_pixels));
 
 	return results;
 }

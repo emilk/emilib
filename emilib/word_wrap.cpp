@@ -62,7 +62,7 @@ std::vector<int> find_all_of_pattern_in(const std::string& pattern, const std::s
 		if (hit == std::string::npos) {
 			break;
 		}
-		results.push_back(hit);
+		results.push_back(static_cast<int>(hit));
 		pos = hit + 1;
 	}
 	return results;
@@ -104,7 +104,7 @@ void word_wrap_line(
 	for (const auto& pattern : kPatterns) {
 		const auto breaks = find_all_of_pattern_in(pattern, text);
 		if (!breaks.empty()) {
-			size_t pos = closest_to(breaks, text.size() / 2);
+			size_t pos = closest_to(breaks, static_cast<int>(text.size() / 2));
 			const auto first = text.substr(0, pos + pattern.size() - 1);
 			const auto second = text.substr(pos + pattern.size());
 

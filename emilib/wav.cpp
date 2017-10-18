@@ -89,9 +89,11 @@ Wav parse_wav(const void* wav_void_data, size_t wav_size)
 
 	skip_four_bytes("fmt ");
 
-	uint32_t chunk_size = read_uint32();
-	if (chunk_size != 16) {
-		throw std::runtime_error("Expected 'fmt ' block to be 16 bytes, was " + std::to_string(chunk_size));
+	{
+		uint32_t chunk_size = read_uint32();
+		if (chunk_size != 16) {
+			throw std::runtime_error("Expected 'fmt ' block to be 16 bytes, was " + std::to_string(chunk_size));
+		}
 	}
 
 	int16_t audio_format = read_uint16(); // our 16 values
