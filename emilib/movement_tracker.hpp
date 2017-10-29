@@ -149,7 +149,7 @@ public:
 
 	// ------------------------------------------------
 
-	/// Flush out oldes entries.
+	/// Flush out oldest entries.
 	void flush(double now)
 	{
 		while (!_list.empty() && _list.front().when < now - _max_history_time) {

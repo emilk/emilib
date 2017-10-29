@@ -73,7 +73,7 @@ NSDictionary* get_attributes(const TextInfo& ti, bool ignore_text_align)
 		CFURLRef font_url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)ns_ttf_path, kCFURLPOSIXPathStyle, false);
 		#if 1
 			CFArrayRef all_descriptors = CTFontManagerCreateFontDescriptorsFromURL(font_url);
-			CHECK_NOTNULL_F(all_descriptors);
+			CHECK_NOTNULL_F(all_descriptors, "Failed to load .ttf font at '%s'", ti.ttf_path.c_str());
 			CHECK_EQ_F(CFArrayGetCount(all_descriptors), 1);
 			CTFontDescriptorRef first_descriptor = (CTFontDescriptorRef)CFArrayGetValueAtIndex(all_descriptors, 0);
 			font = CTFontCreateWithFontDescriptor(first_descriptor, ti.font_size, nullptr);
@@ -193,7 +193,7 @@ void draw_text(
 
 	// In this simple example, initialize a rectangular path.
 	CGRect bounds = CGRectMake(pos.x, pos.y, ti.max_size.x, ti.max_size.y);
-	CGPathAddRect(path, nullptr, bounds );
+	CGPathAddRect(path, nullptr, bounds);
 
 	// Create the framesetter with the attributed string.
 	CTFramesetterRef framesetter =

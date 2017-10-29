@@ -26,11 +26,11 @@ NSString* app_path()
 	return [paths objectAtIndex:0];
 }
 
-std::string from_ns_string(NSString* string)
-{
-	std::string utf8 = [string cStringUsingEncoding:NSUTF8StringEncoding];
-	return utf8;
-}
+// std::string from_ns_string(NSString* string)
+// {
+// 	std::string utf8 = [string cStringUsingEncoding:NSUTF8StringEncoding];
+// 	return utf8;
+// }
 
 } // namespace
 
@@ -87,6 +87,7 @@ Size screen_size_points_landscape()
 	if (size.width < size.height) {
 		std::swap(size.width, size.height);
 	}
+	LOG_F(INFO, "UIScreen size: %f x %f", size.width, size.height);
 	return {static_cast<float>(size.width), static_cast<float>(size.height)};
 }
 
