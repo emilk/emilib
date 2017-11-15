@@ -59,7 +59,7 @@ template<typename Vector>
 bool all_same(const Vector& v)
 {
 	CHECK_F(!v.empty());
-	for (int i=1; i<v.size(); ++i) {
+	for (size_t i = 1; i < v.size(); ++i) {
 		if (v[i] != v[0]) {
 			return false;
 		}
@@ -68,11 +68,24 @@ bool all_same(const Vector& v)
 }
 
 template<typename Vector>
-int sum(const Vector& v)
+auto sum(const Vector& v)
 {
 	using namespace std;
 	using value_type = typename Vector::value_type;
 	return std::accumulate(begin(v), end(v), value_type());
+}
+
+template<typename Element>
+const Element& max(const std::vector<Element>& v)
+{
+	CHECK_F(!v.empty());
+	size_t largest_index = 0;
+	for (size_t i = 1; i < v.size(); ++i) {
+		if (v[i] > v[largest_index]) {
+			largest_index = i;
+		}
+	}
+	return v[largest_index];
 }
 
 } // namespace emilib
