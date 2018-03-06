@@ -1,4 +1,4 @@
-// By Emil Ernerfeldt 2012-2016
+// By Emil Ernerfeldt 2012-2018
 // LICENSE:
 //   This software is dual-licensed to the public domain and under the following
 //   license: you are granted a perpetual, irrevocable license to copy, modify,
@@ -343,26 +343,27 @@ void Texture::set_mip_data(const void* data_ptr, Size size, unsigned mip_level)
 	switch (_format)
 	{
 		case ImageFormat::Alpha8:
-			src_format = GL_RED;
-			dst_format = GL_RED;
+			src_format = dst_format = GL_RED;
 			element_format = GL_UNSIGNED_BYTE;
 			break;
 
 		case ImageFormat::Red8:
-			src_format = GL_RED;
-			dst_format = src_format;
+			src_format = dst_format = GL_RED;
 			element_format = GL_UNSIGNED_BYTE;
 			break;
 
+		case ImageFormat::RedF32:
+			src_format = dst_format = GL_RED;
+			element_format = GL_FLOAT;
+			break;
+
 		case ImageFormat::RGB24:
-			src_format = GL_RGB;
-			dst_format = GL_RGB;
+			src_format = dst_format = GL_RGB;
 			element_format = GL_UNSIGNED_BYTE;
 			break;
 
 		case ImageFormat::RGBA32:
-			src_format = GL_RGBA;
-			dst_format = GL_RGBA;
+			src_format = dst_format = GL_RGBA;
 			element_format = GL_UNSIGNED_BYTE;
 			break;
 
@@ -552,14 +553,15 @@ unsigned Texture::bits_per_pixel() const
 		return _bpp;
 	} else {
 		switch (_format) {
-			case ImageFormat::Alpha8:  return  1 * 8;
-			case ImageFormat::Red8:    return  1 * 8;
-			case ImageFormat::RGB24:   return  3 * 8;
-			case ImageFormat::RGBA32:  return  4 * 8;
-			case ImageFormat::BGRA32:  return  4 * 8;
-			case ImageFormat::AlphaHF: return  2 * 8;
-			case ImageFormat::RGBAHF:  return  8 * 8;
-			case ImageFormat::RGBAf:   return 16 * 8;
+			case ImageFormat::Alpha8:  return  8;
+			case ImageFormat::AlphaHF: return 16;
+			case ImageFormat::BGRA32:  return 32;
+			case ImageFormat::RedF32:  return 32;
+			case ImageFormat::Red8:    return  8;
+			case ImageFormat::RGB24:   return 24;
+			case ImageFormat::RGBA32:  return 32;
+			case ImageFormat::RGBAf:   return 4 * 32;
+			case ImageFormat::RGBAHF:  return 4 * 16;
 			default: ABORT_F("Unknown image format: %d", (int)_format);
 		}
 	}

@@ -1,4 +1,4 @@
-// By Emil Ernerfeldt 2012-2016
+// By Emil Ernerfeldt 2012-2018
 // LICENSE:
 //   This software is dual-licensed to the public domain and under the following
 //   license: you are granted a perpetual, irrevocable license to copy, modify,
@@ -104,13 +104,14 @@ enum class ImageFormat
 {
 	INVALID,
 	Alpha8,  ///< One byte
+	AlphaHF, ///< 16-bit half-float, alpha channel only.
+	BGRA32,  ///< GL_BGRA - Four bytes
 	Red8,    ///< One byte
+	RedF32,  ///< 32bit float Red channel
 	RGB24,   ///< Three bytes
 	RGBA32,  ///< Four bytes
-	BGRA32,  ///< GL_BGRA - Four bytes
-	AlphaHF, ///< 16-bit half-float, alpha channel only.
-	RGBAHF,  ///< RGBA Half-float
 	RGBAf,   ///< 32bit float RGBA
+	RGBAHF,  ///< RGBA Half-float
 
 	// Available as render-target:
 	//RGBA16F_EXT                                  0x881A
