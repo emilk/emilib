@@ -1,4 +1,4 @@
-// By Emil Ernerfeldt 2012-2016
+// By Emil Ernerfeldt 2012-2018
 // LICENSE:
 //   This software is dual-licensed to the public domain and under the following
 //   license: you are granted a perpetual, irrevocable license to copy, modify,
@@ -72,7 +72,7 @@ public:
 	/// Note: data MUST be in the correct format.
 	void set_data(const void* data);
 
-	void set_mip_data(const void* data, Size size, unsigned level);
+	void set_mip_data(const void* data, Size size, int level);
 
 	const ImageFormat& format() const { return _format; }
 
@@ -87,15 +87,15 @@ public:
 	void set_debug_name(const std::string& debug_name);
 
 	/// We must have an id
-	void bind(unsigned tu = 0) const;
+	void bind(int tu = 0) const;
 
-	unsigned width()  const { return _size.x;  }
-	unsigned height() const { return _size.y; }
+	int width()  const { return _size.x;  }
+	int height() const { return _size.y; }
 	const Size& size() const { return _size; }
 
 	/// Use to override when you know the format is compressed
-	void set_bits_per_pixel(unsigned bpp);
-	unsigned bits_per_pixel() const;
+	void set_bits_per_pixel(int bpp);
+	int bits_per_pixel() const;
 	size_t memory_usage() const; ///< in bytes
 
 	/// 0 if not generated
@@ -117,7 +117,7 @@ private:
 
 	GLuint      _id       = 0;
 	bool        _has_data = false;
-	unsigned    _bpp      = 0;
+	int         _bpp      = 0;
 
 	// The effecto of set_params is deferred until bind() so we can set_params from non-render thread.
 	mutable TexParams _params;
@@ -465,7 +465,7 @@ class TempViewPort
 public:
 	explicit TempViewPort(Rectangle bb);
 	explicit TempViewPort(Size size);
-	explicit TempViewPort(unsigned width, unsigned height) : TempViewPort(Size{width, height}) {}
+	explicit TempViewPort(int width, int height) : TempViewPort(Size{width, height}) {}
 	~TempViewPort();
 
 	/// Call when we acquire context or resize window.
@@ -536,8 +536,8 @@ public:
 
 	GLuint      id()     const;
 	const Size& size()   const { return _size;   }
-	unsigned    width()  const { return _size.x; }
-	unsigned    height() const { return _size.y; }
+	int         width()  const { return _size.x; }
+	int         height() const { return _size.y; }
 
 	/// Call after painting if color_mipmap is set.
 	void generate_color_mipmap();

@@ -164,7 +164,7 @@ bool supports_mipmaps_for(Size size)
 #endif
 }
 
-unsigned max_texture_size()
+int max_texture_size()
 {
 	static int s_max_size = [](){
 		int size;
@@ -323,7 +323,7 @@ void Texture::set_data(const void* data_ptr)
 	}
 }
 
-void Texture::set_mip_data(const void* data_ptr, Size size, unsigned mip_level)
+void Texture::set_mip_data(const void* data_ptr, Size size, int mip_level)
 {
 	ERROR_CONTEXT("Texture name",   _debug_name.c_str());
 	ERROR_CONTEXT("Texture width",  size.x);
@@ -403,8 +403,8 @@ void Texture::set_mip_data(const void* data_ptr, Size size, unsigned mip_level)
 
 	CHECK_FOR_GL_ERROR;
 
-	CHECK_LE_F(size.x, max_texture_size(), "%s too large (%u x %u), max is %u", _debug_name.c_str(), size.x, size.y, max_texture_size());
-	CHECK_LE_F(size.y, max_texture_size(), "%s too large (%u x %u), max is %u", _debug_name.c_str(), size.x, size.y, max_texture_size());
+	CHECK_LE_F(size.x, max_texture_size(), "%s too large (%d x %d), max is %d", _debug_name.c_str(), size.x, size.y, max_texture_size());
+	CHECK_LE_F(size.y, max_texture_size(), "%s too large (%d x %d), max is %d", _debug_name.c_str(), size.x, size.y, max_texture_size());
 
 	glTexImage2D(GL_TEXTURE_2D, mip_level, dst_format,
 					 (GLsizei)size.x, (GLsizei)size.y, 0,
@@ -422,7 +422,7 @@ bool Texture::is_power_of_two() const
 	return gl::is_power_of_two(_size);
 }
 
-void Texture::bind(unsigned tu) const
+void Texture::bind(int tu) const
 {
 	CHECK_NE_F(_id, 0, "Texture not loaded: '%s'", _debug_name.c_str());
 	NAME_PAINT_FUNCTION();
@@ -542,12 +542,12 @@ void Texture::set_filtering(TexFilter filter) const
 // }
 
 // Use to override, e.g. when you know the format is compressed
-void Texture::set_bits_per_pixel(unsigned bpp)
+void Texture::set_bits_per_pixel(int bpp)
 {
 	_bpp = bpp;
 }
 
-unsigned Texture::bits_per_pixel() const
+int Texture::bits_per_pixel() const
 {
 	if (_bpp != 0) {
 		return _bpp;
@@ -650,8 +650,8 @@ Texture load_uncompressed_pvr2_from_memory(
 			tex.set_mip_data(data_start, size, level);
 
 			data_start += size.x * size.y * bytes_per_pixel;
-			size.x = std::max(1u, size.x/2);
-			size.y = std::max(1u, size.y/2);
+			size.x = std::max(1, size.x / 2);
+			size.y = std::max(1, size.y / 2);
 		}
 		return tex;
 	}
@@ -1510,7 +1510,7 @@ const Rectangle& TempViewPort::back_buffer()
 
 Size TempViewPort::back_buffer_size()
 {
-	return {(unsigned)s_current_vp.width, (unsigned)s_current_vp.height};
+	return {s_current_vp.width, s_current_vp.height};
 }
 
 // ----------------------------------------------------------------------------

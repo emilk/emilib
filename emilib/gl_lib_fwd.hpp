@@ -88,7 +88,7 @@ enum class Usage
 
 struct Size
 {
-	unsigned x, y;
+	int x, y;
 };
 
 struct Rectangle
