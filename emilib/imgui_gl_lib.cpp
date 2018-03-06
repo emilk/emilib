@@ -1,4 +1,4 @@
-// By Emil Ernerfeldt 2015-2016
+// By Emil Ernerfeldt 2015-2018
 // LICENSE:
 //   This software is dual-licensed to the public domain and under the following
 //   license: you are granted a perpetual, irrevocable license to copy, modify,
@@ -46,11 +46,11 @@ static void paint_imgui_draw_lists(ImDrawData* draw_data)
 
 	// Render command lists
 	for (int n = 0; n < draw_data->CmdListsCount; ++n)
-    {
-        const ImDrawList* cmd_list = draw_data->CmdLists[n];
-        const ImDrawIdx* idx_buffer = &cmd_list->IdxBuffer[0];
+	{
+		const ImDrawList* cmd_list = draw_data->CmdLists[n];
+		const ImDrawIdx* idx_buffer = &cmd_list->IdxBuffer[0];
 
-        ImDrawVert* vert_dest = s_mesh_painter->allocate_vert<ImDrawVert>(cmd_list->VtxBuffer.size());
+		ImDrawVert* vert_dest = s_mesh_painter->allocate_vert<ImDrawVert>(cmd_list->VtxBuffer.size());
 		std::copy_n(&cmd_list->VtxBuffer[0], cmd_list->VtxBuffer.size(), vert_dest);
 
 		for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.size(); cmd_i++)
@@ -59,6 +59,7 @@ static void paint_imgui_draw_lists(ImDrawData* draw_data)
 			if (pcmd->UserCallback)
 			{
 				pcmd->UserCallback(cmd_list, pcmd);
+				s_prog->bind(); // The UserCallback probable messed this up
 			}
 			else
 			{
@@ -106,7 +107,7 @@ gl::Program_UP load_shader()
 
 		void main() {
 			if (v_pixel.x < u_clip.x || u_clip.z < v_pixel.x ||
-			    v_pixel.y < u_clip.y || u_clip.w < v_pixel.y)
+				v_pixel.y < u_clip.y || u_clip.w < v_pixel.y)
 			{
 				discard;
 			}
@@ -133,6 +134,7 @@ void bind_imgui_painting()
 	int tex_x, tex_y;
 	io.Fonts->GetTexDataAsRGBA32(&tex_data, &tex_x, &tex_y);
 
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex_x, tex_y, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data);
 	io.Fonts->TexID = (void *)(intptr_t)tex_id;
 
@@ -143,14 +145,16 @@ void bind_imgui_painting()
 		gl::VertComp::Vec2("a_tc"),
 		gl::VertComp::RGBA32("a_color"),
 	}));
+}
 
-	io.RenderDrawListsFn = paint_imgui_draw_lists;
+void paint_imgui()
+{
+	paint_imgui_draw_lists(ImGui::GetDrawData());
 }
 
 void unbind_imgui_painting()
 {
 	ImGuiIO& io = ImGui::GetIO();
-	io.RenderDrawListsFn = nullptr;
 	io.Fonts = nullptr;
 	s_prog = nullptr;
 	s_mesh_painter = nullptr;

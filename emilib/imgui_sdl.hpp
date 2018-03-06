@@ -1,4 +1,4 @@
-// By Emil Ernerfeldt 2015-2016
+// By Emil Ernerfeldt 2015-2018
 // LICENSE:
 //   This software is dual-licensed to the public domain and under the following
 //   license: you are granted a perpetual, irrevocable license to copy, modify,
@@ -46,6 +46,7 @@ namespace emilib {
  *		glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
  *
  *		imgui_sdl.paint();
+ *		gl::paint_imgui();
  *
  *		SDL_GL_SwapWindow(sdl.window);
  *	}

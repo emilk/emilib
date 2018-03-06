@@ -1,4 +1,4 @@
-// By Emil Ernerfeldt 2015-2016
+// By Emil Ernerfeldt 2015-2018
 // LICENSE:
 //   This software is dual-licensed to the public domain and under the following
 //   license: you are granted a perpetual, irrevocable license to copy, modify,
@@ -81,11 +81,13 @@ void ImGui_SDL::new_frame()
 		io.MousePos = {(float)mouse_x, (float)mouse_y};
 		io.MouseDown[0] = (mouse_state & SDL_BUTTON_LMASK);
 		io.MouseDown[1] = (mouse_state & SDL_BUTTON_RMASK);
+		io.MouseDown[2] = (mouse_state & SDL_BUTTON_MMASK);
 	} else {
 		io.MouseDown[0] = false;
 		io.MouseDown[1] = false;
-		io.MousePos.x = -1;
-		io.MousePos.y = -1;
+		io.MouseDown[2] = false;
+		io.MousePos.x = -FLT_MAX;
+		io.MousePos.y = -FLT_MAX;
 
 		memset(io.KeysDown, 0, sizeof(io.KeysDown));
 		io.KeyShift = false;
@@ -93,6 +95,9 @@ void ImGui_SDL::new_frame()
 		io.KeyAlt   = false;
 		io.KeySuper = false;
 	}
+
+	// Hide OS mouse cursor if ImGui is drawing it
+	SDL_ShowCursor(io.MouseDrawCursor ? 0 : 1);
 
 	// Start the frame
 	ImGui::NewFrame();
