@@ -16,7 +16,6 @@
 
 #include "file_system.hpp"
 #include "mem_map.hpp"
-#include "string_interning.hpp"
 #include "wav.hpp"
 
 namespace al {
@@ -58,42 +57,72 @@ void check_for_al_error()
 
 // ----------------------------------------------------------------------------
 
-Sound Sound::load_wav(const char* path)
+Buffer Buffer::make_wav(const std::string& path)
 {
-	ERROR_CONTEXT("Loading sound", path);
+	Buffer buffer(path);
+	buffer.load_wav(path);
+	return buffer;
+}
 
+Buffer::Buffer(const std::string& debug_name) : _debug_name(debug_name)
+{
 	check_for_al_error();
-	ALuint buffer_id;
-	alGenBuffers(1, &buffer_id);
+	alGenBuffers(1, &_buffer_id);
 	check_for_al_error();
+}
 
-	const auto mem_map = emilib::MemMap(path);
+/// Fill buffer with the contents of the given wav file.
+void Buffer::load_wav(const std::string& path)
+{
+	ERROR_CONTEXT("Loading wav", path.c_str());
+	const auto mem_map = emilib::MemMap(path.c_str());
 	const emilib::Wav wav = emilib::parse_wav(mem_map.data(), mem_map.size());
 
-	// CHECK_F(wav.channels == 1, "We don't support attenuation of stereo sound wav:s");
 	if (wav.channels != 1) {
-		LOG_F(ERROR, "We don't support attenuation of stereo sound wav:s: '%s'", path);
+		LOG_F(WARNING, "We don't support attenuation of stereo sound wav:s: '%s'", path);
 	}
 
 	ALenum format = wav.channels == 1 ?
 		(wav.bits_per_sample == 16 ? AL_FORMAT_MONO16   : AL_FORMAT_MONO8  ) :
 		(wav.bits_per_sample == 16 ? AL_FORMAT_STEREO16 : AL_FORMAT_STEREO8);
 
-	alBufferData(buffer_id, format, wav.data, (ALsizei)wav.data_size, wav.sample_rate);
+	CHECK_F(_buffer_id != 0);
+	alBufferData(_buffer_id, format, wav.data, (ALsizei)wav.data_size, wav.sample_rate);
 
 	check_for_al_error();
-
-	return Sound(path, buffer_id, (unsigned)wav.data_size);
 }
 
-Sound::Sound(const char* debug_name, ALuint buffer_id, unsigned size_bytes)
-	: _debug_name(emilib::intern_string(debug_name))
-	, _buffer_id(buffer_id)
-	, _size_bytes(size_bytes)
+void Buffer::load_mono_float(float sample_rate, const float* samples, size_t num_samples)
 {
+	std::vector<int16_t> samples16(num_samples);
+	bool did_clip = false;
+	for (size_t i = 0; i < num_samples; ++i) {
+		float sample = samples[i] * 32768.0f;
+		if (sample < -32768.0f) {
+			sample = -32768.0f;
+			did_clip = true;
+		}
+		if (sample > 32767.0f) {
+			sample = 32767.0f;
+			did_clip = true;
+		}
+		samples16[i] = std::round(sample);
+	}
+	if (did_clip) {
+		LOG_F(WARNING, "Clipped sound '%s'", _debug_name.c_str());
+	}
+
+	load_mono_int16(sample_rate, samples16.data(), samples16.size());
 }
 
-Sound::~Sound()
+void Buffer::load_mono_int16(float sample_rate, const int16_t* samples, size_t num_samples)
+{
+	CHECK_F(_buffer_id != 0);
+	alBufferData(_buffer_id, AL_FORMAT_MONO16, samples, (ALsizei)num_samples * sizeof(int16_t), sample_rate);
+	check_for_al_error();
+}
+
+Buffer::~Buffer()
 {
 	check_for_al_error();
 	if (_buffer_id) {
@@ -102,28 +131,28 @@ Sound::~Sound()
 	}
 }
 
-int Sound::get_freqency() const
+int Buffer::get_freqency() const
 {
 	int temp;
 	alGetBufferi(_buffer_id, AL_FREQUENCY, &temp);
 	return temp;
 }
 
-int Sound::get_bits() const
+int Buffer::get_bits() const
 {
 	int temp;
 	alGetBufferi(_buffer_id, AL_BITS, &temp);
 	return temp;
 }
 
-int Sound::get_channels() const
+int Buffer::get_channels() const
 {
 	int temp;
 	alGetBufferi(_buffer_id, AL_CHANNELS, &temp);
 	return temp;
 }
 
-int Sound::get_size() const
+int Buffer::get_size() const
 {
 	int temp;
 	alGetBufferi(_buffer_id, AL_SIZE, &temp);
@@ -177,18 +206,18 @@ Source::~Source()
 	}
 }
 
-void Source::set_sound(Sound_SP sound)
+void Source::set_buffer(Buffer_SP buffer)
 {
-	if (_sound != sound) {
+	if (_buffer != buffer) {
 		stop();
-		_sound = sound;
-		CHECK_NOTNULL_F(_sound);
+		_buffer = buffer;
+		CHECK_NOTNULL_F(_buffer);
 		check_for_al_error();
-		CHECK_F(alIsBuffer(_sound->_buffer_id));
+		CHECK_F(alIsBuffer(_buffer->_buffer_id));
 		check_for_al_error();
 		CHECK_F(alIsSource(_source));
 		check_for_al_error();
-		alSourcei(_source, AL_BUFFER, _sound->_buffer_id);
+		alSourcei(_source, AL_BUFFER, _buffer->_buffer_id);
 		check_for_al_error();
 	}
 }
@@ -432,7 +461,7 @@ SoundMngr::SoundMngr(const std::string& sfx_dir)
 SoundMngr::~SoundMngr()
 {
 	_sources.clear();
-	_map.clear();
+	_buffer_map.clear();
 
 	alcMakeContextCurrent(nullptr);
 
@@ -452,25 +481,24 @@ bool SoundMngr::is_working() const
 	return _device != nullptr && _context != nullptr;
 }
 
-Sound_SP SoundMngr::load_sound(const std::string& sound_name, bool is_hot)
+Buffer_SP SoundMngr::load_buffer(const std::string& sound_name, bool is_hot)
 {
-	auto it = _map.find(sound_name);
+	auto it = _buffer_map.find(sound_name);
 
-	if (it == _map.end()) {
-		Sound_SP sound_ptr;
+	if (it == _buffer_map.end()) {
+		Buffer_SP buffer_ptr;
 		try {
 			if (is_hot) {
 				LOG_F(WARNING, "Hot-Loading sound '%s'...", sound_name.c_str());
 			}
 			auto path = _sfx_dir + sound_name;
-			auto sound = Sound::load_wav(path.c_str());
-			sound_ptr = std::make_shared<Sound>(std::move(sound));
+			buffer_ptr = std::make_shared<Buffer>(Buffer::make_wav(path.c_str()));
 			check_for_al_error();
 		} catch (std::exception& e) {
 			LOG_F(ERROR, "Failed to load sound '%s': %s", sound_name.c_str(), e.what());
 		}
-		_map[sound_name] = sound_ptr;
-		return sound_ptr;
+		_buffer_map[sound_name] = buffer_ptr;
+		return buffer_ptr;
 	} else {
 		return it->second;
 	}
@@ -478,7 +506,7 @@ Sound_SP SoundMngr::load_sound(const std::string& sound_name, bool is_hot)
 
 void SoundMngr::prefetch(const std::string& sound_name)
 {
-	load_sound(sound_name, false);
+	load_buffer(sound_name, false);
 }
 
 void SoundMngr::prefetch_all(const std::string& sub_folder)
@@ -493,9 +521,9 @@ void SoundMngr::prefetch_all(const std::string& sub_folder)
 
 Source_SP SoundMngr::play(const std::string& sound_name)
 {
-	if (auto sound = load_sound(sound_name, true)) {
+	if (auto buffer = load_buffer(sound_name, true)) {
 		if (auto source = get_source()) {
-			source->set_sound(sound);
+			source->set_buffer(buffer);
 			source->play();
 			return source;
 		}
@@ -566,7 +594,7 @@ void SoundMngr::print_memory_usage() const
 {
 	size_t size_bytes = 0;
 	unsigned count = 0;
-	for (auto&& p : _map) {
+	for (auto&& p : _buffer_map) {
 		count += 1;
 		size_bytes += p.second->size_bytes();
 	}

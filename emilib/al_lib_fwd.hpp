@@ -10,8 +10,8 @@
 
 namespace al {
 
-class Sound;
-using Sound_SP = std::shared_ptr<Sound>;
+class Buffer;
+using Buffer_SP = std::shared_ptr<Buffer>;
 
 class Source;
 using Source_SP = std::shared_ptr<Source>;

@@ -1,10 +1,11 @@
-// By Emil Ernerfeldt 2002-2017
+// By Emil Ernerfeldt 2002-2018
 // LICENSE:
 //   This software is dual-licensed to the public domain and under the following
 //   license: you are granted a perpetual, irrevocable license to copy, modify,
 //   publish, and distribute this file as you see fit.
 // Wrapper around OpenAL, a library for playing sounds.
 // HISTORY: Originally from around 2002.
+// 2018: Refactor Sound and rename it as Buffer.
 
 #pragma once
 
@@ -40,14 +41,23 @@ void check_for_al_error();
 
 // ----------------------------------------------------------------------------
 
-/// A loaded sound. Can be played via Source. Many Source:s can play the same Sound at the same.
-class Sound
+/// A loaded sound. Can be played via Source. Many Source:s can play the same Buffer at the same.
+class Buffer
 {
 public:
-	static Sound load_wav(const char* path);
+	static Buffer make_wav(const std::string& path);
 
-	Sound(Sound&& o) noexcept : _debug_name(o._debug_name), _buffer_id(o._buffer_id), _size_bytes(o._size_bytes) { o._buffer_id = 0; o._size_bytes = 0; }
-	~Sound();
+	/// Create and empty Buffer
+	explicit Buffer(const std::string& debug_name);
+
+	/// Fill Buffer with the contents of the given wav file.
+	void load_wav(const std::string& path);
+
+	void load_mono_float(float sample_rate, const float* samples, size_t num_samples);
+	void load_mono_int16(float sample_rate, const int16_t* samples, size_t num_samples);
+
+	Buffer(Buffer&& o) noexcept : _debug_name(o._debug_name), _buffer_id(o._buffer_id), _size_bytes(o._size_bytes) { o._buffer_id = 0; o._size_bytes = 0; }
+	~Buffer();
 
 	/// Memory usage.
 	unsigned size_bytes() const { return _size_bytes; }
@@ -59,14 +69,12 @@ public:
 
 private:
 	friend class Source;
-	Sound(const Sound&) = delete;
-	Sound& operator=(const Sound&) = delete;
+	Buffer(const Buffer&) = delete;
+	Buffer& operator=(const Buffer&) = delete;
 
-	Sound(const char* debug_name, unsigned buffer_id, unsigned size_bytes);
-
-	const char* _debug_name;
-	unsigned    _buffer_id;
-	unsigned    _size_bytes;
+	std::string _debug_name;
+	unsigned    _buffer_id = 0;
+	unsigned    _size_bytes = 0;
 };
 
 // ----------------------------------------------------------------------------
@@ -97,8 +105,8 @@ public:
 	void stop();
 	void rewind();
 
-	void set_sound(Sound_SP sound);
-	const Sound_SP& sound() const;
+	void set_buffer(Buffer_SP buffer);
+	const Buffer_SP& buffer() const;
 
 	/// Volume, [0,1]. >1 MAY work.
 	void set_gain(float gain);
@@ -164,9 +172,9 @@ private:
 	Source(const Source&) = delete;
 	Source& operator=(const Source&) = delete;
 
-	unsigned _source;
-	Sound_SP _sound;
-	float    _gain = 1;
+	unsigned  _source;
+	Buffer_SP _buffer;
+	float     _gain = 1;
 };
 
 // ----------------------------------------------------------------------------
@@ -252,10 +260,10 @@ public:
 	void print_memory_usage() const;
 
 private:
-	Sound_SP load_sound(const std::string& sound_name, bool is_hot);
+	Buffer_SP load_buffer(const std::string& sound_name, bool is_hot);
 	Source_SP get_source();
 
-	using SoundMap   = std::unordered_map<std::string, Sound_SP>;
+	using BufferMap  = std::unordered_map<std::string, Buffer_SP>;
 	using SourceList = std::vector<Source_SP>;
 
 	std::string _sfx_dir;
@@ -263,7 +271,7 @@ private:
 	ALCcontext* _context = nullptr;
 	Listener    _listener;
 
-	SoundMap    _map;
+	BufferMap   _buffer_map;
 	SourceList  _sources;
 };
 
