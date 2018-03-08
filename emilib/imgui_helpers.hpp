@@ -31,6 +31,14 @@ using GLuint = uint32_t;
 
 namespace imgui_helpers {
 
+/* Examples:
+    if (ImGui::BeginMainMenuBar()) {
+        imgui_helpers::show_im_gui_menu();
+        ImGui::EndMainMenuBar();
+    }
+*/
+void show_im_gui_menu();
+
 /// Pick a size that maintains the aspect ration of the given image.
 ImVec2 aspect_correct_image_size(const ImVec2& desired_size, const ImVec2& canvas_size, const ImVec2& minimum_size);
 

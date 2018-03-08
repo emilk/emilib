@@ -8,6 +8,53 @@
 
 namespace imgui_helpers {
 
+void show_im_gui_menu()
+{
+    static bool s_show_imgui_demo_window  = false;
+    static bool s_show_imgui_metrics      = false;
+    static bool s_show_imgui_style_editor = false;
+    static bool s_show_imgui_user_guide   = false;
+
+    if (ImGui::BeginMenu("ImGui")) {
+        const double fps = ImGui::GetIO().Framerate;
+        ImGui::Text("%.1f FPS (%.1f ms/frame) rolling average", fps, 1000.0 / fps);
+        ImGui::Checkbox("Show ImGui example",      &s_show_imgui_demo_window);
+        ImGui::Checkbox("Show ImGui metrics",      &s_show_imgui_metrics);
+        ImGui::Checkbox("Show ImGui style editor", &s_show_imgui_style_editor);
+        ImGui::Checkbox("Show ImGui user guide",   &s_show_imgui_user_guide);
+
+        ImGui::SliderInt("Log stderr verbosity", &loguru::g_stderr_verbosity, 0, 10);
+
+        if (ImGui::Button("Classic Style")) { ImGui::StyleColorsClassic(); }
+        if (ImGui::Button("Dark Style"))    { ImGui::StyleColorsDark();    }
+        if (ImGui::Button("Light Style"))   { ImGui::StyleColorsLight();   }
+
+        ImGui::EndMenu();
+    }
+
+    if (s_show_imgui_demo_window) {
+        ImGui::ShowDemoWindow(&s_show_imgui_demo_window);
+    }
+
+    if (s_show_imgui_metrics) {
+        ImGui::ShowMetricsWindow(&s_show_imgui_metrics);
+    }
+
+    if (s_show_imgui_style_editor) {
+        if (ImGui::Begin("ImGui Style Editor", &s_show_imgui_style_editor)) {
+            ImGui::ShowStyleEditor();
+        }
+        ImGui::End();
+    }
+
+    if (s_show_imgui_user_guide) {
+        if (ImGui::Begin("ImGui User Guide", &s_show_imgui_user_guide)) {
+            ImGui::ShowUserGuide();
+        }
+        ImGui::End();
+    }
+}
+
 ImVec2 aspect_correct_image_size(const ImVec2& desired_size, const ImVec2& canvas_size, const ImVec2& minimum_size)
 {
     const auto desired_width  = std::max(1.0f, desired_size.x);
