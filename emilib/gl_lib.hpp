@@ -185,6 +185,7 @@ public:
 	template<typename T>
 	void set_uniform(const std::string& name, const T& value) const
 	{
+		ERROR_CONTEXT("uniform", name.c_str());
 		set_uniform(get_uniform_loc(name), value);
 	}
 
