@@ -59,7 +59,10 @@ static void paint_imgui_draw_lists(ImDrawData* draw_data)
 			if (pcmd->UserCallback)
 			{
 				pcmd->UserCallback(cmd_list, pcmd);
-				s_prog->bind(); // The UserCallback probable messed this up
+
+				// Restore some state UserCallback may have messed up:
+				s_prog->bind();
+				glActiveTexture(GL_TEXTURE0);
 			}
 			else
 			{
