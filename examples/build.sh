@@ -1,5 +1,10 @@
-rm *.bin
+rm -f *.bin
 touch *.cpp
 
-g++ --std=c++14 -Wall -I .. -I . coroutine_example.cpp -o coroutine_example
-g++ --std=c++14 -Wall -I .. -I . strprintf_example.cpp -o strprintf_example
+function build
+{
+	g++ --std=c++14 -Wall -I .. -I . $1.cpp -o $1.bin
+}
+
+build coroutine_example
+build strprintf_example
