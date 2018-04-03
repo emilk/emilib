@@ -1,4 +1,4 @@
-// By Emil Ernerfeldt 2014-2016
+// By Emil Ernerfeldt 2014-2017
 // LICENSE:
 //   This software is dual-licensed to the public domain and under the following
 //   license: you are granted a perpetual, irrevocable license to copy, modify,
@@ -195,7 +195,7 @@ public:
 	{
 		clear();
 		reserve(other.size());
-		insert(cbegin(other), cend(other));
+		insert(other.cbegin(), other.cend());
 		return *this;
 	}
 
@@ -408,6 +408,22 @@ public:
 	void insert_unique(std::pair<KeyT, ValueT>&& p)
 	{
 		insert_unique(std::move(p.first), std::move(p.second));
+	}
+
+	void insert_or_assign(const KeyT& key, ValueT&& value)
+	{
+		check_expand_need();
+
+		auto bucket = find_or_allocate(key);
+
+		// Check if inserting a new value rather than overwriting an old entry
+		if (_states[bucket] == State::FILLED) {
+			_pairs[bucket].second = value;
+		} else {
+			_states[bucket] = State::FILLED;
+			new(_pairs + bucket) PairT(key, value);
+			_num_filled++;
+		}
 	}
 
 	/// Return the old value or ValueT() if it didn't exist.

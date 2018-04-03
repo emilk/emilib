@@ -45,6 +45,10 @@ TEST_CASE( "[string -> string]", "HashMap" ) {
 	REQUIRE(map["4"] == "four");
 	REQUIRE(map["5"] == "five");
 	REQUIRE(map["6"] == "six");
+	map["6"] = "sechs";
+	REQUIRE(map["6"] == "sechs");
+	map.insert_or_assign("6", "seis");
+	REQUIRE(map["6"] == "seis");
 }
 
 TEST_CASE( "copy+moving", "HashMap" ) {
