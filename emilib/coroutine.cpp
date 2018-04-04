@@ -87,6 +87,7 @@ void Coroutine::stop()
 		_thread->join();
 		CHECK_F(_is_done);
 		CHECK_F(_control_is_outer);
+		_mutex.unlock(); // We need to unlock before destroying it.
 		_thread = nullptr;
 	}
 }
