@@ -40,7 +40,7 @@ class Coroutine
 {
 public:
 	/// A running count of all coroutines will be appended to debug_name.
-	/// The resulting name isused to name the inner thead and will also be written on errors.
+	/// The resulting name is used to name the inner thread and will also be written on errors.
 	Coroutine(const char* debug_name, std::function<void(InnerControl& ic)> fun);
 
 	/// Will stop() the coroutine, if not already done().
@@ -49,6 +49,7 @@ public:
 	/// Abort the inner thread, if not done().
 	void stop();
 
+	/// Give control to the coroutine thread.
 	/// dt = elapsed time since last call in seconds.
 	void poll(double dt);
 
@@ -85,7 +86,7 @@ public:
 	/// Total running time of this coroutine (sum of all dt).
 	double time() const { return _time; }
 
-	/// Inner thread: return execution to Outer thread until fun() is true.
+	/// Return execution to Outer thread until fun() is true.
 	template<typename Fun>
 	void wait_for(const Fun& fun)
 	{
@@ -94,23 +95,21 @@ public:
 		}
 	}
 
-	/// Inner thread: return execution to Outer thread for the next s seconds.
+	/// Return execution to Outer thread for the next s seconds.
 	void wait_sec(double s);
 
-	/// Inner thread: Return execution to Outer thread.
+	/// Return execution to Outer thread.
 	void yield();
 
-	/// Called from Outer:
-	void poll(double dt);
-
 private:
+	friend Coroutine;
 	Coroutine& _cr;
 	double     _time = 0;
 };
 
 // ----------------------------------------------------------------------------
 
-/// Helper for handling several coroutines
+/// Helper for handling several coroutines.
 class CoroutineSet
 {
 public:

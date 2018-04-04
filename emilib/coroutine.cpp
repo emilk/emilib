@@ -78,14 +78,15 @@ void Coroutine::stop()
 {
 	if (_thread) {
 		if (!_is_done) {
-			LOG_F(1, "Aborting coroutine '%s'...", _debug_name.c_str());
+			LOG_SCOPE_F(1, "Aborting coroutine '%s'...", _debug_name.c_str());
 			_abort = true;
 			while (!_is_done) {
-				_inner->poll(0);
+				poll(0);
 			}
 		}
 		_thread->join();
 		CHECK_F(_is_done);
+		CHECK_F(_control_is_outer);
 		_thread = nullptr;
 	}
 }
@@ -94,9 +95,21 @@ void Coroutine::stop()
 void Coroutine::poll(double dt)
 {
 	CHECK_NOTNULL_F(_inner);
-	if (!_is_done) {
-		_inner->poll(dt);
-	}
+	if (_is_done) { return; }
+
+	CHECK_EQ_F(_control_is_outer.load(), true);
+	_control_is_outer = false;
+	_mutex.unlock();
+	_cond.notify_one();
+
+	// Let the inner thread do it's business. Wait for it to return to us:
+
+	std::unique_lock<std::mutex> lock(_mutex);
+	_cond.wait(lock, [&]{ return !!_control_is_outer; });
+	lock.release(); // Keep the _mutex locked.
+	CHECK_EQ_F(_control_is_outer.load(), true);
+
+	_inner->_time += dt;
 }
 
 // ----------------------------------------------------------------------------
@@ -114,35 +127,17 @@ void InnerControl::yield()
 	_cr._mutex.unlock();
 	_cr._cond.notify_one();
 
-	// Let the outher thread do it's buisness. Wait for it to return to us:
+	// Let the outer thread do it's business. Wait for it to return to us:
 
 	std::unique_lock<std::mutex> lock(_cr._mutex);
 	_cr._cond.wait(lock, [=]{ return !_cr._control_is_outer; });
-	lock.release();
+	lock.release(); // Keep the _mutex locked.
 	CHECK_EQ_F(_cr._control_is_outer.load(), false);
 
 	if (_cr._abort) {
 		DLOG_F(1, "%s: throwing AbortException", _cr._debug_name.c_str());
 		throw AbortException();
 	}
-}
-
-// Called from Outer:
-void InnerControl::poll(double dt)
-{
-	CHECK_EQ_F(_cr._control_is_outer.load(), true);
-	_cr._control_is_outer = false;
-	_cr._mutex.unlock();
-	_cr._cond.notify_one();
-
-	// Let the inner thread do it's buisness. Wait for it to return to us:
-
-	std::unique_lock<std::mutex> lock(_cr._mutex);
-	_cr._cond.wait(lock, [=]{ return !!_cr._control_is_outer; });
-	lock.release();
-	CHECK_EQ_F(_cr._control_is_outer.load(), true);
-
-	_time += dt;
 }
 
 // ----------------------------------------------------------------------------
