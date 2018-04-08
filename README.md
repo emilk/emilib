@@ -196,13 +196,13 @@ Include `gl_lib.hpp` and link with `gl_lib.cpp`. You can also make use of `gl_li
 Helper functions for creating an SDL2 OpenGL window.
 
 #### imgui_gl_lib.hpp/.cpp
-Provides bindings between my `gl_lib` and the wonderful [Dear Imgui](https://github.com/ocornut/imgui) GUI library. Can be used alone or together with `emilib/imgui_sdl.hpp/.cpp`.
+Provides bindings between my `gl_lib` and the wonderful [Dear ImGui](https://github.com/ocornut/imgui) GUI library. Can be used alone or together with `emilib/imgui_sdl.hpp/.cpp`.
 
 #### imgui_helpers.hpp/.cpp
-Helpers for working with the wonderful [Dear Imgui](https://github.com/ocornut/imgui) GUI library.
+Helpers for working with the wonderful [Dear ImGui](https://github.com/ocornut/imgui) GUI library.
 
 #### imgui_sdl.hpp/.cpp
-Bindings between [SDL2](https://www.libsdl.org/) and the wonderful [Dear Imgui](https://github.com/ocornut/imgui) GUI library. Can be used alone or together with `emilib/imgui_gl_lib.hpp/.cpp`.
+Bindings between [SDL2](https://www.libsdl.org/) and the wonderful [Dear ImGui](https://github.com/ocornut/imgui) GUI library. Can be used alone or together with `emilib/imgui_gl_lib.hpp/.cpp`.
 
 #### sdl_input.hpp/.cpp
 sdl_input wraps the input events from [SDL2](https://www.libsdl.org/) with an easy-to-use interface that is unified for desktop and mobile.

@@ -7,8 +7,6 @@
 #include "imgui_sdl.hpp"
 
 #include <algorithm>
-#include <codecvt>
-#include <locale>
 #include <string>
 
 #include <imgui/imgui.h>
@@ -31,9 +29,11 @@ ImGui_SDL::ImGui_SDL(float width_points, float height_points, float pixels_per_p
 	, _height_points(height_points)
 	, _pixels_per_point(pixels_per_point)
 {
+	ImGui::CreateContext();
+
 	ImGuiIO& io = ImGui::GetIO();
 	io.DisplaySize = {width_points, height_points};
-	io.DeltaTime = 1.0f/60.0f;
+	io.DeltaTime = 1.0f / 60.0f; // Whatever – this will be properly measured later on.
 
 	// Keyboard mapping. ImGui will use those indices to peek into the io.KeyDown[] array.
 	io.KeyMap[ImGuiKey_Tab]        = SDL_SCANCODE_TAB;
@@ -60,14 +60,14 @@ ImGui_SDL::ImGui_SDL(float width_points, float height_points, float pixels_per_p
 
 ImGui_SDL::~ImGui_SDL()
 {
-	ImGui::Shutdown();
+	ImGui::DestroyContext();
 }
 
 void ImGui_SDL::new_frame()
 {
 	ImGuiIO& io = ImGui::GetIO();
 
-	// Setup timestep
+	// Setup timestep:
 	static double s_last_time = 0.0f;
 	const double current_time = SDL_GetTicks() / 1000.0;
 	io.DeltaTime = (float)(current_time - s_last_time);
@@ -150,7 +150,6 @@ void ImGui_SDL::on_event(const SDL_Event& event)
 	}
 }
 
-// Key modifiers:
 bool ImGui_SDL::mod_command() const
 {
 	return ImGui::GetIO().KeyCtrl;

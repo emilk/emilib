@@ -11,7 +11,7 @@ union SDL_Event;
 namespace emilib {
 
 /**
- * Provides bindings between Dear ImGui and SDL. Handles input, copy-past etc.
+ * Provides bindings between Dear ImGui and SDL. Handles input, copy-paste etc.
  * Does NOT handle painting! Please use imgui_gl_lib.hpp for that.
  * You should have your own even loop and feed the events to ImGui_SDL.
  *
@@ -42,12 +42,11 @@ namespace emilib {
  *			quit = true;
  *		}
  *
+ *		imgui_sdl.paint();
+ *
  *		glClearColor(0.1f, 0.1f, 0.1f, 0);
  *		glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
- *
- *		imgui_sdl.paint();
  *		gl::paint_imgui();
- *
  *		SDL_GL_SwapWindow(sdl.window);
  *	}
  */
@@ -65,7 +64,10 @@ public:
 	bool interactive() const { return _interactive; }
 	void set_interactive(bool v) { _interactive = v; }
 
+	/// Call once at the start of each frame.
 	void new_frame();
+
+	/// Call once at the end of each frame.
 	void paint();
 
 	/// You must call this yourself!
@@ -75,6 +77,8 @@ public:
 	bool mod_command() const;
 	bool mod_shift() const;
 
+	/// Window sizes.
+	/// Note that on a High DPI display (e.g a retina Mac) there are many pixels per point.
 	float width_points()     const { return _width_points;     }
 	float height_points()    const { return _height_points;    }
 	float width_pixels()     const { return _pixels_per_point * _width_points;  }
