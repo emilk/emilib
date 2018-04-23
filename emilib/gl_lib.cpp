@@ -461,6 +461,12 @@ void Texture::bind(int tu) const
 	}
 }
 
+void Texture::unbind(int tu) const
+{
+	glActiveTexture(GL_TEXTURE0 + tu);
+	glBindTexture(GL_TEXTURE_2D, _id);
+}
+
 void Texture::set_wrap_mode(WrapMode s, WrapMode t) const
 {
 	NAME_PAINT_FUNCTION();
@@ -963,9 +969,17 @@ void Program::validate() const
 	validate_program(_program, _debug_name.c_str());
 // #endif
 }
+
 void Program::bind() const
 {
 	glUseProgram(_program);
+}
+
+void Program::unbind() const
+{
+	#if GLLIB_OPENGL_VERSION < 300
+		glUseProgram(0);
+	#endif
 }
 
 int Program::get_uniform_loc(const std::string& uniform_name) const
@@ -1337,6 +1351,8 @@ void bind_prog_and_attributes(const VertexFormat& vf, const Program& program)
 		glVertexAttribPointer(attrib_loc, vc.num_comps, vc.type, vc.normalize, (GLsizei)vf.stride(), (const void*)vc.offset);
 		CHECK_FOR_GL_ERROR;
 	}
+
+	program.unbind();
 }
 
 // ----------------------------------------------------------------------------
@@ -1354,11 +1370,19 @@ VBO::~VBO()
 	glDeleteBuffers(1, &_id);
 }
 
-void VBO::bind()
+void VBO::bind() const
 {
 	CHECK_FOR_GL_ERROR;
 	glBindBuffer(_type == Vertex ? GL_ARRAY_BUFFER : GL_ELEMENT_ARRAY_BUFFER, _id);
 	CHECK_FOR_GL_ERROR;
+}
+
+
+void VBO::unbind() const
+{
+	#if GLLIB_OPENGL_VERSION < 300
+		glBindBuffer(_type == Vertex ? GL_ARRAY_BUFFER : GL_ELEMENT_ARRAY_BUFFER, 0);
+	#endif
 }
 
 void VBO::upload()

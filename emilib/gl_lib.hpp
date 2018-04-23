@@ -88,6 +88,7 @@ public:
 
 	/// We must have an id
 	void bind(int tu = 0) const;
+	void unbind(int tu = 0) const;
 
 	int width()  const { return _size.x;  }
 	int height() const { return _size.y; }
@@ -175,6 +176,7 @@ public:
 	void validate() const;
 
 	void bind() const;
+	void unbind() const; /// Does nothing on OpenGL 3 and later.
 
 	int get_attribute_loc(const std::string& attrib_name) const;
 	int get_uniform_loc(const std::string& attrib_name) const;
@@ -325,7 +327,8 @@ public:
 	size_t size_bytes() const { return _buffer.size(); }
 
 	void upload();
-	void bind();
+	void bind() const;
+	void unbind() const; /// Does nothing on OpenGL 3 and later.
 
 private:
 	unsigned          _id    = -1;
