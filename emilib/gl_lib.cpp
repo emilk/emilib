@@ -1059,15 +1059,12 @@ Program compile_program(const std::string& vs, const std::string& fs, const std:
 
 #elif GLLIB_OPENGL_VERSION < 300
 
-	const auto common_prefix = R"(#version 150
+	const auto common_prefix = R"(#version 120
 
 	#define lowp
 	#define mediump
 	#define highp
 	#define precision
-
-	#define texture2D   texture
-	#define textureCube texture
 	)";
 
 	const auto vs_prefix = R"(
@@ -1077,7 +1074,7 @@ Program compile_program(const std::string& vs, const std::string& fs, const std:
 
 	const auto fs_prefix = R"(
 	#define fs_in varying
-	out vec4 out_FragColor;
+	#define out_FragColor gl_FragColor
 	)";
 
 #else
