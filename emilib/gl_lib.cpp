@@ -1511,22 +1511,22 @@ void MeshPainter::paint_strip(const Program& prog)
 
 void MeshPainter::paint(const Program& prog, GLenum mode)
 {
-	if (!_vao) {
-		_vao.reset(new VAO());
-		_vao->bind();
+	VAO_UP& vao = _vao_from_prog[prog.id()];
+
+	if (!vao) {
+		vao.reset(new VAO());
+		vao->bind();
 
 		_vertices.bind();
-
-		if (_indices) {
-			_indices->bind();
-		}
-
+		if (_indices) { _indices->bind(); }
 		bind_prog_and_attributes(_vf, prog);
-		_vao->unbind();
+
+		vao->unbind();
 	}
 
-	_vao->bind();
+	vao->bind();
 
+	_vertices.bind();
 	_vertices.upload(); // If needed.
 
 	if (_indices) {
@@ -1534,12 +1534,16 @@ void MeshPainter::paint(const Program& prog, GLenum mode)
 		_indices->bind();
 		CHECK_FOR_GL_ERROR;
 		glDrawElements(mode, (GLsizei)_indices->count(), GL_UNSIGNED_INT, (void*)0);
+		_indices->unbind();
 		CHECK_FOR_GL_ERROR;
 	} else {
 		CHECK_FOR_GL_ERROR;
 		glDrawArrays(mode, 0, (GLsizei)_vertices.count());
 		CHECK_FOR_GL_ERROR;
 	}
+
+	_vertices.unbind();
+	vao->unbind();
 
 	CHECK_FOR_GL_ERROR;
 }

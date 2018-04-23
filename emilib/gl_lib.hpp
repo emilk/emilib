@@ -10,9 +10,10 @@
 
 #pragma once
 
-#include <algorithm>
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <loguru.hpp>
@@ -410,11 +411,11 @@ public:
 	void invalidate_verts() { _vertices.invalidate(); }
 
 private:
-	Usage                _usage;
-	VBO                  _vertices;
-	std::unique_ptr<VBO> _indices;
-	std::unique_ptr<VAO> _vao;
-	VertexFormat         _vf;
+	Usage                              _usage;
+	VBO                                _vertices;
+	VBO_UP                             _indices;
+	std::unordered_map<GLuint, VAO_UP> _vao_from_prog;
+	VertexFormat                       _vf;
 };
 
 // ----------------------------------------------------------------------------
