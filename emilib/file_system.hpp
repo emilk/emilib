@@ -78,7 +78,8 @@ std::vector<std::string> files_in_directory(const std::string& path);
 
 void print_tree(const std::string& path, const std::string& indent = "");
 
-/// Call the given on all files in
+/// Call the given visitor on all files in the given path recursively.
+/// All returned paths will have the @p path as a prefix.
 void walk_dir(const std::string& path, const std::function<void(const std::string&)>& visitor);
 
 // ------------------------------------------------

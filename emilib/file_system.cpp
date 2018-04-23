@@ -275,7 +275,8 @@ void print_tree(const std::string& path, const std::string& indent)
 
 void walk_dir(const std::string& path, const std::function<void(const std::string&)>& visitor)
 {
-	CHECK_F(path.empty() || path[path.size() - 1] == '/');
+	CHECK_F(path.empty() || path[path.size() - 1] == '/',
+		"Expected a path to a directory ending with a slash, got '%s'", path.c_str());
 
 	auto directory = opendir(path.c_str());
 	if (!directory) {
