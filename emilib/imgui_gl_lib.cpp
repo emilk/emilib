@@ -144,8 +144,8 @@ void bind_imgui_painting()
 	s_prog = load_shader();
 
 	s_mesh_painter.reset(new gl::MeshPainter(gl::Usage::WRITE_MANY_READ_MANY, {
-		gl::VertComp::Vec2("a_pos"),
-		gl::VertComp::Vec2("a_tc"),
+		gl::VertComp::Vec2f("a_pos"),
+		gl::VertComp::Vec2f("a_tc"),
 		gl::VertComp::RGBA32("a_color"),
 	}));
 }
