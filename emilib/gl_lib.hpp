@@ -376,8 +376,13 @@ public:
 	template<typename Vertex>
 	Vertex* allocate_vert(size_t count)
 	{
-		CHECK_F(sizeof(Vertex) == _vf.stride(), "Unexpected vertex size");
+		CHECK_EQ_F(sizeof(Vertex), _vf.stride(), "Unexpected vertex size");
 		return _vertices.allocate<Vertex>(count);
+	}
+
+	size_t vertex_count() const
+	{
+		return _vertices.count();
 	}
 
 	template<typename Vertex>
@@ -403,7 +408,7 @@ public:
 
 	// --------------------------
 
-	/// mode == GL_TRIANGLE_STRIP or GL_TRIANGLE_FAN
+	/// mode: GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_TRIANGLES, ...
 	void paint(const Program& prog, GLenum mode);
 
 	void paint_strip(const Program& prog);
