@@ -225,10 +225,18 @@ gl::Texture* TextureMngr::get(const std::string& name, const gl::TexParams& para
 
 void TextureMngr::prefetch_all(const std::string& sub_folder)
 {
-	const auto root_path = _gfx_dir + sub_folder;
-	fs::walk_dir(root_path, [=](const std::string& file_path) {
-		prefetch(fs::strip_path(root_path, file_path));
+	fs::walk_dir(_gfx_dir + sub_folder, [=](const std::string& file_path) {
+		prefetch(fs::strip_path(_gfx_dir, file_path));
 	});
+}
+
+std::vector<std::string> TextureMngr::all_image_paths(const std::string& sub_folder) const
+{
+	std::vector<std::string> paths;
+	fs::walk_dir(_gfx_dir + sub_folder, [&](const std::string& file_path) {
+		paths.push_back(fs::strip_path(_gfx_dir, file_path));
+	});
+	return paths;
 }
 
 #if 0

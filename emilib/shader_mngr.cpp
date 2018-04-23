@@ -155,12 +155,23 @@ gl::Program* ShaderMngr::get_file(const std::string& name)
 
 void ShaderMngr::prefetch_all(const std::string& sub_folder)
 {
-	const auto root_path = _shader_dir + sub_folder;
-	fs::walk_dir(root_path, [=](const std::string& file_path) {
+	fs::walk_dir(_shader_dir + sub_folder, [=](const std::string& file_path) {
 		if (fs::file_ending(file_path) == "shader") {
-			get_file(fs::strip_path(root_path, file_path));
+			get_file(fs::strip_path(_shader_dir, file_path));
 		}
 	});
+}
+
+/// Recursively list all images in shader_dir/sub_folder
+std::vector<std::string> ShaderMngr::all_shader_paths(const std::string& sub_folder) const
+{
+	std::vector<std::string> paths;
+	fs::walk_dir(_shader_dir + sub_folder, [&](const std::string& file_path) {
+		if (fs::file_ending(file_path) == "shader") {
+			paths.push_back(fs::strip_path(_shader_dir, file_path));
+		}
+	});
+	return paths;
 }
 
 } // namespace emilib

@@ -100,6 +100,9 @@ public:
 	/// Recursively load all shaders in shader_dir/sub_folder
 	void prefetch_all(const std::string& sub_folder = "");
 
+	/// Recursively list all images in shader_dir/sub_folder
+	std::vector<std::string> all_shader_paths(const std::string& sub_folder = "") const;
+
 private:
 	// using SourceMap = std::unordered_map<gl::ProgramSource, gl::Program_UP>;
 	using FFMap     = std::unordered_map<int,               gl::Program_UP>;

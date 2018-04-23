@@ -69,6 +69,9 @@ public:
 	/// Recursively prefetch all textures in gfx_dir/sub_folder
 	void prefetch_all(const std::string& sub_folder = "");
 
+	/// Recursively list all images in gfx_dir/sub_folder
+	std::vector<std::string> all_image_paths(const std::string& sub_folder = "") const;
+
 	/// When we need to load a bunch of new things it is prudent to throw out the old.
 	/// We do this in three steps:
 	/// 1) call prepare_eviction
