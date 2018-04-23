@@ -1270,11 +1270,33 @@ VertComp VertComp::Float(const char* name)
 	return vc;
 }
 
-VertComp VertComp::Vec2(const char* name, Normalize normalize)
+VertComp VertComp::Vec2f(const char* name, Normalize normalize)
 {
 	VertComp vc;
 	vc.name      = name;
 	vc.num_comps = 2;
+	vc.type      = GL_FLOAT;
+	vc.normalize = normalize;
+	vc.offset    = 0;
+	return vc;
+}
+
+VertComp VertComp::Vec3f(const char* name, Normalize normalize)
+{
+	VertComp vc;
+	vc.name      = name;
+	vc.num_comps = 3;
+	vc.type      = GL_FLOAT;
+	vc.normalize = normalize;
+	vc.offset    = 0;
+	return vc;
+}
+
+VertComp VertComp::Vec4f(const char* name, Normalize normalize)
+{
+	VertComp vc;
+	vc.name      = name;
+	vc.num_comps = 4;
 	vc.type      = GL_FLOAT;
 	vc.normalize = normalize;
 	vc.offset    = 0;

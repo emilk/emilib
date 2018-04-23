@@ -251,7 +251,9 @@ struct VertComp
 
 	// Static constructor helpers:
 	static VertComp Float(const char* name);
-	static VertComp Vec2(const char* name, Normalize normalize = DONT_NORMALIZE);
+	static VertComp Vec2f(const char* name, Normalize normalize = DONT_NORMALIZE);
+	static VertComp Vec3f(const char* name, Normalize normalize = DONT_NORMALIZE);
+	static VertComp Vec4f(const char* name, Normalize normalize = DONT_NORMALIZE);
 	static VertComp RGBA32(const char* name);
 };
 
