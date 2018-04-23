@@ -198,6 +198,9 @@ Helper functions for creating an SDL2 OpenGL window.
 #### imgui_gl_lib.hpp/.cpp
 Provides bindings between my `gl_lib` and the wonderful [Dear ImGui](https://github.com/ocornut/imgui) GUI library. Can be used alone or together with `emilib/imgui_sdl.hpp/.cpp`.
 
+#### imgui_gl_lib_tools.hpp/.cpp
+Some additional helpers for painting OpenGL stuff with `gl_lib` inside of [Dear ImGui](https://github.com/ocornut/imgui).
+
 #### imgui_helpers.hpp/.cpp
 Helpers for working with the wonderful [Dear ImGui](https://github.com/ocornut/imgui) GUI library.
 
