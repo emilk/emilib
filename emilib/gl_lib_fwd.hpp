@@ -113,6 +113,10 @@ enum class ImageFormat
 	RGBAf,   ///< 32bit float RGBA
 	RGBAHF,  ///< RGBA Half-float
 
+	Depth16,
+	Depth24,
+	Depth32,
+
 	// Available as render-target:
 	//RGBA16F_EXT                                  0x881A
 	//RGB16F_EXT                                   0x881B

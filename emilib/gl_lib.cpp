@@ -397,6 +397,24 @@ void Texture::set_mip_data(const void* data_ptr, Size size, int mip_level)
 #endif
 			break;
 
+		case ImageFormat::Depth16:
+			dst_format     = GL_DEPTH_COMPONENT16;
+			src_format     = GL_DEPTH_COMPONENT;
+			element_format = GL_FLOAT;
+			break;
+
+		case ImageFormat::Depth24:
+			dst_format     = GL_DEPTH_COMPONENT24;
+			src_format     = GL_DEPTH_COMPONENT;
+			element_format = GL_FLOAT;
+			break;
+
+		case ImageFormat::Depth32:
+			dst_format     = GL_DEPTH_COMPONENT32;
+			src_format     = GL_DEPTH_COMPONENT;
+			element_format = GL_FLOAT;
+			break;
+
 		default:
 			ABORT_F("Unknown image format");
 	}
@@ -411,6 +429,13 @@ void Texture::set_mip_data(const void* data_ptr, Size size, int mip_level)
 					 src_format, element_format, data_ptr);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, mip_level);
+
+	if (src_format == GL_DEPTH_COMPONENT)
+	{
+		// For use with PCF (percentage-close filtering) in a shader:
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+	}
 
 	CHECK_FOR_GL_ERROR;
 
@@ -562,6 +587,9 @@ int Texture::bits_per_pixel() const
 			case ImageFormat::RGBA32:  return 32;
 			case ImageFormat::RGBAf:   return 4 * 32;
 			case ImageFormat::RGBAHF:  return 4 * 16;
+			case ImageFormat::Depth16: return 16;
+			case ImageFormat::Depth24: return 24;
+			case ImageFormat::Depth32: return 32;
 			default: ABORT_F("Unknown image format: %d", (int)_format);
 		}
 	}
