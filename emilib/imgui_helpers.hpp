@@ -58,8 +58,8 @@ void Text(const std::string& text);
 void LabelText(const std::string& label, const std::string& text);
 bool Button(const std::string& text);
 
-bool ListBox(const std::string& label, std::string& current_item, const std::vector<std::string>& items, int height_in_items = -1);
-bool Combo(const std::string& label, std::string& current_item, const std::vector<std::string>& items, int height_in_items = -1);
+bool ListBox(const std::string& label, std::string* current_item, const std::vector<std::string>& items, int height_in_items = -1);
+bool Combo(const std::string& label, std::string* current_item, const std::vector<std::string>& items, int height_in_items = -1);
 
 /// Convenience for enums
 template<typename Enum>

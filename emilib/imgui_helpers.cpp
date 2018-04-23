@@ -125,42 +125,44 @@ bool Button(const std::string& text)
     return ImGui::Button(text.c_str());
 }
 
-bool ListBox(const std::string& label, std::string& current_item, const std::vector<std::string>& items, int height_in_items)
+bool ListBox(const std::string& label, std::string* current_item, const std::vector<std::string>& items, int height_in_items)
 {
+    CHECK_NOTNULL_F(current_item);
     std::vector<const char*> items_c_str;
     items_c_str.reserve(items.size());
     int current_item_index = -1;
     for (int i = 0; i < items.size(); ++i) {
         items_c_str.push_back(items[i].c_str());
-        if (items[i] == current_item) {
+        if (items[i] == *current_item) {
             current_item_index = i;
         }
     }
 
     if (ImGui::ListBox(label.c_str(), &current_item_index, items_c_str.data(), (int)items.size(), height_in_items)) {
         CHECK_F(0 <= current_item_index && current_item_index < items.size());
-        current_item = items[current_item_index];
+        *current_item = items[current_item_index];
         return true;
     } else {
         return false;
     }
 }
 
-bool Combo(const std::string& label, std::string& current_item, const std::vector<std::string>& items, int height_in_items)
+bool Combo(const std::string& label, std::string* current_item, const std::vector<std::string>& items, int height_in_items)
 {
+    CHECK_NOTNULL_F(current_item);
     std::vector<const char*> items_c_str;
     items_c_str.reserve(items.size());
     int current_item_index = -1;
     for (int i = 0; i < items.size(); ++i) {
         items_c_str.push_back(items[i].c_str());
-        if (items[i] == current_item) {
+        if (items[i] == *current_item) {
             current_item_index = i;
         }
     }
 
     if (ImGui::Combo(label.c_str(), &current_item_index, items_c_str.data(), (int)items.size(), height_in_items)) {
         CHECK_F(0 <= current_item_index && current_item_index < items.size());
-        current_item = items[current_item_index];
+        *current_item = items[current_item_index];
         return true;
     } else {
         return false;
