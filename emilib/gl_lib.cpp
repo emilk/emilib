@@ -1567,7 +1567,7 @@ FBO::Lock::~Lock()
 	}
 }
 
-const char* framebuffer_completion_to_string(GLenum err)
+static const char* framebuffer_completion_to_string(GLenum err)
 {
 	switch (err)
 	{
@@ -1576,13 +1576,22 @@ const char* framebuffer_completion_to_string(GLenum err)
 		// case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS: return "GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS";
 		case     GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
 		case     GL_FRAMEBUFFER_UNSUPPORTED:                   return "GL_FRAMEBUFFER_UNSUPPORTED";
+
+		// case GL_FRAMEBUFFER_COMPLETE_EXT:                      return "GL_FRAMEBUFFER_COMPLETE_EXT";
+		// case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:         return "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT";
+		// case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT: return "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT";
+		case GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT:         return "GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT";
+		case GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT:            return "GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT";
+		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT:        return "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT";
+		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT:        return "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT";
+		// case GL_FRAMEBUFFER_UNSUPPORTED_EXT:                   return "GL_FRAMEBUFFER_UNSUPPORTED_EXT";
+
 		default: return                                        "UNKNOWN";
 	}
 }
 
 FBO::FBO(const std::string& debug_name, Size size, const Params& params)
 	: _debug_name(debug_name), _size(size), _params(params)
-	, _color_tex(debug_name + "_color", TexParams::clamped_linear(), params.color_format, size, nullptr)
 {
 	CHECK_FOR_GL_ERROR;
 
@@ -1592,10 +1601,11 @@ FBO::FBO(const std::string& debug_name, Size size, const Params& params)
 	{
 		FBO::Lock lock(this);
 		CHECK_FOR_GL_ERROR;
-		// glEnable(GL_TEXTURE_2D);
 
-		{
+		if (params.with_color) {
 			CHECK_FOR_GL_ERROR;
+			// glEnable(GL_TEXTURE_2D);
+			_color_tex = Texture(debug_name + "_color", TexParams::clamped_linear(), params.color_format, size, nullptr);
 			_color_tex.bind();
 			if (!_color_tex.has_data()) {
 				// We must init texture or we'll get a GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
@@ -1604,19 +1614,44 @@ FBO::FBO(const std::string& debug_name, Size size, const Params& params)
 			glFramebufferTexture2D(
 				GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _color_tex.id(), 0);
 			CHECK_FOR_GL_ERROR;
+		} else {
+			glDrawBuffer(GL_NONE); // No color buffer is drawn to.
+			glReadBuffer(GL_NONE); // No color buffer is read from.
 		}
 
 		CHECK_FOR_GL_ERROR;
 
 #if !GLLIB_GLES
-		if (params.with_depth) {
+		if (params.depth == Depth::kDepthRenderBuffer) {
 			CHECK_FOR_GL_ERROR;
 			glGenRenderbuffers(1, &_depth_rbo_id);
 			glBindRenderbuffer(GL_RENDERBUFFER, _depth_rbo_id);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32, width(), height());
+
+			GLuint depth_format;
+			if (params.depth_format == ImageFormat::Depth16) {
+				depth_format = GL_DEPTH_COMPONENT16;
+			} else if (params.depth_format == ImageFormat::Depth24) {
+				depth_format = GL_DEPTH_COMPONENT24;
+			} else if (params.depth_format == ImageFormat::Depth32) {
+				depth_format = GL_DEPTH_COMPONENT32;
+			} else {
+				ABORT_F("Expected a depth format.");
+			}
+
+			glRenderbufferStorage(GL_RENDERBUFFER, depth_format, width(), height());
 			glBindRenderbuffer(GL_RENDERBUFFER, 0);
 			glFramebufferRenderbuffer(
 				GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, _depth_rbo_id);
+			CHECK_FOR_GL_ERROR;
+		} else if (params.depth == Depth::kDepthTexture) {
+			_depth_tex = Texture(debug_name + "_depth", TexParams::clamped_linear(), params.depth_format, size, nullptr);
+			_depth_tex.bind();
+			if (!_depth_tex.has_data()) {
+				// We must init texture or we'll get a GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+				_depth_tex.set_data(nullptr);
+			}
+			CHECK_FOR_GL_ERROR;
+			glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, _depth_tex.id(), 0);
 			CHECK_FOR_GL_ERROR;
 		}
 #endif // !GLLIB_GLES
@@ -1628,8 +1663,8 @@ FBO::FBO(const std::string& debug_name, Size size, const Params& params)
 		FBO::Lock lock(this);
 		auto status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		CHECK_EQ_F(status, GL_FRAMEBUFFER_COMPLETE,
-		    "Framebuffer '%s' not complete after initialization: %s",
-			debug_name.c_str(), framebuffer_completion_to_string(status));
+			"Framebuffer '%s' not complete after initialization: 0x%04X (%s)",
+			debug_name.c_str(), status, framebuffer_completion_to_string(status));
 	}
 
 	CHECK_FOR_GL_ERROR;

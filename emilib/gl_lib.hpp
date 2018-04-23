@@ -500,6 +500,13 @@ private:
 class FBO
 {
 public:
+	enum Depth
+	{
+		kNone,
+		kDepthRenderBuffer, ///< Fast
+		kDepthTexture,      ///< If you need to sample it later
+	};
+
 	/// Bind/unbind FBO:
 	class Lock
 	{
@@ -517,9 +524,12 @@ public:
 
 	struct Params
 	{
-#if !GLLIB_GLES
-		bool with_depth   = false;
+#if !GLLIB_GLES // TODO: might be supported on newer GLES versions?
+		Depth       depth        = Depth::kNone;
+		ImageFormat depth_format = ImageFormat::Depth32;
 #endif // !GLLIB_GLES
+
+		bool        with_color   = true;  ///< Turn off the color component if you don't need it.
 		bool        color_mipmap = false; ///< You must also call generate_color_mipmap() after painting.
 		ImageFormat color_format = ImageFormat::RGBA32;
 	};
@@ -527,7 +537,6 @@ public:
 	// ------------------------------------------------
 
 	FBO(const std::string& debug_name, Size size, const Params& params);
-	FBO(const std::string& debug_name, Size size) : FBO(debug_name, size, Params()) {}
 	~FBO();
 
 	FBO(const FBO&) = delete;
@@ -543,8 +552,15 @@ public:
 	/// Call after painting if color_mipmap is set.
 	void generate_color_mipmap();
 
-	const gl::Texture& color_texture() const { return _color_tex; }
-	gl::Texture release_color_texture() { return std::move(_color_tex); }
+	/// Iff params.with_color
+	gl::Texture&       color_texture()         { return _color_tex;            }
+	const gl::Texture& color_texture() const   { return _color_tex;            }
+	gl::Texture        release_color_texture() { return std::move(_color_tex); }
+
+	/// Iff params.depth == Depth::kDepthTexture
+	gl::Texture&       depth_texture()         { return _depth_tex;            }
+	const gl::Texture& depth_texture() const   { return _depth_tex;            }
+	gl::Texture        release_depth_texture() { return std::move(_depth_tex); }
 
 private:
 	std::string _debug_name;
@@ -552,6 +568,7 @@ private:
 	Params      _params;
 	GLuint      _fbo_id;
 	gl::Texture _color_tex;
+	gl::Texture _depth_tex;
 #if !GLLIB_GLES
 	GLuint      _depth_rbo_id = 0;
 #endif // !GLLIB_GLES
