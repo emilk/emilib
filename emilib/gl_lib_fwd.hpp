@@ -16,25 +16,26 @@
 
 // ----------------------------------------------------------------------------
 
-#if TARGET_OS_IPHONE
+#ifndef GLLIB_GLES
+	#if TARGET_OS_IPHONE
+		#define GLLIB_GLES 1
+	#else
+		#define GLLIB_GLES 0
+	#endif
+#endif
 
-	#define GLLIB_GLES                 1
-	#define GLLIB_OPENGL_VERSION       200
+#ifndef GLLIB_OPENGL_VERSION
+	#if GLLIB_GLES
+		#define GLLIB_OPENGL_VERSION 200
+	#elif TARGET_OS_MAC
+		#define GLLIB_OPENGL_VERSION 320 // 210, 320, 330, 410, ...
+	#else
+		#define GLLIB_OPENGL_VERSION 210 // Works on Ubuntu 16.04
+	#endif
+#endif
+
+#ifndef GLLIB_TRILLINEAR_FILTERING
 	#define GLLIB_TRILLINEAR_FILTERING 1
-
-#elif TARGET_OS_MAC
-
-	#define GLLIB_GLES                 0
-	#define GLLIB_OPENGL_VERSION       320 // 210, 320, 330, 410, ...
-	#define GLLIB_TRILLINEAR_FILTERING 1
-
-#else
-
-	// Works on Ubuntu 16.04
-	#define GLLIB_GLES                 0
-	#define GLLIB_OPENGL_VERSION       210 // 210, 320, 330, 410, ...
-	#define GLLIB_TRILLINEAR_FILTERING 1
-
 #endif
 
 // ----------------------------------------------------------------------------
