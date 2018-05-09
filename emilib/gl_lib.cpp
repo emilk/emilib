@@ -700,8 +700,10 @@ std::string prefix_with_line_numbers(const char* str)
 
 	while (*str)
 	{
-		result += loguru::strprintf("%3lu  ", line_nr).c_str();
-		while (char c = *str++) {
+		auto line_nr_text = loguru::strprintf("%3lu  ", line_nr);
+		result += line_nr_text.c_str();
+		while (const char c = *str) {
+			++str;
 			result += c;
 			if (c == '\n') {
 				++line_nr;
