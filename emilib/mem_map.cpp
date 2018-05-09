@@ -28,7 +28,7 @@ MemMap::MemMap(const char* path)
 	}
 
 	_size = (size_t)file_status.st_size;
-	_data = mmap(0, _size, PROT_READ, MAP_PRIVATE, file, 0);
+	_data = mmap(nullptr, _size, PROT_READ, MAP_PRIVATE, file, 0);
 	CHECK_NE_F(_data, MAP_FAILED);
 
 	// Note this will not close the file/mapping right now, as it will be held until unmapped.
