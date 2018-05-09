@@ -15,13 +15,14 @@
 
 #include "gl_lib_opengl.hpp"
 
-#ifndef GLLIB_GLES
-	#error GLLIB_GLES not defined
+#ifndef EMILIB_GL_GLES
+	#error EMILIB_GL_GLES not defined
 #endif
-#ifndef GLLIB_OPENGL_VERSION
-	#error GLLIB_OPENGL_VERSION not defined
+#ifndef EMILIB_GL_OPENGL_VERSION
+	#error EMILIB_GL_OPENGL_VERSION not defined
 #endif
 
+namespace emilib {
 namespace gl {
 
 // ----------------------------------------------------------------------------
@@ -70,7 +71,7 @@ void on_gl_error(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei
 
 void init_glew()
 {
-#if !GLLIB_GLES
+#if !EMILIB_GL_GLES
 	#ifndef GLEW_OK
 	#	error "No GLEW!"
 	#endif
@@ -92,7 +93,7 @@ void init_glew()
 
 	char gl_version_string[64];
 	snprintf(gl_version_string, sizeof(gl_version_string) - 1,
-		"GL_VERSION_%d_%d", GLLIB_OPENGL_VERSION / 100, (GLLIB_OPENGL_VERSION / 10) % 10);
+		"GL_VERSION_%d_%d", EMILIB_GL_OPENGL_VERSION / 100, (EMILIB_GL_OPENGL_VERSION / 10) % 10);
 	CHECK_F(glewIsSupported(gl_version_string), "Not supported: %s", gl_version_string);
 
 	// CHECK_F(glewIsSupported("GL_VERSION_3_2"));
@@ -104,7 +105,7 @@ void init_glew()
 	} else {
 		LOG_F(INFO, "ARB_debug_output not supported");
 	}
-#endif // !GLLIB_GLES
+#endif // !EMILIB_GL_GLES
 
 	CHECK_FOR_GL_ERROR;
 }
@@ -156,7 +157,7 @@ inline constexpr bool is_power_of_two(Size size)
 
 bool supports_mipmaps_for(Size size)
 {
-#if GLLIB_GLES
+#if EMILIB_GL_GLES
 	return is_power_of_two(size.x) && is_power_of_two(size.y);
 #else
 	(void)size;
@@ -191,7 +192,7 @@ Texture::Texture(
 	, _debug_name(std::move(debug_name))
 	, _params(params_arg)
 {
-	NAME_PAINT_FUNCTION();
+	EMILIB_GL_PAINT_FUNCTION();
 	CHECK_FOR_GL_ERROR;
 
 	_id = id;
@@ -210,7 +211,7 @@ Texture::Texture(
 	, _debug_name(std::move(debug_name))
 	, _params(params_arg)
 {
-	NAME_PAINT_FUNCTION();
+	EMILIB_GL_PAINT_FUNCTION();
 	CHECK_FOR_GL_ERROR;
 
 	glGenTextures(1, &_id);
@@ -223,7 +224,7 @@ void Texture::init(const void* data_ptr)
 	// ------------------------------------------------
 	// Check params
 
-#if GLLIB_GLES
+#if EMILIB_GL_GLES
 	if (is_half(_format)) {
 		// Just in case:
 		// FIXME: needed?
@@ -279,7 +280,7 @@ void Texture::swap(Texture& other)
 void Texture::free()
 {
 	if (_id != 0) {
-		NAME_PAINT_FUNCTION();
+		EMILIB_GL_PAINT_FUNCTION();
 		glDeleteTextures(1, &_id);
 		_id = 0;
 		_has_data = false;
@@ -329,7 +330,7 @@ void Texture::set_mip_data(const void* data_ptr, Size size, int mip_level)
 	ERROR_CONTEXT("Texture width",  size.x);
 	ERROR_CONTEXT("Texture height", size.y);
 	ERROR_CONTEXT("mip_level",      mip_level);
-	NAME_PAINT_FUNCTION();
+	EMILIB_GL_PAINT_FUNCTION();
 	bind();
 
 	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // FIXME
@@ -450,7 +451,7 @@ bool Texture::is_power_of_two() const
 void Texture::bind(int tu) const
 {
 	CHECK_NE_F(_id, 0, "Texture not loaded: '%s'", _debug_name.c_str());
-	NAME_PAINT_FUNCTION();
+	EMILIB_GL_PAINT_FUNCTION();
 	glActiveTexture(GL_TEXTURE0 + tu);
 	glBindTexture(GL_TEXTURE_2D, _id);
 
@@ -469,7 +470,7 @@ void Texture::unbind(int tu) const
 
 void Texture::set_wrap_mode(WrapMode s, WrapMode t) const
 {
-	NAME_PAINT_FUNCTION();
+	EMILIB_GL_PAINT_FUNCTION();
 
 	// How to map WrapModes to GL.
 	auto translate_mode = [](WrapMode mode)
@@ -483,7 +484,7 @@ void Texture::set_wrap_mode(WrapMode s, WrapMode t) const
 		}
 	};
 
-#if GLLIB_GLES
+#if EMILIB_GL_GLES
 	// See Section 3.8.7 Texture Completeness in OpenGl ES 2.0 spec.
 	if (!is_power_of_two()) {
 		assert(s==WrapMode::Clamp && t==WrapMode::Clamp);
@@ -496,10 +497,10 @@ void Texture::set_wrap_mode(WrapMode s, WrapMode t) const
 
 void Texture::set_filtering(TexFilter filter) const
 {
-	NAME_PAINT_FUNCTION();
+	EMILIB_GL_PAINT_FUNCTION();
 
 	if (filter==TexFilter::DontCare) {
-#if GLLIB_GLES
+#if EMILIB_GL_GLES
 		if (is_power_of_two()) {
 			filter = TexFilter::Mipmapped;
 		} else {
@@ -510,7 +511,7 @@ void Texture::set_filtering(TexFilter filter) const
 #endif
 	}
 
-#if GLLIB_GLES
+#if EMILIB_GL_GLES
 	if (!is_power_of_two()) {
 		if (filter == TexFilter::Mipmapped) {
 			LOG_F(WARNING, "non-power-of-two mipmaps NOT SUPPORTED! Texture: %s", _debug_name.c_str());
@@ -534,7 +535,7 @@ void Texture::set_filtering(TexFilter filter) const
 	} else {
 		if (filter == TexFilter::Mipmapped) {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-				GLLIB_TRILLINEAR_FILTERING ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST);
+				EMILIB_GL_TRILLINEAR_FILTERING ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR_MIPMAP_NEAREST);
 		}
 		else {
 			// LOG_F(WARNING, "'%s' Filter: Linear", _debug_name.c_str());
@@ -546,7 +547,7 @@ void Texture::set_filtering(TexFilter filter) const
 
 #if TARGET_OS_IPHONE
 	const bool supports_anisotropic_filtering = true;
-#elif GLLIB_GLES
+#elif EMILIB_GL_GLES
 	const bool supports_anisotropic_filtering = false;
 #else
 	//const bool supports_anisotropic_filtering = GLEW_EXT_texture_filter_anisotropic;
@@ -837,7 +838,7 @@ const char* type_to_string(GLenum type)
 		//case GL_DOUBLE_MAT4x3​:        return "GL_DOUBLE_MAT4x3​";
 		case GL_SAMPLER_2D:           return "GL_SAMPLER_2D";  // TODO: more of these
 
-#if !GLLIB_GLES
+#if !EMILIB_GL_GLES
 		case GL_DOUBLE_MAT3x4:        return "GL_DOUBLE_MAT3x4";
 		case GL_DOUBLE_MAT4x2:        return "GL_DOUBLE_MAT4x2";
 		case GL_FLOAT_MAT2x3:         return "GL_FLOAT_MAT2x3";
@@ -979,7 +980,7 @@ void Program::bind() const
 
 void Program::unbind() const
 {
-	#if GLLIB_OPENGL_VERSION < 300
+	#if EMILIB_GL_OPENGL_VERSION < 300
 		glUseProgram(0);
 	#endif
 }
@@ -1052,7 +1053,7 @@ template<> void Program::set_uniform(int loc, const double& v) const
 Program compile_program(const std::string& vs, const std::string& fs, const std::string& debug_name)
 {
 
-#if GLLIB_GLES
+#if EMILIB_GL_GLES
 
 	const auto common_prefix = R"(
 	// enable dFdx, dFdy, fwidth:
@@ -1073,7 +1074,7 @@ Program compile_program(const std::string& vs, const std::string& fs, const std:
 	#define out_FragColor gl_FragColor
 	)";
 
-#elif GLLIB_OPENGL_VERSION < 300
+#elif EMILIB_GL_OPENGL_VERSION < 300
 
 	const auto common_prefix = R"(#version 120
 
@@ -1382,7 +1383,7 @@ void VBO::bind() const
 
 void VBO::unbind() const
 {
-	#if GLLIB_OPENGL_VERSION < 300
+	#if EMILIB_GL_OPENGL_VERSION < 300
 		glBindBuffer(_type == Vertex ? GL_ARRAY_BUFFER : GL_ELEMENT_ARRAY_BUFFER, 0);
 	#endif
 }
@@ -1433,7 +1434,7 @@ void VBO::upload()
 		glBindVertexArrayOES(0);
 	}
 
-#elif TARGET_OS_MAC && (300 <= GLLIB_OPENGL_VERSION)
+#elif TARGET_OS_MAC && (300 <= EMILIB_GL_OPENGL_VERSION)
 
 	VAO::VAO()
 	{
@@ -1670,7 +1671,7 @@ FBO::FBO(const std::string& debug_name, Size size, const Params& params)
 
 		CHECK_FOR_GL_ERROR;
 
-#if !GLLIB_GLES
+#if !EMILIB_GL_GLES
 		if (params.depth == Depth::kDepthRenderBuffer) {
 			CHECK_FOR_GL_ERROR;
 			glGenRenderbuffers(1, &_depth_rbo_id);
@@ -1703,7 +1704,7 @@ FBO::FBO(const std::string& debug_name, Size size, const Params& params)
 			glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, _depth_tex.id(), 0);
 			CHECK_FOR_GL_ERROR;
 		}
-#endif // !GLLIB_GLES
+#endif // !EMILIB_GL_GLES
 	}
 
 	CHECK_FOR_GL_ERROR;
@@ -1721,11 +1722,11 @@ FBO::FBO(const std::string& debug_name, Size size, const Params& params)
 
 FBO::~FBO()
 {
-#if !GLLIB_GLES
+#if !EMILIB_GL_GLES
 	if (_depth_rbo_id != 0) {
 		glDeleteRenderbuffers(1, &_depth_rbo_id);
 	}
-#endif // !GLLIB_GLES
+#endif // !EMILIB_GL_GLES
 	glDeleteFramebuffers(1, &_fbo_id);
 }
 
@@ -1747,3 +1748,4 @@ void FBO::generate_color_mipmap()
 // ----------------------------------------------------------------------------
 
 } // namespace gl
+} // namespace emilib

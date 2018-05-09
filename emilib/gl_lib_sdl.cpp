@@ -31,12 +31,12 @@ InitResult init(const Params& params)
 		ABORT_F("ERROR: SDL_Init: %s", SDL_GetError());
 	}
 
-#if GLLIB_GLES
+#if EMILIB_GL_GLES
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2); // TODO: GLES 3
 #else
-	auto major = GLLIB_OPENGL_VERSION / 100;
-	auto minor = (GLLIB_OPENGL_VERSION % 100) / 10;
+	auto major = EMILIB_GL_OPENGL_VERSION / 100;
+	auto minor = (EMILIB_GL_OPENGL_VERSION % 100) / 10;
 	LOG_F(INFO, "Using OpenGL %d.%d", major, minor);
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);

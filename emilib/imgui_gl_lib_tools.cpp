@@ -4,6 +4,7 @@
 
 #include "gl_lib.hpp"
 
+namespace emilib {
 namespace gl {
 namespace {
 
@@ -100,3 +101,4 @@ void imgui_show_gl(
 }
 
 } // namespace gl
+} // namespace emilib

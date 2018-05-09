@@ -20,14 +20,15 @@
 
 #include "gl_lib_fwd.hpp"
 
-#ifndef GLLIB_GLES
-	#error GLLIB_GLES not defined
+#ifndef EMILIB_GL_GLES
+	#error EMILIB_GL_GLES not defined
 #endif
-#ifndef GLLIB_OPENGL_VERSION
-	#error GLLIB_OPENGL_VERSION not defined
+#ifndef EMILIB_GL_OPENGL_VERSION
+	#error EMILIB_GL_OPENGL_VERSION not defined
 #endif
 
 /// OpenGL wrapper classes
+namespace emilib {
 namespace gl {
 
 using GLenum = unsigned int;
@@ -535,10 +536,10 @@ public:
 
 	struct Params
 	{
-#if !GLLIB_GLES // TODO: might be supported on newer GLES versions?
+#if !EMILIB_GL_GLES // TODO: might be supported on newer GLES versions?
 		Depth       depth        = Depth::kNone;
 		ImageFormat depth_format = ImageFormat::Depth32;
-#endif // !GLLIB_GLES
+#endif // !EMILIB_GL_GLES
 
 		bool        with_color   = true;  ///< Turn off the color component if you don't need it.
 		bool        color_mipmap = false; ///< You must also call generate_color_mipmap() after painting.
@@ -580,11 +581,12 @@ private:
 	GLuint      _fbo_id;
 	gl::Texture _color_tex;
 	gl::Texture _depth_tex;
-#if !GLLIB_GLES
+#if !EMILIB_GL_GLES
 	GLuint      _depth_rbo_id = 0;
-#endif // !GLLIB_GLES
+#endif // !EMILIB_GL_GLES
 };
 
 // ----------------------------------------------------------------------------
 
 } // namespace gl
+} // namespace emilib

@@ -6,6 +6,7 @@
 
 #pragma once
 
+namespace emilib {
 namespace gl {
 
 /// Call this to use gl_lib to paint Dear ImGui. Call once at the start of your program.
@@ -20,3 +21,4 @@ void paint_imgui();
 void unbind_imgui_painting();
 
 } // namespace gl
+} // namespace emilib

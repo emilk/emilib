@@ -8,6 +8,7 @@
 #include <emilib/gl_lib_opengl.hpp>
 #include <imgui/imgui.h>
 
+namespace emilib {
 namespace gl {
 
 static gl::Program_UP     s_prog;
@@ -15,7 +16,7 @@ static gl::MeshPainter_UP s_mesh_painter;
 
 static void paint_imgui_draw_lists(ImDrawData* draw_data)
 {
-	NAME_PAINT_FUNCTION();
+	EMILIB_GL_PAINT_FUNCTION();
 
 	// Setup render state
 	glEnable(GL_BLEND);
@@ -164,3 +165,4 @@ void unbind_imgui_painting()
 }
 
 } // namespace gl
+} // namespace emilib

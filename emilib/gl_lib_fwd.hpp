@@ -16,30 +16,31 @@
 
 // ----------------------------------------------------------------------------
 
-#ifndef GLLIB_GLES
+#ifndef EMILIB_GL_GLES
 	#if TARGET_OS_IPHONE
-		#define GLLIB_GLES 1
+		#define EMILIB_GL_GLES 1
 	#else
-		#define GLLIB_GLES 0
+		#define EMILIB_GL_GLES 0
 	#endif
 #endif
 
-#ifndef GLLIB_OPENGL_VERSION
-	#if GLLIB_GLES
-		#define GLLIB_OPENGL_VERSION 200
+#ifndef EMILIB_GL_OPENGL_VERSION
+	#if EMILIB_GL_GLES
+		#define EMILIB_GL_OPENGL_VERSION 200
 	#elif TARGET_OS_MAC
-		#define GLLIB_OPENGL_VERSION 320 // 210, 320, 330, 410, ...
+		#define EMILIB_GL_OPENGL_VERSION 320 // 210, 320, 330, 410, ...
 	#else
-		#define GLLIB_OPENGL_VERSION 210 // Works on Ubuntu 16.04
+		#define EMILIB_GL_OPENGL_VERSION 210 // Works on Ubuntu 16.04
 	#endif
 #endif
 
-#ifndef GLLIB_TRILLINEAR_FILTERING
-	#define GLLIB_TRILLINEAR_FILTERING 1
+#ifndef EMILIB_GL_TRILLINEAR_FILTERING
+	#define EMILIB_GL_TRILLINEAR_FILTERING 1
 #endif
 
 // ----------------------------------------------------------------------------
 
+namespace emilib {
 namespace gl {
 
 class Program;
@@ -189,8 +190,9 @@ struct TexParams
 
 void check_for_gl_error(const char* file, int line);
 
+#undef CHECK_FOR_GL_ERROR
 #ifndef NDEBUG
-	#define CHECK_FOR_GL_ERROR gl::check_for_gl_error(__FILE__, __LINE__)
+	#define CHECK_FOR_GL_ERROR ::emilib::gl::check_for_gl_error(__FILE__, __LINE__)
 #else
 	#define CHECK_FOR_GL_ERROR
 #endif
@@ -207,10 +209,11 @@ public:
 	PaintGrouper& operator=(PaintGrouper&) = delete;
 };
 
-#define NAME_PAINT_GROUP(name) gl::PaintGrouper LOGURU_ANONYMOUS_VARIABLE(paint_scope_)(name)
+#define EMILIB_GL_PAINT_GROUP(name) ::emilib::gl::PaintGrouper LOGURU_ANONYMOUS_VARIABLE(paint_scope_)(name)
 
-#define NAME_PAINT_FUNCTION() NAME_PAINT_GROUP(__PRETTY_FUNCTION__)
+#define EMILIB_GL_PAINT_FUNCTION() EMILIB_GL_PAINT_GROUP(__PRETTY_FUNCTION__)
 
 // ------------------------------------------------
 
 } // gl
+} // namespace emilib

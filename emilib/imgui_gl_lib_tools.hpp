@@ -12,6 +12,7 @@
 
 #include "gl_lib_fwd.hpp"
 
+namespace emilib {
 namespace gl {
 
 using Painter = std::function<void(gl::MeshPainter&)>;
@@ -39,3 +40,4 @@ void imgui_show_gl(
 	const Painter& painter);
 
 } // namespace gl
+} // namespace emilib
