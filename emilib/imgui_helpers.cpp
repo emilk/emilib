@@ -98,7 +98,7 @@ bool SliderSize(const std::string& label, size_t* v, size_t v_min, size_t v_max,
     return changed;
 }
 
-bool InputText(const std::string& label, std::string& text, ImGuiInputTextFlags flags, ImGuiTextEditCallback callback, void* user_data)
+bool InputText(const std::string& label, std::string& text, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
 {
     char buff[1024];
     strncpy(buff, text.c_str(), sizeof(buff));
