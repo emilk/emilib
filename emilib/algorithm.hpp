@@ -32,7 +32,7 @@ void erase_if(Vector* vec, const Predicate& predicate)
 }
 
 /// Apply a function to each element and return the results.
-template <typename Container, typename Kernel>
+template<typename Container, typename Kernel>
 auto map(Container&& inputs, const Kernel& kernel)
     -> std::vector<decltype(kernel(inputs.front()))>
 {
@@ -42,6 +42,17 @@ auto map(Container&& inputs, const Kernel& kernel)
 		results.emplace_back(kernel(input_value));
 	}
 	return results;
+}
+
+/// Flatten multiple containers into one vector (NOT recursively).
+template<typename Container>
+auto flatten(std::initializer_list<Container> containers)
+{
+	std::vector<typename Container::value_type> result;
+	for (const auto& container : containers) {
+		result.insert(end(result), begin(container), end(container));
+	}
+	return result;
 }
 
 /// Sort the given range so elements with lower key(element) comes first.
