@@ -85,6 +85,8 @@ public:
 	float height_pixels()    const { return _pixels_per_point * _height_points; }
 	float pixels_per_point() const { return _pixels_per_point; }
 
+	void set_size_points(float width_points, float height_points);
+
 private:
 	bool  _visible = true;
 	bool  _interactive = true;

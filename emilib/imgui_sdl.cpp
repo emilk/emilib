@@ -140,11 +140,8 @@ void ImGui_SDL::on_event(const SDL_Event& event)
 
 		case SDL_WINDOWEVENT: {
 			if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-				_width_points = event.window.data1;
-				_height_points = event.window.data2;
-				VLOG_F(1, "Resized: %fx%f points", _width_points, _height_points);
-				io.DisplaySize.x = _width_points;
-				io.DisplaySize.y = _height_points;
+				set_size_points(event.window.data1, event.window.data2);
+				VLOG_F(1, "Resized to %fx%f points", _width_points, _height_points);
 			}
 		} break;
 	}
@@ -158,6 +155,15 @@ bool ImGui_SDL::mod_command() const
 bool ImGui_SDL::mod_shift() const
 {
 	return ImGui::GetIO().KeyShift;
+}
+
+void ImGui_SDL::set_size_points(float width_points, float height_points)
+{
+	_width_points = width_points;
+	_height_points = height_points;
+	ImGuiIO& io = ImGui::GetIO();
+	io.DisplaySize.x = _width_points;
+	io.DisplaySize.y = _height_points;
 }
 
 } // namespace emilib
