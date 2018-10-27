@@ -41,10 +41,14 @@ ImGui_SDL::ImGui_SDL(float width_points, float height_points, float pixels_per_p
 	io.KeyMap[ImGuiKey_RightArrow] = SDL_SCANCODE_RIGHT;
 	io.KeyMap[ImGuiKey_UpArrow]    = SDL_SCANCODE_UP;
 	io.KeyMap[ImGuiKey_DownArrow]  = SDL_SCANCODE_DOWN;
+	io.KeyMap[ImGuiKey_PageUp]     = SDL_SCANCODE_PAGEUP;
+	io.KeyMap[ImGuiKey_PageDown]   = SDL_SCANCODE_PAGEDOWN;
 	io.KeyMap[ImGuiKey_Home]       = SDL_SCANCODE_HOME;
 	io.KeyMap[ImGuiKey_End]        = SDL_SCANCODE_END;
+	io.KeyMap[ImGuiKey_Insert]     = SDL_SCANCODE_INSERT;
 	io.KeyMap[ImGuiKey_Delete]     = SDL_SCANCODE_DELETE;
 	io.KeyMap[ImGuiKey_Backspace]  = SDL_SCANCODE_BACKSPACE;
+	io.KeyMap[ImGuiKey_Space]      = SDL_SCANCODE_SPACE;
 	io.KeyMap[ImGuiKey_Enter]      = SDL_SCANCODE_RETURN;
 	io.KeyMap[ImGuiKey_Escape]     = SDL_SCANCODE_ESCAPE;
 	io.KeyMap[ImGuiKey_A]          = SDLK_a;
