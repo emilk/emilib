@@ -101,7 +101,10 @@ InitResult init(const Params& params)
 	LOG_F(INFO, "Pixel size: %lux%lu", results.width_pixels, results.height_pixels);
 	LOG_F(INFO, "Pixels per point: %f", results.pixels_per_point);
 
-	results.gl_context = SDL_GL_CreateContext(results.window);
+	{
+		LOG_SCOPE_F(1, "SDL_GL_CreateContext");
+		results.gl_context = SDL_GL_CreateContext(results.window);
+	}
 	CHECK_F(results.gl_context != nullptr);
 
 	SDL_GL_SetSwapInterval(1); // vsync
