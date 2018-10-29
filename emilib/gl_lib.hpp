@@ -193,7 +193,7 @@ public:
 		set_uniform(get_uniform_loc(name), value);
 	}
 
-	/// gl_lib does NOT implement this function! You have to do that yourself, e.g. for Vec2, Mat4
+	/// gl_lib does NOT implement this function! You have to do that yourself, e.g. for Vec2f, Mat4
 	template<typename T>
 	void set_uniform(int location, const T& value) const;
 
@@ -241,7 +241,7 @@ enum Normalize { DONT_NORMALIZE, NORMALIZE };
 struct VertComp
 {
 	std::string name;
-	unsigned    num_comps; ///< 1 for scalars, 2 for Vec2 etc
+	unsigned    num_comps; ///< 1 for scalars, 2 for Vec2f etc
 	unsigned    type;      ///< e.g. GL_FLOAT
 	Normalize   normalize; ///< If we normalize, values are rescaled to [0, 1]
 	size_t      offset;    ///< Byte offset, filled in by VertexFormat::VertexFormat.

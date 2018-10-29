@@ -17,7 +17,7 @@
 namespace emilib {
 
 /// Tracks movement and gives info about velocity.
-/// 'T' is the type of movement we track (float for scoll, Vec2 for position, ...)
+/// 'T' is the type of movement we track (float for scoll, Vec2f for position, ...)
 template<typename T>
 class MovementTracker
 {
@@ -226,6 +226,6 @@ public:
 // ------------------------------------------------
 
 // Example:
-// using PositionTracker = MovementTracker<Vec2>;
+// using PositionTracker = MovementTracker<Vec2f>;
 
 } // namespace emilib
