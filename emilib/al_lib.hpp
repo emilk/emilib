@@ -214,7 +214,7 @@ public:
 	/// sound_name == "subdir/foo.wav"
 	void prefetch(const std::string& sound_name);
 
-	/// Recursively prefetch all textures in sfx_dir/sub_folder
+	/// Recursively prefetch all sounds in sfx_dir/sub_folder
 	void prefetch_all(const std::string& sub_folder = "");
 
 	/// Fire and forget - or keep the returned source and modify it.
