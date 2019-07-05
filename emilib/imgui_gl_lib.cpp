@@ -16,6 +16,8 @@ static gl::MeshPainter_UP s_mesh_painter;
 
 static void paint_imgui_draw_lists(ImDrawData* draw_data)
 {
+	if (!draw_data) { return; }
+
 	EMILIB_GL_PAINT_FUNCTION();
 
 	// Setup render state
@@ -45,11 +47,10 @@ static void paint_imgui_draw_lists(ImDrawData* draw_data)
 	glUniformMatrix4fv(s_prog->get_uniform_loc("u_mvp"), 1, false, mvp);
 	const auto u_clip_loc = s_prog->get_uniform_loc("u_clip");
 
-	// Render command lists
 	for (int n = 0; n < draw_data->CmdListsCount; ++n)
 	{
 		const ImDrawList* cmd_list = draw_data->CmdLists[n];
-		const ImDrawIdx* idx_buffer = &cmd_list->IdxBuffer[0];
+		const ImDrawIdx* idx_buffer = cmd_list->IdxBuffer.Data;
 
 		ImDrawVert* vert_dest = s_mesh_painter->allocate_vert<ImDrawVert>(cmd_list->VtxBuffer.size());
 		std::copy_n(&cmd_list->VtxBuffer[0], cmd_list->VtxBuffer.size(), vert_dest);
@@ -59,6 +60,7 @@ static void paint_imgui_draw_lists(ImDrawData* draw_data)
 			const ImDrawCmd* pcmd = &cmd_list->CmdBuffer[cmd_i];
 			if (pcmd->UserCallback)
 			{
+                // User callback (registered via ImDrawList::AddCallback)
 				pcmd->UserCallback(cmd_list, pcmd);
 
 				// Restore some state UserCallback may have messed up:
