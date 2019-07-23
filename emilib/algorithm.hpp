@@ -78,25 +78,24 @@ bool all_same(const Vector& v)
 	return true;
 }
 
+template<typename T> struct Accumulator        { using type = T;      };
+template<>           struct Accumulator<float> { using type = double; };
+
 template<typename Vector>
 auto sum(const Vector& v)
 {
 	using namespace std;
 	using value_type = typename Vector::value_type;
-	return std::accumulate(begin(v), end(v), value_type());
+	using accumulator = typename Accumulator<value_type>::type;
+	auto sum = std::accumulate(begin(v), end(v), accumulator());
+	return static_cast<value_type>(sum);
 }
 
-template<typename Element>
-const Element& max(const std::vector<Element>& v)
+template<typename Container>
+auto max(const Container& v)
 {
 	CHECK_F(!v.empty());
-	size_t largest_index = 0;
-	for (size_t i = 1; i < v.size(); ++i) {
-		if (v[i] > v[largest_index]) {
-			largest_index = i;
-		}
-	}
-	return v[largest_index];
+	return *std::max_element(v.begin(), v.end());
 }
 
 } // namespace emilib
