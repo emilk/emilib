@@ -107,6 +107,10 @@ Simple wrapper around memory mapping with RAII.
 Track movement of some data, e.g. to estimate velocity from recent movement.
 For instance, you can use this to track a finger flicking something on a touch-screen to calculate the final velocity when the finger is released.
 
+#### profiler.hpp/.cpp profiler_gui.hpp/cpp
+Fast opt-in profiling using easy to use macros.
+Nice flamegraph UI which you can explore.
+
 #### read_write_mutex.hpp
 Fast mutex for multiple-readers, single-writer scenarios written in pure C++11.
 
