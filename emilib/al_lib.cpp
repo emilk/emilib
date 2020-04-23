@@ -79,7 +79,7 @@ void Buffer::load_wav(const std::string& path)
 	const emilib::Wav wav = emilib::parse_wav(mem_map.data(), mem_map.size());
 
 	if (wav.channels != 1) {
-		LOG_F(WARNING, "We don't support attenuation of stereo sound wav:s: '%s'", path);
+		LOG_F(WARNING, "We don't support attenuation of stereo sound wav:s: '%s'", path.c_str());
 	}
 
 	ALenum format = wav.channels == 1 ?
